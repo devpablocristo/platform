@@ -6,41 +6,18 @@ updates:
       interval: "weekly"
 
   - package-ecosystem: "npm"
-    directory: "/ai/console/ts"
+    directory: "/"
     schedule:
       interval: "weekly"
-
-  - package-ecosystem: "npm"
-    directory: "/calendar/board/ts"
-    schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "npm"
-    directory: "/crud/ui/ts"
-    schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "npm"
-    directory: "/kanban/board/ts"
-    schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "npm"
-    directory: "/sidebar/ts"
-    schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "npm"
-    directory: "/ui/data-display/ts"
-    schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "npm"
-    directory: "/ui/filters/ts"
-    schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "npm"
-    directory: "/ui/forms/ts"
-    schedule:
-      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      npm-dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      npm-production-dependencies:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
