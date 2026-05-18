@@ -59,7 +59,20 @@ def main() -> None:
     if output_dir.exists():
         shutil.rmtree(output_dir)
 
-    shutil.copytree(module_dir, output_dir)
+    # Exclude build/runtime artifacts that would either pull broken symlinks
+    # or pad the package size unnecessarily.
+    IGNORE_PATTERNS = shutil.ignore_patterns(
+        "node_modules",
+        ".turbo",
+        ".cache",
+        "dist",
+        "build",
+        ".next",
+        "coverage",
+        "*.tsbuildinfo",
+        "__pycache__",
+    )
+    shutil.copytree(module_dir, output_dir, ignore=IGNORE_PATTERNS)
 
     out_package_json = output_dir / "package.json"
     package_data = json.loads(out_package_json.read_text(encoding="utf-8"))
