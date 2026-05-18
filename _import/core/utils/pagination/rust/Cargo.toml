@@ -1,0 +1,13 @@
+[package]
+name = "pagination"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Cursor-based and offset-based pagination with true generics"
+
+[lib]
+name = "pagination"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }

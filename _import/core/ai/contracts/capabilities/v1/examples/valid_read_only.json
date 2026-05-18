@@ -1,0 +1,50 @@
+{
+  "schema_version": "capability_manifest.v1",
+  "id": "ponti.insights",
+  "product": "ponti",
+  "version": "1.0.0",
+  "tenant_scope": "project",
+  "name": "Ponti Insights",
+  "description": "Read-only insight capabilities for Ponti projects.",
+  "agents": [
+    {
+      "name": "ponti_insights",
+      "description": "Answers questions about computed agricultural insights."
+    }
+  ],
+  "tools": [
+    {
+      "name": "ponti.insights.summary",
+      "description": "Returns a summary of active insights for a project.",
+      "mode": "read",
+      "side_effect": false,
+      "risk_class": "low",
+      "input_schema": {
+        "type": "object",
+        "required": ["project_id"],
+        "properties": {
+          "project_id": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array"
+          }
+        }
+      },
+      "required_roles": ["member"],
+      "required_modules": ["insights"],
+      "evidence_fields": [],
+      "executor_ref": "ponti-ai.insights.summary"
+    }
+  ]
+}

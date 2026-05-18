@@ -1,0 +1,27 @@
+# Cursor Rules para `core`
+
+La fuente de verdad detallada está en:
+
+- `.cursor/rules/core-rules.mdc`
+- `.cursor/rules/impact-scan-first.mdc`
+- `.cursor/rules/core-monorepo-structure.mdc`
+- `.cursor/rules/core-module-boundaries.mdc`
+- `.cursor/rules/core-dependency-graph.mdc`
+- `.cursor/rules/go-library-architecture.mdc`
+- `.cursor/rules/python-core-libs.mdc`
+- `.cursor/rules/rust-kernels.mdc`
+- `.cursor/rules/testing-and-verification.mdc`
+- `.cursor/rules/no-git-remote.mdc`
+
+## Resumen crítico
+
+- Este repo es un monorepo de capacidades reutilizables, no de productos
+- Los módulos raíz esperados son: `saas/`, `backend/`, `postgres/`, `serverless/`, `governance/`, `artifact/`, `ai/`
+- Dentro de este repo NO se usan sufijos `-core`
+- No crear `common/`, `shared/`, `utils/`, `libs/` en la raíz
+- Lenguaje distinto no obliga repo distinto
+- Solo crear `go/`, `rust/`, `python/` si la misma capacidad tiene múltiples implementaciones
+- Antes de afirmar que un cambio es seguro, rastrear consumidores y productores afectados
+- No meter dominio específico de Nexus, Pymes, Ponti, Fixguard o KMA/AlphaCoding en este repo
+- No decir "listo" sin verificación
+- No ejecutar `git push`, commits o cambios remotos/destructivos sin autorización explícita

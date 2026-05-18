@@ -1,0 +1,13 @@
+[package]
+name = "fsm"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Compile-time finite state machine — invalid transitions are unrepresentable"
+
+[lib]
+name = "fsm"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }

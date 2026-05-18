@@ -1,0 +1,18 @@
+---
+description: Verificar impacto completo antes de proponer o asegurar cambios
+alwaysApply: true
+---
+
+# Impact scan obligatorio
+
+Antes de proponer, afirmar seguridad o implementar cambios no triviales:
+
+- rastrear consumidores y productores afectados;
+- revisar impacto cross-module;
+- si aplica, revisar impacto en repos consumidores fuera de `core`;
+- no afirmar "es seguro" sin revisar esos paths.
+
+Si no verificaste todo, decirlo explícitamente.
+
+Este repo existe para ser consumido por varios productos. Un cambio pequeño acá puede romper varios repos.
+

@@ -1,0 +1,63 @@
+{
+  "schema_version": "capability_manifest.v1",
+  "id": "pymes.sales",
+  "product": "pymes",
+  "version": "1.0.0",
+  "tenant_scope": "org",
+  "name": "Pymes Sales",
+  "description": "Governed sales capabilities for Pymes.",
+  "agents": [
+    {
+      "name": "pymes_sales",
+      "description": "Handles internal sales workflows."
+    }
+  ],
+  "tools": [
+    {
+      "name": "pymes.sales.create",
+      "description": "Creates a sale in Pymes after governance approval.",
+      "mode": "write",
+      "side_effect": true,
+      "risk_class": "high",
+      "input_schema": {
+        "type": "object",
+        "required": ["org_id", "customer_id", "items"],
+        "properties": {
+          "org_id": {
+            "type": "string"
+          },
+          "customer_id": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "minItems": 1
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "sale_id": {
+            "type": "string"
+          },
+          "total_amount": {
+            "type": "number"
+          }
+        }
+      },
+      "required_roles": ["admin", "seller"],
+      "required_modules": ["sales"],
+      "evidence_fields": ["sale_id", "total_amount"],
+      "executor_ref": "pymes-api.sales.create",
+      "governance": {
+        "requires_approval": true,
+        "action_type": "sale.create",
+        "target_system": "pymes"
+      }
+    }
+  ]
+}

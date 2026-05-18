@@ -1,0 +1,32 @@
+{
+  "name": "@devpablocristo/core-http",
+  "version": "0.2.0",
+  "private": false,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./fetch": "./src/fetch.ts",
+    "./errors": "./src/errors.ts",
+    "./sse": "./src/sse.ts"
+  },
+  "scripts": {
+    "test": "vitest run --environment jsdom --globals",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^25.7.0",
+    "jsdom": "^29.1.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.6"
+  },
+  "files": [
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.spec.ts",
+    "!src/**/*.spec.tsx"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

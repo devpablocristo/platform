@@ -1,0 +1,61 @@
+---
+description: Reglas Go para módulos librería dentro de core
+globs: "**/*.go"
+alwaysApply: true
+---
+
+# Go en `core`
+
+Usar arquitectura hexagonal solo donde haya dominio real o comportamiento complejo.
+
+La arquitectura NO se define por la estructura de directorios.
+
+Hexagonal se valida por:
+- dependencias hacia adentro
+- dominio aislado de infraestructura
+- puertos/adapters claros
+
+La estructura de carpetas de este documento es una convención de legibilidad y consistencia para el repo.
+
+## Patrón A: dominio o comportamiento rico
+
+```text
+{contexto}/
+  usecases.go
+  usecases/domain/entities.go
+  handler.go
+  handler/dto/dto.go
+  repository.go
+  repository/models/models.go
+  {adapter}.go
+  {adapter}/
+  *_test.go
+```
+
+`handler.go` y `repository.go` son opcionales. Solo existen si el módulo realmente expone esos adapters.
+
+## Patrón B: runtime o adapters técnicos
+
+```text
+{package}/
+  client.go
+  config.go
+  errors.go
+  types.go
+  *_test.go
+```
+
+No forzar `usecases/handler/repository` en paquetes que solo son infraestructura reusable.
+
+## Reglas Go
+
+- `context.Context` primer parámetro
+- no `panic()`
+- no ignorar errores con `_`
+- `slog` por default
+- `errors.Is` para comparación
+- `fmt.Errorf("...: %w", err)` para wrapping
+- interfaces en el consumidor
+- accept interfaces, return structs
+- si hay HTTP: DTOs explícitos, nunca `var body struct{...}`
+- si hay migraciones: nunca modificar una migración ya publicada

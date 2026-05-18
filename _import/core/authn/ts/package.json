@@ -1,0 +1,45 @@
+{
+  "name": "@devpablocristo/core-authn",
+  "version": "0.3.0",
+  "private": false,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./errors": "./src/errors.ts",
+    "./browser/events": "./src/browser/events.ts",
+    "./browser/storage": "./src/browser/storage.ts",
+    "./http/fetch": "./src/http/fetch.ts",
+    "./http/axios": "./src/http/axios.ts",
+    "./providers/clerk": "./src/providers/clerk.ts"
+  },
+  "scripts": {
+    "test": "vitest run --environment jsdom --globals",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "axios": "^1.16.0"
+  },
+  "peerDependencies": {
+    "@devpablocristo/core-browser": "^0.4.0",
+    "@devpablocristo/core-http": "^0.2.0"
+  },
+  "devDependencies": {
+    "@devpablocristo/core-browser": "file:../../browser/ts",
+    "@devpablocristo/core-http": "file:../../http/ts",
+    "@types/node": "^24.0.0",
+    "axios-mock-adapter": "^2.1.0",
+    "jsdom": "^29.0.1",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.4"
+  },
+  "files": [
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.spec.ts",
+    "!src/**/*.spec.tsx"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

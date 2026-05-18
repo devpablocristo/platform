@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "devpablocristo-core-ai"
+version = "0.8.2"
+description = "Reusable AI runtime primitives: provider protocol, messages, orchestration, provider registry and operational memory"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "devpablocristo-httpserver>=0.2.0,<1",
+    "fastapi>=0.115,<1",
+    "starlette>=0.41,<2",
+    "structlog>=24.0",
+    "httpx>=0.27,<1",
+    "tenacity>=9.0,<10",
+    "python-jose[cryptography]>=3.3",
+    "google-genai>=1.0",
+    "pydantic>=2.9,<3",
+]
+
+[project.optional-dependencies]
+test = [
+    "httpx>=0.27,<1",
+    "jsonschema>=4,<5",
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+]
+dev = [
+    "jsonschema>=4,<5",
+    "ruff",
+    "mypy",
+    "pytest",
+    "pytest-asyncio",
+    "httpx>=0.27,<1",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

@@ -1,0 +1,44 @@
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# Node
+node_modules/
+dist/
+build/
+.next/
+
+# Python
+__pycache__/
+*.py[cod]
+.python-version
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Go
+bin/
+coverage.out
+*.test
+
+# Rust
+target/
+Cargo.lock
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+

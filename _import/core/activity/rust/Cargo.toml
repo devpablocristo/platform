@@ -1,0 +1,24 @@
+[package]
+name = "activity"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Reusable activity kernel in Rust for audit trails and timelines"
+
+[lib]
+name = "activity"
+path = "src/lib.rs"
+
+[dependencies]
+chrono = { version = "0.4.42", features = ["clock", "serde"] }
+csv = "1.4.0"
+fs2 = "0.4.3"
+hex = "0.4.3"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+sha2 = "0.10.9"
+thiserror = "1.0.69"
+uuid = { version = "1.18.1", features = ["v4", "serde"] }
+
+[dev-dependencies]
+tempfile = "3.20.0"

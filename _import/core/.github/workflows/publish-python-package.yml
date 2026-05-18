@@ -1,0 +1,99 @@
+name: core-publish-python-package
+
+on:
+  push:
+    tags:
+      - "http/python/v*"
+      - "ai/python/v*"
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      TWINE_USERNAME: __token__
+      TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Resolve tagged module
+        id: tag
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          module="${tag%/v*}"
+          version="${tag##*/v}"
+          echo "module=${module}" >> "$GITHUB_OUTPUT"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate tag matches VERSION and pyproject
+        run: |
+          module="${{ steps.tag.outputs.module }}"
+          version="${{ steps.tag.outputs.version }}"
+          test -f "${module}/VERSION"
+          actual="$(tr -d '[:space:]' < "${module}/VERSION")"
+          if [[ "${actual}" != "${version}" ]]; then
+            echo "tag/version mismatch: ${module} VERSION=${actual} tag=${version}" >&2
+            exit 1
+          fi
+          python3 - <<'PY'
+          import pathlib
+          import tomllib
+          import os
+          module = pathlib.Path(os.environ["MODULE"])
+          version = os.environ["VERSION"]
+          pyproject = tomllib.loads((module / "pyproject.toml").read_text(encoding="utf-8"))
+          project_version = pyproject["project"]["version"]
+          if project_version != version:
+              raise SystemExit(
+                  f"pyproject/version mismatch: {module} pyproject={project_version} tag={version}"
+              )
+          PY
+        env:
+          MODULE: ${{ steps.tag.outputs.module }}
+          VERSION: ${{ steps.tag.outputs.version }}
+
+      - name: Test source module
+        run: |
+          module="${{ steps.tag.outputs.module }}"
+          case "${module}" in
+            "http/python")
+              ./scripts/test-http-python.sh
+              ;;
+            "ai/python")
+              ./scripts/test-ai.sh
+              ;;
+            *)
+              echo "unsupported module: ${module}" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Install build tooling
+        run: python3 -m pip install --upgrade build twine
+
+      - name: Build distribution
+        run: |
+          module="${{ steps.tag.outputs.module }}"
+          cd "${module}"
+          rm -rf dist build
+          python3 -m build
+          python3 -m twine check dist/*
+
+      - name: Publish package
+        run: |
+          if [[ -z "${TWINE_PASSWORD:-}" ]]; then
+            echo "missing PYPI_API_TOKEN secret" >&2
+            exit 1
+          fi
+          module="${{ steps.tag.outputs.module }}"
+          cd "${module}"
+          python3 -m twine upload dist/*

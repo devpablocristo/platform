@@ -1,0 +1,45 @@
+{
+  "schema_version": "capability_manifest.v1",
+  "id": "ponti.insights",
+  "product": "ponti",
+  "version": "1.0.0",
+  "tenant_scope": "project",
+  "name": "Ponti Insights",
+  "description": "Invalid duplicate tool example.",
+  "agents": [
+    {
+      "name": "ponti_insights",
+      "description": "Answers questions about computed agricultural insights."
+    }
+  ],
+  "tools": [
+    {
+      "name": "ponti.insights.summary",
+      "description": "Returns a summary of active insights for a project.",
+      "mode": "read",
+      "side_effect": false,
+      "risk_class": "low",
+      "input_schema": {
+        "type": "object"
+      },
+      "required_roles": [],
+      "required_modules": [],
+      "evidence_fields": [],
+      "executor_ref": "ponti-ai.insights.summary"
+    },
+    {
+      "name": "ponti.insights.summary",
+      "description": "Returns a summary of active insights for a project.",
+      "mode": "read",
+      "side_effect": false,
+      "risk_class": "low",
+      "input_schema": {
+        "type": "object"
+      },
+      "required_roles": [],
+      "required_modules": [],
+      "evidence_fields": [],
+      "executor_ref": "ponti-ai.insights.summary"
+    }
+  ]
+}

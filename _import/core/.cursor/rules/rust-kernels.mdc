@@ -1,0 +1,31 @@
+---
+description: Reglas Rust para kernels y módulos deterministas
+globs: "**/*.rs"
+alwaysApply: true
+---
+
+# Rust en `core`
+
+Usar Rust cuando una capacidad necesite kernel determinista, safety fuerte o mejor performance.
+
+## Estructura sugerida
+
+```text
+{modulo}/
+  Cargo.toml
+  src/
+    lib.rs
+    domain/
+    application/
+    adapters/
+  tests/
+```
+
+## Reglas
+
+- `unsafe` prohibido salvo pedido explícito
+- no `panic!` en library code salvo bugs imposibles/documentados
+- API pública pequeña y tipada
+- dominio puro separado de adapters
+- si existe `spec/`, implementar contra esa spec
+

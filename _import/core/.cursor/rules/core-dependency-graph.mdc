@@ -1,0 +1,28 @@
+---
+description: Dependencias permitidas entre módulos del monorepo core
+alwaysApply: true
+---
+
+# Grafo de dependencias
+
+## Regla general
+
+- Sin ciclos entre módulos
+- No importar internals de otro módulo
+- Cada módulo debe ser autocontenido por defecto
+
+## Reglas fuertes
+
+- `backend` no depende de otros módulos
+- `databases/postgres` debe intentar mantenerse independiente
+- `databases/dynamodb` debe intentar mantenerse independiente
+- `saas` puede depender de `backend`
+- `providers/aws/lambda`, `providers/aws/s3` y `providers/aws/sqs` deben intentar mantenerse independientes
+- `eventing` debe intentar mantenerse independiente
+- `governance`, `artifact`, `webhook`, `activity` y `ai` deben intentar mantenerse independientes
+
+## Si necesitás una excepción
+
+- documentar primero la razón;
+- mantener la dependencia en una sola dirección;
+- no esconder acoplamiento vía helpers o packages "temporales".

@@ -1,0 +1,35 @@
+{
+  "schema_version": "capability_manifest.v1",
+  "id": "pymes.sales",
+  "product": "pymes",
+  "version": "1.0.0",
+  "tenant_scope": "org",
+  "name": "Pymes Sales",
+  "description": "Invalid governed write without action_type.",
+  "agents": [
+    {
+      "name": "pymes_sales",
+      "description": "Handles internal sales workflows."
+    }
+  ],
+  "tools": [
+    {
+      "name": "pymes.sales.create",
+      "description": "Creates a sale in Pymes after governance approval.",
+      "mode": "write",
+      "side_effect": true,
+      "risk_class": "high",
+      "input_schema": {
+        "type": "object"
+      },
+      "required_roles": ["admin"],
+      "required_modules": ["sales"],
+      "evidence_fields": ["sale_id"],
+      "executor_ref": "pymes-api.sales.create",
+      "governance": {
+        "requires_approval": true,
+        "target_system": "pymes"
+      }
+    }
+  ]
+}

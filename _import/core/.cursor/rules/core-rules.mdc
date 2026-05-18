@@ -1,0 +1,54 @@
+---
+description: Reglas base del monorepo core
+alwaysApply: true
+---
+
+# Reglas base
+
+## Contexto
+
+Este repo contiene capacidades reutilizables, no productos.
+
+Módulos raíz esperados:
+- `saas/`
+- `authz/`
+- `authn/`
+- `notifications/`
+- `backend/`
+- `databases/postgres/`
+- `databases/dynamodb/`
+- `providers/aws/lambda/`
+- `providers/aws/s3/`
+- `providers/aws/sqs/`
+- `eventing/`
+- `governance/`
+- `artifact/`
+- `webhook/`
+- `activity/`
+- `ai/`
+
+## Principios
+
+- DRY, YAGNI, SOLID, KISS, fail fast
+- cambios quirúrgicos
+- ideal primero, luego recomendación práctica si difieren
+- verificar antes de afirmar
+
+## Idioma
+
+- código en inglés
+- comentarios en español
+- respuestas en español
+
+## Prohibiciones
+
+- NUNCA valores hardcodeados salvo autorización explícita
+- NUNCA meter dominio específico de producto en `core`
+- NUNCA crear `common/`, `shared/`, `utils/`, `libs/` en la raíz
+- NUNCA duplicar una capacidad en dos módulos
+- NUNCA mezclar implementación directa en la raíz de una capacidad
+- NUNCA crear manifests o código real en la raíz de una capacidad; siempre van dentro de `go/`, `python/`, `rust/` o `ts/`
+- NUNCA crear Go fuera de `go/`, Python fuera de `python/`, Rust fuera de `rust/`, TypeScript fuera de `ts/`
+- NUNCA usar una sola versión global del repo
+- NUNCA dejar una implementación sin archivo `VERSION`
+- NUNCA decir "listo" sin evidencia de verificación

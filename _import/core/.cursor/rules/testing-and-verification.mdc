@@ -1,0 +1,19 @@
+---
+description: Verificación obligatoria por lenguaje y módulo afectado
+alwaysApply: true
+---
+
+# Verificar antes de cerrar
+
+Antes de afirmar que un cambio está listo:
+
+- Go: `go build ./...`, `go vet ./...`, `go test ./...` en el módulo afectado
+- Rust: `cargo fmt --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test`
+- Python: `ruff check .`, `mypy .`, `pytest -q`
+
+## Reglas
+
+- Si el cambio afecta varios módulos, probar todos los afectados
+- Si no se puede probar, decirlo explícitamente
+- No afirmar "funciona" sin evidencia de ejecución de este turno
+

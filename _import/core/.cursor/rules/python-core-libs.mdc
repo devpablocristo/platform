@@ -1,0 +1,39 @@
+---
+description: Reglas Python para librerías y runtime reusable dentro de core
+globs: "**/*.py"
+alwaysApply: true
+---
+
+# Python en `core`
+
+## Reglas base
+
+- type hints siempre
+- Pydantic o dataclasses para tipos públicos
+- `Protocol` para interfaces
+- `async/await` para I/O
+- `|` syntax para opcionales
+- no `print()`
+- no `except: pass`
+- config siempre por settings o parámetros
+- no retornar `dict` sueltos como API pública
+
+## Si el módulo expone FastAPI
+
+Separar:
+
+```text
+domain/
+service/
+schemas/
+repository/
+router/
+dependencies/
+```
+
+## Prohibiciones
+
+- no hardcodear config
+- no meter prompts o tools de negocio específicos de un producto
+- no usar el módulo Python como dumping ground de scripts sueltos
+

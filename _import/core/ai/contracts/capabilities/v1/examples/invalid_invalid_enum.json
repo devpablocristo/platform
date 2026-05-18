@@ -1,0 +1,31 @@
+{
+  "schema_version": "capability_manifest.v1",
+  "id": "ponti.insights",
+  "product": "ponti",
+  "version": "1.0.0",
+  "tenant_scope": "account",
+  "name": "Ponti Insights",
+  "description": "Invalid enum example.",
+  "agents": [
+    {
+      "name": "ponti_insights",
+      "description": "Answers questions about computed agricultural insights."
+    }
+  ],
+  "tools": [
+    {
+      "name": "ponti.insights.summary",
+      "description": "Returns a summary of active insights for a project.",
+      "mode": "read",
+      "side_effect": false,
+      "risk_class": "severe",
+      "input_schema": {
+        "type": "object"
+      },
+      "required_roles": [],
+      "required_modules": [],
+      "evidence_fields": [],
+      "executor_ref": "ponti-ai.insights.summary"
+    }
+  ]
+}

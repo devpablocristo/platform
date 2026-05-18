@@ -1,0 +1,18 @@
+[package]
+name = "artifact"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Reusable artifact runtime in Rust for asset metadata, attachments, and tabular CSV/XLSX flows"
+
+[lib]
+name = "artifact"
+path = "src/lib.rs"
+
+[dependencies]
+calamine = "0.34.0"
+chrono = { version = "0.4.42", features = ["clock", "serde"] }
+csv = "1.4.0"
+rust_xlsxwriter = "0.94.0"
+serde = { version = "1.0.228", features = ["derive"] }
+thiserror = "1.0.69"

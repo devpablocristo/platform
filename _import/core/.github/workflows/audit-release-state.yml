@@ -1,0 +1,29 @@
+name: core-release-audit
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Show expected versions
+        run: bash ./scripts/list-module-versions.sh
+
+      - name: Validate module versions
+        run: bash ./scripts/validate-module-versions.sh
+
+      - name: Check remote tags
+        run: bash ./scripts/check-remote-tags.sh origin

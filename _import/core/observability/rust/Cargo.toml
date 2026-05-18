@@ -1,0 +1,16 @@
+[package]
+name = "observability"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Structured logging + request ID propagation via tracing"
+
+[lib]
+name = "observability"
+path = "src/lib.rs"
+
+[dependencies]
+http = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
+uuid = { version = "1", features = ["v4"] }

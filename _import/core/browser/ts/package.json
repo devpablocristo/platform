@@ -1,0 +1,43 @@
+{
+  "name": "@devpablocristo/core-browser",
+  "version": "0.4.0",
+  "private": false,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./storage": "./src/storage.ts",
+    "./crud": "./src/crud/index.ts",
+    "./search": "./src/search/index.ts",
+    "./theme": "./src/theme.ts",
+    "./observability": "./src/observability.ts",
+    "./i18n": "./src/i18n/index.ts"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/node": "^25.7.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.6",
+    "jsdom": "^29.1.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.6"
+  },
+  "files": [
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.spec.ts",
+    "!src/**/*.spec.tsx"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,11 @@
+---
+description: No ejecutar acciones git remotas o destructivas sin autorización
+alwaysApply: true
+---
+
+# Git / remoto
+
+- NUNCA `git push` sin autorización explícita
+- NUNCA commit, merge, rebase, reset, checkout o cambio de rama sin autorización explícita
+- Permitido: `git status`, `git diff`, `git log`, `git show`, `git branch`, `git remote -v`
+

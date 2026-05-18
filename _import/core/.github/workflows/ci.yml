@@ -1,0 +1,43 @@
+name: core-ci
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: core-ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.1"
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20.19.0"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Make scripts executable
+        run: chmod +x scripts/validate-runtime-layout.sh scripts/validate-boundaries.sh scripts/validate-module-versions.sh scripts/list-module-versions.sh scripts/bump-module-version.sh scripts/test-go-modules.sh scripts/test-rust-modules.sh scripts/test-ts-modules.sh scripts/test-http-python.sh scripts/test-ai.sh scripts/test-all.sh
+
+      - name: Run all module tests
+        run: ./scripts/test-all.sh

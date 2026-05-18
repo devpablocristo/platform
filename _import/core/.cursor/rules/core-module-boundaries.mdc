@@ -1,0 +1,41 @@
+---
+description: Qué va en cada módulo y qué queda fuera de core
+alwaysApply: true
+---
+
+# Fronteras por módulo
+
+## Test de pertenencia
+
+Pregunta:
+
+`¿esto lo pueden consumir al menos dos productos sin reescribirlo ni meterle negocio/copy específico?`
+
+- Si sí: probablemente pertenece a `core`
+- Si no: no pertenece a `core`
+
+## Módulos
+
+- `saas/`: capability root, implementación actual en `saas/go/`
+- `browser/`: capability root, implementación actual en `browser/ts/`
+- `http/`: capability root, implementación actual en `http/ts/`
+- `backend/`: capability root, implementación actual en `backend/go/`
+- `databases/postgres/`: capability root, implementación actual en `databases/postgres/go/`
+- `databases/dynamodb/`: capability root, implementación actual en `databases/dynamodb/go/`
+- `providers/aws/lambda/`: capability root, implementación actual en `providers/aws/lambda/go/`
+- `providers/aws/s3/`: capability root, implementación actual en `providers/aws/s3/go/`
+- `providers/aws/sqs/`: capability root, implementación actual en `providers/aws/sqs/go/`
+- `eventing/`: capability root, implementación actual en `eventing/go/`
+- `governance/`: capability root, implementación actual en `governance/go/`
+- `artifact/`: capability root, implementación actual en `artifact/go/`
+- `webhook/`: capability root, implementación actual en `webhook/go/`
+- `activity/`: capability root, implementación actual en `activity/go/`
+- `authn/`: capability root, implementación actual en `authn/ts/`
+- `ai/`: capability root, implementación actual en `ai/python/`
+
+## No pertenece a `core`
+
+- dominio específico de Nexus, Pymes, Ponti, Fixguard o KMA/AlphaCoding
+- apps, UIs, dashboards
+- copy o mensajes de producto
+- features que todavía solo sirven a un repo y no tienen frontera estable
