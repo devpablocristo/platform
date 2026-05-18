@@ -111,4 +111,7 @@ jobs:
             exit 0
           fi
           cd "${PACKAGE_DIR}"
-          npm publish --access public
+          # --ignore-scripts skips prepublishOnly which would re-run typecheck/test
+          # against the prepared tarball directory (where node_modules is absent).
+          # We already ran tests in the "Test source module" step.
+          npm publish --access public --ignore-scripts
