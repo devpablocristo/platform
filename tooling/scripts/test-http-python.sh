@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-AI_DIR="${ROOT_DIR}/ai/python"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+AI_DIR="${ROOT_DIR}/kernels/ai/runtime/python"
 HTTP_DIR="${ROOT_DIR}/http/python"
 VENV_DIR="${AI_DIR}/.venv"
 
