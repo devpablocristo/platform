@@ -1,12 +1,12 @@
 [package]
-name = "observability"
+name = "platform-observability"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "Structured logging + request ID propagation via tracing"
 
 [lib]
-name = "observability"
+name = "platform-observability"
 path = "src/lib.rs"
 
 [dependencies]

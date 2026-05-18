@@ -1,12 +1,12 @@
 [package]
-name = "fsm"
+name = "platform-concurrency-fsm"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "Compile-time finite state machine — invalid transitions are unrepresentable"
 
 [lib]
-name = "fsm"
+name = "platform-concurrency-fsm"
 path = "src/lib.rs"
 
 [dependencies]

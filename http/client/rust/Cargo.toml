@@ -1,12 +1,12 @@
 [package]
-name = "http_client"
+name = "platform-http-client"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "Async HTTP client with retry, dynamic headers, and body size limit"
 
 [lib]
-name = "http_client"
+name = "platform-http-client"
 path = "src/lib.rs"
 
 [dependencies]

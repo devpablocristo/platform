@@ -1,12 +1,12 @@
 [package]
-name = "pagination"
+name = "platform-utils-pagination"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "Cursor-based and offset-based pagination with true generics"
 
 [lib]
-name = "pagination"
+name = "platform-utils-pagination"
 path = "src/lib.rs"
 
 [dependencies]

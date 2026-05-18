@@ -1,12 +1,12 @@
 [package]
-name = "http_server"
+name = "platform-http-server"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "Axum HTTP server with security headers, CORS, health endpoints, and graceful shutdown"
 
 [lib]
-name = "http_server"
+name = "platform-http-server"
 path = "src/lib.rs"
 
 [dependencies]

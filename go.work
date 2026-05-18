@@ -1,0 +1,35 @@
+go 1.26.1
+
+use (
+	./authn/go
+	./authz/go
+	./calendar/ics/go
+	./concurrency/go
+	./config/go
+	./contracts/ai/go
+	./databases/dynamodb/go
+	./databases/postgres/go
+	./errors/go
+	./eventing/go
+	./features/crud/archive/go
+	./features/crud/paths/go
+	./features/scheduling/go
+	./http/gin/go
+	./http/go
+	./ingestion/go
+	./jobs/go
+	./kernels/activity/go
+	./kernels/ai/go
+	./kernels/artifact/go
+	./kernels/governance/go
+	./kernels/saas/go
+	./notifications/go
+	./observability/go
+	./sdks/aws/lambda/go
+	./sdks/aws/s3/go
+	./sdks/aws/sqs/go
+	./sdks/google-calendar/go
+	./security/go
+	./validate/go
+	./webhook/go
+)

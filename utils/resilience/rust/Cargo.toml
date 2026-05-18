@@ -1,12 +1,12 @@
 [package]
-name = "resilience"
+name = "platform-utils-resilience"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "Retry with exponential backoff + async circuit breaker"
 
 [lib]
-name = "resilience"
+name = "platform-utils-resilience"
 path = "src/lib.rs"
 
 [dependencies]

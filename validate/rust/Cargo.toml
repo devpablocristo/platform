@@ -1,12 +1,12 @@
 [package]
-name = "validate"
+name = "platform-validate"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "Pure validation utilities — strings, numbers, IDs, time, enums, money, collections"
 
 [lib]
-name = "validate"
+name = "platform-validate"
 path = "src/lib.rs"
 
 [dependencies]

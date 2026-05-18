@@ -1,12 +1,12 @@
 [package]
-name = "activity"
+name = "platform-kernels-activity"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "Reusable activity kernel in Rust for audit trails and timelines"
 
 [lib]
-name = "activity"
+name = "platform-kernels-activity"
 path = "src/lib.rs"
 
 [dependencies]

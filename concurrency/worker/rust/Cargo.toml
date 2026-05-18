@@ -1,12 +1,12 @@
 [package]
-name = "worker"
+name = "platform-concurrency-worker"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "Periodic background worker with graceful shutdown via tokio"
 
 [lib]
-name = "worker"
+name = "platform-concurrency-worker"
 path = "src/lib.rs"
 
 [dependencies]

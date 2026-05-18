@@ -1,12 +1,12 @@
 [package]
-name = "governance"
+name = "platform-kernels-governance"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "Reusable governance kernel in Rust for risk, decision, approval, and evidence flows"
 
 [lib]
-name = "governance"
+name = "platform-kernels-governance"
 path = "src/lib.rs"
 
 [dependencies]

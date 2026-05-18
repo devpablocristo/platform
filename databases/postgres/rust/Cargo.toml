@@ -1,12 +1,12 @@
 [package]
-name = "postgres"
+name = "platform-databases-postgres"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "PostgreSQL connection pool + migrations via sqlx with compile-time query checking"
 
 [lib]
-name = "postgres"
+name = "platform-databases-postgres"
 path = "src/lib.rs"
 
 [dependencies]

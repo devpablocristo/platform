@@ -1,0 +1,20 @@
+{
+  "name": "@devpablocristo/platform-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Unified monorepo for the pablo platform ecosystem (Go, TS, Rust, Python).",
+  "type": "module",
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "test:ts": "pnpm -r run test",
+    "typecheck:ts": "pnpm -r run typecheck",
+    "build:ts": "pnpm -r run build",
+    "test:go": "bash tooling/scripts/test-go-modules.sh",
+    "test:rust": "bash tooling/scripts/test-rust-modules.sh",
+    "test:python": "bash tooling/scripts/test-http-python.sh && bash tooling/scripts/test-ai.sh",
+    "test:all": "bash tooling/scripts/test-all.sh",
+    "validate:versions": "bash tooling/scripts/validate-module-versions.sh",
+    "validate:boundaries": "bash tooling/scripts/validate-boundaries.sh",
+    "validate:ts-deps": "python3 tooling/scripts/validate-internal-ts-deps.py"
+  }
+}

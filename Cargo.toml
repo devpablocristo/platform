@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = [
+    "authn/rust",
+    "concurrency/fsm/rust",
+    "concurrency/worker/rust",
+    "databases/postgres/rust",
+    "errors/rust",
+    "http/client/rust",
+    "http/server/rust",
+    "kernels/activity/rust",
+    "kernels/artifact/rust",
+    "kernels/governance/rust",
+    "observability/rust",
+    "utils/pagination/rust",
+    "utils/resilience/rust",
+    "validate/rust",
+]
+
+[workspace.package]
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/devpablocristo/platform"

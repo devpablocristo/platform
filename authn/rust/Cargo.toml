@@ -1,12 +1,12 @@
 [package]
-name = "authn"
+name = "platform-authn"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "Inbound authentication — JWT (JWKS) + API key verification via traits"
 
 [lib]
-name = "authn"
+name = "platform-authn"
 path = "src/lib.rs"
 
 [dependencies]

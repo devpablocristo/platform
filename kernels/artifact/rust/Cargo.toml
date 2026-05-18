@@ -1,12 +1,12 @@
 [package]
-name = "artifact"
+name = "platform-kernels-artifact"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "Reusable artifact runtime in Rust for asset metadata, attachments, and tabular CSV/XLSX flows"
 
 [lib]
-name = "artifact"
+name = "platform-kernels-artifact"
 path = "src/lib.rs"
 
 [dependencies]
