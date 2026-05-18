@@ -15,12 +15,6 @@ for arg in "$@"; do
     esac
 done
 
-if [[ "$DRY_RUN" == "false" && -z "$OTP" ]]; then
-    echo "Your account requires 2FA for deprecate. Re-run with:"
-    echo "  bash $0 --otp=<6-digit code from authenticator>"
-    exit 1
-fi
-
 OTP_FLAG=()
 [[ -n "$OTP" ]] && OTP_FLAG=(--otp="$OTP")
 
@@ -62,7 +56,7 @@ echo
 
 for old in "${!MAP[@]}"; do
     new="${MAP[$old]}"
-    msg="Moved to @devpablocristo/${new}. See ${DOC_URL}"
+    msg="Moved to @devpablocristo/${new}"
     if [[ "$DRY_RUN" == "true" ]]; then
         echo "  [would-deprecate] @devpablocristo/${old} -> @devpablocristo/${new}"
     else
@@ -75,7 +69,7 @@ echo
 echo "==> Deprecating ${#NO_REPLACEMENT[@]} legacy npm packages (no replacement, no active consumers)"
 
 for old in "${NO_REPLACEMENT[@]}"; do
-    msg="Deprecated; no platform-* replacement. See ${DOC_URL}"
+    msg="Deprecated; no platform-* replacement available"
     if [[ "$DRY_RUN" == "true" ]]; then
         echo "  [would-deprecate] @devpablocristo/${old} (no replacement)"
     else
