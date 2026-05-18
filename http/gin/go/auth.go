@@ -63,16 +63,30 @@ type AuthContext struct {
 }
 
 // GetAuthContext extrae el contexto de autenticación del Gin context.
+//
+// Looks up tenant identity under BOTH ctxkeys.CtxKeyTenantID (agnostic, new)
+// and ctxkeys.CtxKeyOrgID (legacy). TenantID takes precedence when both are
+// set, since it's the canonical key for new code. The result is exposed as
+// AuthContext.OrgID for backward compat — consumers can rename their field
+// access in a separate ola.
 func GetAuthContext(c *gin.Context) AuthContext {
+	tenantID, hasTenant := c.Get(ctxkeys.CtxKeyTenantID)
 	orgID, _ := c.Get(ctxkeys.CtxKeyOrgID)
 	actor, _ := c.Get(ctxkeys.CtxKeyActor)
 	role, _ := c.Get(ctxkeys.CtxKeyRole)
 	scopes, _ := c.Get(ctxkeys.CtxKeyScopes)
 	authMethod, _ := c.Get(ctxkeys.CtxKeyAuthMethod)
 
+	resolvedTenant := asString(orgID)
+	if hasTenant {
+		if s := asString(tenantID); s != "" {
+			resolvedTenant = s
+		}
+	}
+
 	ctxScopes, _ := scopes.([]string)
 	return AuthContext{
-		OrgID:      asString(orgID),
+		OrgID:      resolvedTenant,
 		Actor:      asString(actor),
 		Role:       asString(role),
 		Scopes:     ctxScopes,
