@@ -10,7 +10,7 @@ const (
 
 type Candidate struct {
 	ID              string
-	OrgID        string
+	TenantID        string
 	Kind            string
 	EventType       string
 	EntityType      string
@@ -31,7 +31,7 @@ type Candidate struct {
 }
 
 type UpsertInput struct {
-	OrgID    string
+	TenantID    string
 	Kind        string
 	EventType   string
 	EntityType  string

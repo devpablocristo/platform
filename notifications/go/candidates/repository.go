@@ -18,9 +18,9 @@ type Recorder interface {
 }
 
 type Notifier interface {
-	MarkNotified(ctx context.Context, orgID, candidateID string, notifiedAt time.Time) error
+	MarkNotified(ctx context.Context, tenantID, candidateID string, notifiedAt time.Time) error
 }
 
 type Reader interface {
-	ListByTenant(ctx context.Context, orgID string, limit int) ([]domain.Candidate, error)
+	ListByTenant(ctx context.Context, tenantID string, limit int) ([]domain.Candidate, error)
 }

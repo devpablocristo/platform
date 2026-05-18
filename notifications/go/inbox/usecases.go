@@ -27,8 +27,8 @@ func NewUsecases(repo Repository) *Usecases {
 }
 
 func (u *Usecases) Create(ctx context.Context, notification domain.Notification) (domain.Notification, error) {
-	if strings.TrimSpace(notification.OrgID) == "" {
-		return domain.Notification{}, fmt.Errorf("org_id is required")
+	if strings.TrimSpace(notification.TenantID) == "" {
+		return domain.Notification{}, fmt.Errorf("tenant_id is required")
 	}
 	if strings.TrimSpace(notification.RecipientID) == "" {
 		return domain.Notification{}, fmt.Errorf("recipient_id is required")
@@ -41,7 +41,7 @@ func (u *Usecases) Create(ctx context.Context, notification domain.Notification)
 	}
 
 	notification.ID = firstNonEmpty(notification.ID, newID())
-	notification.OrgID = strings.TrimSpace(notification.OrgID)
+	notification.TenantID = strings.TrimSpace(notification.TenantID)
 	notification.RecipientID = strings.TrimSpace(notification.RecipientID)
 	notification.Title = strings.TrimSpace(notification.Title)
 	notification.Body = strings.TrimSpace(notification.Body)
@@ -59,10 +59,10 @@ func (u *Usecases) Create(ctx context.Context, notification domain.Notification)
 	return u.repo.Append(ctx, notification)
 }
 
-func (u *Usecases) ListForRecipient(ctx context.Context, orgID, recipientID string, limit int) ([]domain.Notification, error) {
-	orgID = strings.TrimSpace(orgID)
-	if orgID == "" {
-		return nil, fmt.Errorf("org_id is required")
+func (u *Usecases) ListForRecipient(ctx context.Context, tenantID, recipientID string, limit int) ([]domain.Notification, error) {
+	tenantID = strings.TrimSpace(tenantID)
+	if tenantID == "" {
+		return nil, fmt.Errorf("tenant_id is required")
 	}
 	recipientID = strings.TrimSpace(recipientID)
 	if recipientID == "" {
@@ -71,25 +71,25 @@ func (u *Usecases) ListForRecipient(ctx context.Context, orgID, recipientID stri
 	if limit <= 0 || limit > 200 {
 		limit = 100
 	}
-	return u.repo.ListForRecipient(ctx, orgID, recipientID, limit)
+	return u.repo.ListForRecipient(ctx, tenantID, recipientID, limit)
 }
 
-func (u *Usecases) CountUnread(ctx context.Context, orgID, recipientID string) (int64, error) {
-	orgID = strings.TrimSpace(orgID)
-	if orgID == "" {
-		return 0, fmt.Errorf("org_id is required")
+func (u *Usecases) CountUnread(ctx context.Context, tenantID, recipientID string) (int64, error) {
+	tenantID = strings.TrimSpace(tenantID)
+	if tenantID == "" {
+		return 0, fmt.Errorf("tenant_id is required")
 	}
 	recipientID = strings.TrimSpace(recipientID)
 	if recipientID == "" {
 		return 0, fmt.Errorf("recipient_id is required")
 	}
-	return u.repo.CountUnread(ctx, orgID, recipientID)
+	return u.repo.CountUnread(ctx, tenantID, recipientID)
 }
 
-func (u *Usecases) MarkRead(ctx context.Context, orgID, recipientID, notificationID string) (time.Time, error) {
-	orgID = strings.TrimSpace(orgID)
-	if orgID == "" {
-		return time.Time{}, fmt.Errorf("org_id is required")
+func (u *Usecases) MarkRead(ctx context.Context, tenantID, recipientID, notificationID string) (time.Time, error) {
+	tenantID = strings.TrimSpace(tenantID)
+	if tenantID == "" {
+		return time.Time{}, fmt.Errorf("tenant_id is required")
 	}
 	recipientID = strings.TrimSpace(recipientID)
 	if recipientID == "" {
@@ -99,7 +99,7 @@ func (u *Usecases) MarkRead(ctx context.Context, orgID, recipientID, notificatio
 	if notificationID == "" {
 		return time.Time{}, fmt.Errorf("notification_id is required")
 	}
-	return u.repo.MarkRead(ctx, orgID, recipientID, notificationID, u.now().UTC())
+	return u.repo.MarkRead(ctx, tenantID, recipientID, notificationID, u.now().UTC())
 }
 
 func normalizeMetadata(raw json.RawMessage) json.RawMessage {

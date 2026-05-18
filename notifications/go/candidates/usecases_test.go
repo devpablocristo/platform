@@ -9,7 +9,7 @@ import (
 )
 
 type repositoryStub struct {
-	lastRecordOrg string
+	lastRecordTenant string
 	lastRecordInput  domain.UpsertInput
 	lastMarkTenant   string
 	lastMarkID       string
@@ -18,21 +18,21 @@ type repositoryStub struct {
 }
 
 func (s *repositoryStub) Upsert(_ context.Context, in domain.UpsertInput) (domain.Candidate, bool, error) {
-	s.lastRecordOrg = in.OrgID
+	s.lastRecordTenant = in.TenantID
 	s.lastRecordInput = in
-	return domain.Candidate{ID: "cand-1", OrgID: in.OrgID, Title: in.Title}, true, nil
+	return domain.Candidate{ID: "cand-1", TenantID: in.TenantID, Title: in.Title}, true, nil
 }
 
-func (s *repositoryStub) MarkNotified(_ context.Context, orgID, candidateID string, _ time.Time) error {
-	s.lastMarkTenant = orgID
+func (s *repositoryStub) MarkNotified(_ context.Context, tenantID, candidateID string, _ time.Time) error {
+	s.lastMarkTenant = tenantID
 	s.lastMarkID = candidateID
 	return nil
 }
 
-func (s *repositoryStub) ListByTenant(_ context.Context, orgID string, limit int) ([]domain.Candidate, error) {
-	s.lastListTenant = orgID
+func (s *repositoryStub) ListByTenant(_ context.Context, tenantID string, limit int) ([]domain.Candidate, error) {
+	s.lastListTenant = tenantID
 	s.lastListLimit = limit
-	return []domain.Candidate{{ID: "cand-1", OrgID: orgID}}, nil
+	return []domain.Candidate{{ID: "cand-1", TenantID: tenantID}}, nil
 }
 
 func TestRecordValidatesRequiredFieldsAndDefaults(t *testing.T) {
@@ -42,7 +42,7 @@ func TestRecordValidatesRequiredFieldsAndDefaults(t *testing.T) {
 	uc := NewUsecases(repo)
 
 	record, shouldNotify, err := uc.Record(context.Background(), domain.UpsertInput{
-		OrgID:    "tenant-1",
+		TenantID:    "tenant-1",
 		EventType:   "sale.created",
 		EntityType:  "sale",
 		EntityID:    "sale-1",

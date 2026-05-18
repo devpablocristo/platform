@@ -47,9 +47,9 @@ func NewReadUsecases(reader Reader) *Usecases {
 }
 
 func (u *Usecases) Record(ctx context.Context, input domain.UpsertInput) (domain.Candidate, bool, error) {
-	input.OrgID = strings.TrimSpace(input.OrgID)
-	if input.OrgID == "" {
-		return domain.Candidate{}, false, fmt.Errorf("org_id is required")
+	input.TenantID = strings.TrimSpace(input.TenantID)
+	if input.TenantID == "" {
+		return domain.Candidate{}, false, fmt.Errorf("tenant_id is required")
 	}
 	input.Kind = firstNonEmpty(input.Kind, "insight")
 	input.EventType = strings.TrimSpace(input.EventType)
@@ -92,10 +92,10 @@ func (u *Usecases) Record(ctx context.Context, input domain.UpsertInput) (domain
 	return u.recorder.Upsert(ctx, input)
 }
 
-func (u *Usecases) MarkNotified(ctx context.Context, orgID, candidateID string) error {
-	orgID = strings.TrimSpace(orgID)
-	if orgID == "" {
-		return fmt.Errorf("org_id is required")
+func (u *Usecases) MarkNotified(ctx context.Context, tenantID, candidateID string) error {
+	tenantID = strings.TrimSpace(tenantID)
+	if tenantID == "" {
+		return fmt.Errorf("tenant_id is required")
 	}
 	candidateID = strings.TrimSpace(candidateID)
 	if candidateID == "" {
@@ -104,13 +104,13 @@ func (u *Usecases) MarkNotified(ctx context.Context, orgID, candidateID string) 
 	if u.notifier == nil {
 		return fmt.Errorf("notifier is required")
 	}
-	return u.notifier.MarkNotified(ctx, orgID, candidateID, u.now().UTC())
+	return u.notifier.MarkNotified(ctx, tenantID, candidateID, u.now().UTC())
 }
 
-func (u *Usecases) List(ctx context.Context, orgID string, limit int) ([]domain.Candidate, error) {
-	orgID = strings.TrimSpace(orgID)
-	if orgID == "" {
-		return nil, fmt.Errorf("org_id is required")
+func (u *Usecases) List(ctx context.Context, tenantID string, limit int) ([]domain.Candidate, error) {
+	tenantID = strings.TrimSpace(tenantID)
+	if tenantID == "" {
+		return nil, fmt.Errorf("tenant_id is required")
 	}
 	if limit <= 0 || limit > 200 {
 		limit = 100
@@ -118,7 +118,7 @@ func (u *Usecases) List(ctx context.Context, orgID string, limit int) ([]domain.
 	if u.reader == nil {
 		return nil, fmt.Errorf("reader is required")
 	}
-	return u.reader.ListByTenant(ctx, orgID, limit)
+	return u.reader.ListByTenant(ctx, tenantID, limit)
 }
 
 func firstNonEmpty(values ...string) string {
