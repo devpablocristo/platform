@@ -21,7 +21,7 @@
   },
   "peerDependencies": {
     "@devpablocristo/platform-browser": "^0.1.0",
-    "@devpablocristo/platform-calendar-board": "file:../../features/calendar-board/ts",
+    "@devpablocristo/platform-calendar-board": "file:../../calendar-board/ts",
     "@fullcalendar/core": "^6.1.20",
     "@fullcalendar/interaction": "^6.1.20",
     "@fullcalendar/luxon": "^6.1.20",
@@ -38,7 +38,7 @@
   "devDependencies": {
     "@testing-library/react": "^16.3.2",
     "@devpablocristo/platform-browser": "^0.1.0",
-    "@devpablocristo/platform-calendar-board": "file:../../features/calendar-board/ts",
+    "@devpablocristo/platform-calendar-board": "file:../../calendar-board/ts",
     "@fullcalendar/core": "^6.1.20",
     "@fullcalendar/interaction": "^6.1.20",
     "@fullcalendar/luxon": "^6.1.20",
