@@ -1,0 +1,30 @@
+{
+  "name": "@devpablocristo/modules-repo",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "admin/insights/ts",
+    "ai/console/ts",
+    "calendar/board/ts",
+    "crud/ui/ts",
+    "kanban/board/ts",
+    "scheduling/ts",
+    "search/ts",
+    "sidebar/ts",
+    "ui/conversation-inbox/ts",
+    "ui/data-display/ts",
+    "ui/filters/ts",
+    "ui/forms/ts",
+    "ui/modal/ts",
+    "ui/notification-feed/ts",
+    "ui/page-shell/ts",
+    "ui/section-hub/ts",
+    "work-orders/ts"
+  ],
+  "scripts": {
+    "test:all": "./scripts/test-all.sh",
+    "release:audit": "./scripts/check-remote-tags.sh",
+    "version:check": "./scripts/validate-module-versions.sh",
+    "version:list": "./scripts/list-module-versions.sh"
+  }
+}

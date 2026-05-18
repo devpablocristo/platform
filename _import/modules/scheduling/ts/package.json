@@ -1,0 +1,57 @@
+{
+  "name": "@devpablocristo/modules-scheduling",
+  "version": "0.6.2",
+  "description": "Scheduling calendar, queue operator, and public booking flow for Pymes (React + FullCalendar).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./next": "./src/next.ts",
+    "./styles.css": "./src/styles.css",
+    "./styles.next.css": "./src/styles.next.css"
+  },
+  "files": [
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.spec.ts",
+    "!src/**/*.spec.tsx"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@devpablocristo/core-browser": "^0.4.0",
+    "@devpablocristo/modules-calendar-board": "file:../../calendar/board/ts",
+    "@fullcalendar/core": "^6.1.20",
+    "@fullcalendar/interaction": "^6.1.20",
+    "@fullcalendar/luxon": "^6.1.20",
+    "@fullcalendar/react": "^6.1.20",
+    "@tanstack/react-query": "^5.100.10",
+    "luxon": "^3.7.2",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --globals --passWithNoTests"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@devpablocristo/core-browser": "^0.4.0",
+    "@devpablocristo/modules-calendar-board": "file:../../calendar/board/ts",
+    "@fullcalendar/core": "^6.1.20",
+    "@fullcalendar/interaction": "^6.1.20",
+    "@fullcalendar/luxon": "^6.1.20",
+    "@fullcalendar/react": "^6.1.20",
+    "@tanstack/react-query": "^5.100.10",
+    "@types/node": "^25.7.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "jsdom": "^29.1.1",
+    "luxon": "^3.7.2",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.6"
+  }
+}

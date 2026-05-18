@@ -1,0 +1,47 @@
+{
+  "name": "@devpablocristo/modules-crud-ui",
+  "version": "0.9.1",
+  "private": false,
+  "type": "module",
+  "files": [
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.spec.ts",
+    "!src/**/*.spec.tsx"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./csv": "./src/csv.ts",
+    "./csv-toolbar": "./src/csvToolbarMerge.ts",
+    "./entity-fields": "./src/entityFields.ts",
+    "./surface": "./src/surface.ts",
+    "./preferences": "./src/crudUiPreferences.ts"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@devpablocristo/core-browser": "^0.4.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --globals --passWithNoTests tests src",
+    "prepublishOnly": "npm run typecheck && npm test"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^25.7.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "jsdom": "^29.1.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.6"
+  }
+}

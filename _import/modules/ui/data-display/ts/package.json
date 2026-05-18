@@ -1,0 +1,39 @@
+{
+  "name": "@devpablocristo/modules-ui-data-display",
+  "version": "0.3.3",
+  "private": false,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./icons": "./src/icons.tsx"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --globals --passWithNoTests"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^25.7.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "jsdom": "^29.1.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.6"
+  },
+  "files": [
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.spec.ts",
+    "!src/**/*.spec.tsx"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

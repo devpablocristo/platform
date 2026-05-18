@@ -1,0 +1,14 @@
+# typecheck + tests del paquete @devpablocristo/modules-ui-forms.
+FROM node:20.19.0-bookworm-slim
+WORKDIR /repo/modules/ui/forms/ts
+
+COPY modules/ui/forms/ts/package.json ./
+COPY modules/ui/forms/ts/package-lock.json ./
+
+RUN npm ci --no-audit --no-fund
+
+COPY modules/ui/forms/ts/ ./
+
+RUN npm run typecheck && npm test
+
+CMD ["node", "-e", "console.log('modules-ui-forms OK')"]

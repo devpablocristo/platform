@@ -1,0 +1,14 @@
+# typecheck + tests del paquete @devpablocristo/modules-ui-data-display.
+FROM node:20.19.0-bookworm-slim
+WORKDIR /repo/modules/ui/data-display/ts
+
+COPY modules/ui/data-display/ts/package.json ./
+COPY modules/ui/data-display/ts/package-lock.json ./
+
+RUN npm ci --no-audit --no-fund
+
+COPY modules/ui/data-display/ts/ ./
+
+RUN npm run typecheck && npm test
+
+CMD ["node", "-e", "console.log('modules-ui-data-display OK')"]

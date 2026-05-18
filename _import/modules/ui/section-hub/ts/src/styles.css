@@ -1,0 +1,97 @@
+.section-hub__nav-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.section-hub__nav-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+  text-align: left;
+  width: 100%;
+}
+
+.section-hub__nav-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+[data-theme='dark'] .section-hub__nav-card {
+  background: color-mix(in srgb, var(--color-surface) 60%, transparent);
+  border-color: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+[data-theme='dark'] .section-hub__nav-card:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 50%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+.section-hub__nav-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xl);
+  flex-shrink: 0;
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+}
+
+[data-theme='dark'] .section-hub__nav-icon {
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+.section-hub__nav-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.section-hub__nav-title {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0;
+}
+
+.section-hub__nav-desc {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+
+.section-hub__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: var(--space-1) 0;
+  transition: color var(--transition);
+}
+
+.section-hub__back:hover {
+  color: var(--color-primary);
+}
+
+.section-hub__empty {
+  padding: var(--space-5);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  text-align: center;
+  background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+}

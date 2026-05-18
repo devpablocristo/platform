@@ -1,0 +1,15 @@
+# typecheck + tests del paquete @devpablocristo/modules-crud-ui.
+# Build: context = padre que contiene `modules/`.
+FROM node:20.19.0-bookworm-slim
+WORKDIR /repo/modules/crud/ui/ts
+
+COPY modules/crud/ui/ts/package.json ./
+COPY modules/crud/ui/ts/package-lock.json ./
+
+RUN npm ci --no-audit --no-fund
+
+COPY modules/crud/ui/ts/ ./
+
+RUN npm run typecheck && npm test
+
+CMD ["node", "-e", "console.log('modules-crud-ui OK')"]
