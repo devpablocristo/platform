@@ -18,6 +18,7 @@ use (
 	./http/go
 	./ingestion/go
 	./jobs/go
+	./lifecycle/go
 	./kernels/activity/go
 	./kernels/ai/go
 	./kernels/artifact/go

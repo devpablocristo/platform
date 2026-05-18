@@ -8,6 +8,9 @@ packages:
   # Contracts (cross-language)
   - "contracts/ai/ts"
 
+  # Lifecycle (Ola B0 — CRUDAR transversal)
+  - "lifecycle/ts"
+
   # L2 features (verticals)
   - "features/admin-insights/ts"
   - "features/calendar-board/ts"
