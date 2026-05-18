@@ -1,4 +1,4 @@
-module github.com/devpablocristo/core/authn/go
+module github.com/devpablocristo/platform/authn/go
 
 go 1.26.1
 

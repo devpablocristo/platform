@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "devpablocristo-httpserver"
+name = "devpablocristo-platform-http"
 version = "0.2.0"
 description = "FastAPI/Starlette helpers agnostic to product domain (alineado con los módulos técnicos HTTP de core)"
 readme = "README.md"

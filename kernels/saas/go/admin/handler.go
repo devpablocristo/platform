@@ -3,7 +3,7 @@ package admin
 import (
 	"context"
 
-	"github.com/devpablocristo/core/saas/go/admin/handler/dto"
+	"github.com/devpablocristo/platform/kernels/saas/go/admin/handler/dto"
 )
 
 // Handler expone un adapter de aplicación listo para transporte externo.

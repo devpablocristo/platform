@@ -1,6 +1,6 @@
 {
-  "name": "@devpablocristo/modules-ui-data-display",
-  "version": "0.3.3",
+  "name": "@devpablocristo/platform-ui-data-display",
+  "version": "0.1.0",
   "private": false,
   "type": "module",
   "exports": {

@@ -3,9 +3,9 @@ import {
   request as coreRequest,
   requestResponse as coreRequestResponse,
   type RequestOptions as CoreRequestOptions,
-} from "@devpablocristo/core-http/fetch";
+} from "@devpablocristo/platform-http/fetch";
 
-export { HttpError } from "@devpablocristo/core-http/fetch";
+export { HttpError } from "@devpablocristo/platform-http/fetch";
 
 export type TokenProvider = () => Promise<string | null>;
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	domain "github.com/devpablocristo/core/notifications/go/candidates/usecases/domain"
+	domain "github.com/devpablocristo/platform/notifications/go/candidates/usecases/domain"
 )
 
 type Repository interface {

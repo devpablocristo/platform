@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/devpablocristo/core/errors/go/domainerr"
+	"github.com/devpablocristo/platform/errors/go/domainerr"
 )
 
 func TestNormalizeDomainerrUsesMessage(t *testing.T) {

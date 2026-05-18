@@ -1,6 +1,6 @@
 package dto
 
-import identitydomain "github.com/devpablocristo/core/saas/go/identity/usecases/domain"
+import identitydomain "github.com/devpablocristo/platform/kernels/saas/go/identity/usecases/domain"
 
 type VerifyRequest struct {
 	Token string `json:"token"`

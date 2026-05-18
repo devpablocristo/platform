@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	admindomain "github.com/devpablocristo/core/saas/go/admin/usecases/domain"
+	admindomain "github.com/devpablocristo/platform/kernels/saas/go/admin/usecases/domain"
 )
 
 func TestCapabilities(t *testing.T) {

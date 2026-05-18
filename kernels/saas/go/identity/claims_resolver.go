@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/devpablocristo/core/errors/go/domainerr"
-	identitydomain "github.com/devpablocristo/core/saas/go/identity/usecases/domain"
+	"github.com/devpablocristo/platform/errors/go/domainerr"
+	identitydomain "github.com/devpablocristo/platform/kernels/saas/go/identity/usecases/domain"
 )
 
 // OrgResolverPort resuelve tenant IDs cuando el claim trae un external ID.

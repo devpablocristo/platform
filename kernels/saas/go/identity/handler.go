@@ -1,6 +1,6 @@
 package identity
 
-import "github.com/devpablocristo/core/saas/go/identity/handler/dto"
+import "github.com/devpablocristo/platform/kernels/saas/go/identity/handler/dto"
 
 // Handler expone un adapter de aplicación listo para transporte externo.
 type Handler struct {

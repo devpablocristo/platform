@@ -1,6 +1,6 @@
 package billing
 
-import "github.com/devpablocristo/core/authz/go"
+import "github.com/devpablocristo/platform/authz/go"
 
 const (
 	ScopeAdminConsoleRead  = "admin:console:read"

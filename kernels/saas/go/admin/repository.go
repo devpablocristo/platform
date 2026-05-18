@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	admindomain "github.com/devpablocristo/core/saas/go/admin/usecases/domain"
+	admindomain "github.com/devpablocristo/platform/kernels/saas/go/admin/usecases/domain"
 )
 
 // Repository define el puerto de persistencia del contexto admin.

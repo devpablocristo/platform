@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { confirmAction } from '@devpablocristo/core-browser';
+import { confirmAction } from '@devpablocristo/platform-browser';
 import { formatSchedulingDateTime, formatSchedulingWeekdayNarrow } from './locale';
 import { SchedulingDateInput } from './SchedulingDateInput';
 import type { Booking, SchedulingCalendarCopy, SchedulingEntryType, Service, TimeSlot } from './types';

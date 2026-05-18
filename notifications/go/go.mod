@@ -1,4 +1,4 @@
-module github.com/devpablocristo/core/notifications/go
+module github.com/devpablocristo/platform/notifications/go
 
 go 1.26.1
 

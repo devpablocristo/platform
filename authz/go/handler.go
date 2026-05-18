@@ -1,6 +1,6 @@
 package authz
 
-import "github.com/devpablocristo/core/authz/go/handler/dto"
+import "github.com/devpablocristo/platform/authz/go/handler/dto"
 
 // Handler expone un adapter de aplicación listo para transporte externo.
 type Handler struct {

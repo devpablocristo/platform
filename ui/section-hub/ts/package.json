@@ -1,6 +1,6 @@
 {
-  "name": "@devpablocristo/modules-ui-section-hub",
-  "version": "0.2.0",
+  "name": "@devpablocristo/platform-ui-section-hub",
+  "version": "0.1.0",
   "private": false,
   "type": "module",
   "exports": {
@@ -8,7 +8,7 @@
     "./styles.css": "./src/styles.css"
   },
   "dependencies": {
-    "@devpablocristo/modules-ui-page-shell": "file:../../page-shell/ts"
+    "@devpablocristo/platform-ui-page-shell": "file:../../page-shell/ts"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",

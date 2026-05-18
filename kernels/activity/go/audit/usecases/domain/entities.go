@@ -3,7 +3,7 @@ package domain
 import (
 	"time"
 
-	kernel "github.com/devpablocristo/core/activity/go/kernel/usecases/domain"
+	kernel "github.com/devpablocristo/platform/kernels/activity/go/kernel/usecases/domain"
 )
 
 type Entry struct {

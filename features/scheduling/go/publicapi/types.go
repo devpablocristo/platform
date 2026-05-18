@@ -3,7 +3,7 @@ package publicapi
 import (
 	"time"
 
-	schedulingdomain "github.com/devpablocristo/modules/scheduling/go/domain"
+	schedulingdomain "github.com/devpablocristo/platform/features/scheduling/go/domain"
 	"github.com/google/uuid"
 )
 

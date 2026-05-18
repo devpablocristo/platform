@@ -1,15 +1,15 @@
 // Package archive provee helpers para el estado de archivado (soft delete)
-// del contrato CRUD canónico (ver github.com/devpablocristo/modules/crud/paths).
+// del contrato CRUD canónico (ver github.com/devpablocristo/platform/features/crud/paths).
 //
 // ErrArchived es un domainerr.Error con KindConflict: los middlewares HTTP
-// estándar (ej. core/http/gin/go) lo mapean automáticamente a 409 Conflict.
+// estándar (ej. platform/http/gin/go) lo mapean automáticamente a 409 Conflict.
 package archive
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/devpablocristo/core/errors/go/domainerr"
+	"github.com/devpablocristo/platform/errors/go/domainerr"
 )
 
 // ErrArchived indica que la operación no se puede ejecutar porque el recurso

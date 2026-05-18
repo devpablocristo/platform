@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	domain "github.com/devpablocristo/core/notifications/go/inbox/usecases/domain"
+	domain "github.com/devpablocristo/platform/notifications/go/inbox/usecases/domain"
 )
 
 // Repository define persistencia para la bandeja in-app.

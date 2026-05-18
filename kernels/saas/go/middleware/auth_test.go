@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/devpablocristo/core/security/go/contextkeys"
-	kerneldomain "github.com/devpablocristo/core/saas/go/kernel/usecases/domain"
+	"github.com/devpablocristo/platform/security/go/contextkeys"
+	kerneldomain "github.com/devpablocristo/platform/kernels/saas/go/kernel/usecases/domain"
 	"github.com/google/uuid"
 )
 

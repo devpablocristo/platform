@@ -15,7 +15,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { CrudPageShell } from "@devpablocristo/core-browser/crud";
+import { CrudPageShell } from "@devpablocristo/platform-browser/crud";
 import React, { useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode, type RefObject } from "react";
 import { kanbanCollisionDetection } from "./collision";
 import "./StatusKanbanBoard.css";

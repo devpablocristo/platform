@@ -1,4 +1,4 @@
-module github.com/devpablocristo/core/ai/contracts/go
+module github.com/devpablocristo/platform/contracts/ai/go
 
 go 1.26.1
 

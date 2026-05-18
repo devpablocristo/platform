@@ -3,7 +3,7 @@ package users
 import (
 	"context"
 
-	"github.com/devpablocristo/core/saas/go/users/handler/dto"
+	"github.com/devpablocristo/platform/kernels/saas/go/users/handler/dto"
 )
 
 // Handler expone un adapter de aplicación listo para transporte externo.

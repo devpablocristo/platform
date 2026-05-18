@@ -12,8 +12,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	schedulingpublic "github.com/devpablocristo/modules/scheduling/go/publicapi"
-	publicdto "github.com/devpablocristo/modules/scheduling/go/publichttpgin/dto"
+	schedulingpublic "github.com/devpablocristo/platform/features/scheduling/go/publicapi"
+	publicdto "github.com/devpablocristo/platform/features/scheduling/go/publichttpgin/dto"
 )
 
 type servicePort interface {

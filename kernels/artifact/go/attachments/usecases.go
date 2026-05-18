@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	domain "github.com/devpablocristo/core/artifact/go/attachments/usecases/domain"
+	domain "github.com/devpablocristo/platform/kernels/artifact/go/attachments/usecases/domain"
 )
 
 func BuildStorageKey(tenantID, attachableType, attachableID, fileName string) (string, error) {

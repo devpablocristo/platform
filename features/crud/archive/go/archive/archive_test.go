@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/devpablocristo/core/errors/go/domainerr"
-	"github.com/devpablocristo/modules/crud/archive/go/archive"
+	"github.com/devpablocristo/platform/errors/go/domainerr"
+	"github.com/devpablocristo/platform/features/crud/archive/go/archive"
 )
 
 func TestIfArchivedReturnsNilWhenActive(t *testing.T) {

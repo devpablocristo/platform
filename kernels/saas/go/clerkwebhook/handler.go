@@ -18,9 +18,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/devpablocristo/core/http/go/httperr"
-	"github.com/devpablocristo/core/saas/go/notifications"
-	userdomain "github.com/devpablocristo/core/saas/go/users/usecases/domain"
+	"github.com/devpablocristo/platform/http/go/httperr"
+	"github.com/devpablocristo/platform/kernels/saas/go/notifications"
+	userdomain "github.com/devpablocristo/platform/kernels/saas/go/users/usecases/domain"
 )
 
 const (

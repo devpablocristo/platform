@@ -5,7 +5,7 @@ import (
 	"encoding/csv"
 	"fmt"
 
-	"github.com/devpablocristo/core/artifact/go"
+	"github.com/devpablocristo/platform/kernels/artifact/go"
 	"github.com/xuri/excelize/v2"
 )
 

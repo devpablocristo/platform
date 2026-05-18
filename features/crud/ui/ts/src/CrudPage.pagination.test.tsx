@@ -7,7 +7,7 @@ import { CrudPage } from "./CrudPage";
 
 type Row = { id: string; name: string };
 
-vi.mock("@devpablocristo/core-browser/crud", () => ({
+vi.mock("@devpablocristo/platform-browser/crud", () => ({
   CrudPageShell: ({
     search,
     children,

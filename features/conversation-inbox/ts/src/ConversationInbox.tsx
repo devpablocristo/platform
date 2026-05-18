@@ -3,7 +3,7 @@ import {
   NotificationFeed,
   type NotificationFeedItem,
   type NotificationFeedTone,
-} from "@devpablocristo/modules-ui-notification-feed";
+} from "@devpablocristo/platform-notification-feed";
 
 export type ConversationInboxTone = NotificationFeedTone;
 

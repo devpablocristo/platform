@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/uuid"
 
-	corescheduling "github.com/devpablocristo/core/scheduling/go"
-	schedulingdomain "github.com/devpablocristo/modules/scheduling/go/domain"
+	corescheduling "github.com/devpablocristo/platform/jobs/go"
+	schedulingdomain "github.com/devpablocristo/platform/features/scheduling/go/domain"
 )
 
 func TestCanTransitionBooking(t *testing.T) {

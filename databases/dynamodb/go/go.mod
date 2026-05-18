@@ -1,4 +1,4 @@
-module github.com/devpablocristo/core/databases/dynamodb/go
+module github.com/devpablocristo/platform/databases/dynamodb/go
 
 go 1.26.1
 

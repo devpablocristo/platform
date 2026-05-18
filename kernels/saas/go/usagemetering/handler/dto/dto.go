@@ -3,7 +3,7 @@ package dto
 import (
 	"time"
 
-	usage "github.com/devpablocristo/core/saas/go/usagemetering/usecases/domain"
+	usage "github.com/devpablocristo/platform/kernels/saas/go/usagemetering/usecases/domain"
 )
 
 type IncrementRequest struct {

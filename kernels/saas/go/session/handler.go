@@ -3,8 +3,8 @@ package session
 import (
 	"net/http"
 
-	"github.com/devpablocristo/core/http/go/httperr"
-	saasmiddleware "github.com/devpablocristo/core/saas/go/middleware"
+	"github.com/devpablocristo/platform/http/go/httperr"
+	saasmiddleware "github.com/devpablocristo/platform/kernels/saas/go/middleware"
 )
 
 // RegisterProtected registra GET /session en el mux, detrás de authMW.

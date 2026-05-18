@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	orgdomain "github.com/devpablocristo/core/saas/go/org/usecases/domain"
+	orgdomain "github.com/devpablocristo/platform/kernels/saas/go/org/usecases/domain"
 )
 
 type UseCases struct {

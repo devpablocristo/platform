@@ -3,7 +3,7 @@ package storage
 import (
 	"context"
 
-	"github.com/devpablocristo/core/artifact/go"
+	"github.com/devpablocristo/platform/kernels/artifact/go"
 )
 
 type Store interface {

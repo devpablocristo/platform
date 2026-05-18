@@ -6,7 +6,7 @@ import { useSearch } from './useSearch';
 
 const searchMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@devpablocristo/core-browser/search', () => ({
+vi.mock('@devpablocristo/platform-browser/search', () => ({
   search: (...args: unknown[]) => searchMock(...args),
 }));
 

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	admindomain "github.com/devpablocristo/core/saas/go/admin/usecases/domain"
-	"github.com/devpablocristo/core/saas/go/notifications"
+	admindomain "github.com/devpablocristo/platform/kernels/saas/go/admin/usecases/domain"
+	"github.com/devpablocristo/platform/kernels/saas/go/notifications"
 )
 
 const (

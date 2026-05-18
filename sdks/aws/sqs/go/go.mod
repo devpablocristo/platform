@@ -1,4 +1,4 @@
-module github.com/devpablocristo/core/providers/aws/sqs/go
+module github.com/devpablocristo/platform/sdks/aws/sqs/go
 
 go 1.26.1
 

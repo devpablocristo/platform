@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	domain "github.com/devpablocristo/core/webhook/go/usecases/domain"
+	domain "github.com/devpablocristo/platform/webhook/go/usecases/domain"
 )
 
 const (

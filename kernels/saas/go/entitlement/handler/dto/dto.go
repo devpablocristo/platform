@@ -1,6 +1,6 @@
 package dto
 
-import entitlementdomain "github.com/devpablocristo/core/saas/go/entitlement/usecases/domain"
+import entitlementdomain "github.com/devpablocristo/platform/kernels/saas/go/entitlement/usecases/domain"
 
 type NormalizePlanRequest struct {
 	Plan entitlementdomain.PlanCode `json:"plan"`

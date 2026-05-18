@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	domain "github.com/devpablocristo/core/activity/go/audit/usecases/domain"
-	kernel "github.com/devpablocristo/core/activity/go/kernel/usecases/domain"
+	domain "github.com/devpablocristo/platform/kernels/activity/go/audit/usecases/domain"
+	kernel "github.com/devpablocristo/platform/kernels/activity/go/kernel/usecases/domain"
 )
 
 func TestAppendBuildsHashChain(t *testing.T) {

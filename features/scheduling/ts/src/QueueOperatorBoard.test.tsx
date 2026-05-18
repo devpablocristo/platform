@@ -9,7 +9,7 @@ import type { Branch, DayAgendaItem, Queue } from './types';
 
 const confirmActionMock = vi.hoisted(() => vi.fn(async () => true));
 
-vi.mock('@devpablocristo/core-browser', () => ({
+vi.mock('@devpablocristo/platform-browser', () => ({
   confirmAction: confirmActionMock,
 }));
 

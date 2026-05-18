@@ -1,6 +1,6 @@
 {
-  "name": "@devpablocristo/modules-ui-modal",
-  "version": "0.2.0",
+  "name": "@devpablocristo/platform-ui-modal",
+  "version": "0.1.0",
   "private": false,
   "type": "module",
   "exports": {

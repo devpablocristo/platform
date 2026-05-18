@@ -1,3 +1,3 @@
-module github.com/devpablocristo/core/eventing/go
+module github.com/devpablocristo/platform/eventing/go
 
 go 1.26.1

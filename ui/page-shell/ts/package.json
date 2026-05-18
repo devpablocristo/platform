@@ -1,6 +1,6 @@
 {
-  "name": "@devpablocristo/modules-ui-page-shell",
-  "version": "0.2.0",
+  "name": "@devpablocristo/platform-ui-page-shell",
+  "version": "0.1.0",
   "private": false,
   "type": "module",
   "exports": {
@@ -8,8 +8,8 @@
     "./styles.css": "./src/styles.css"
   },
   "dependencies": {
-    "@devpablocristo/core-browser": "^0.4.0",
-    "@devpablocristo/modules-shell-sidebar": "file:../../../sidebar/ts"
+    "@devpablocristo/platform-browser": "^0.1.0",
+    "@devpablocristo/platform-shell-sidebar": "file:../../../sidebar/ts"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",

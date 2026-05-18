@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	usage "github.com/devpablocristo/core/saas/go/usagemetering/usecases/domain"
+	usage "github.com/devpablocristo/platform/kernels/saas/go/usagemetering/usecases/domain"
 )
 
 func TestCurrentPeriod(t *testing.T) {

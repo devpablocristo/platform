@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	domain "github.com/devpablocristo/core/activity/go/timeline/usecases/domain"
+	domain "github.com/devpablocristo/platform/kernels/activity/go/timeline/usecases/domain"
 )
 
 type Usecases struct {

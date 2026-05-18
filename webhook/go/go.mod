@@ -1,3 +1,3 @@
-module github.com/devpablocristo/core/webhook/go
+module github.com/devpablocristo/platform/webhook/go
 
 go 1.26.1

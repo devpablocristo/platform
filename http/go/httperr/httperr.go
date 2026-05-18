@@ -7,8 +7,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/devpablocristo/core/errors/go/domainerr"
-	"github.com/devpablocristo/core/http/go/httpjson"
+	"github.com/devpablocristo/platform/errors/go/domainerr"
+	"github.com/devpablocristo/platform/http/go/httpjson"
 )
 
 // --- Constantes ---

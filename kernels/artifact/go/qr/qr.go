@@ -3,7 +3,7 @@ package qr
 import (
 	"strings"
 
-	"github.com/devpablocristo/core/artifact/go"
+	"github.com/devpablocristo/platform/kernels/artifact/go"
 	qrcode "github.com/skip2/go-qrcode"
 )
 

@@ -1,3 +1,3 @@
-module github.com/devpablocristo/core/scheduling/go
+module github.com/devpablocristo/platform/jobs/go
 
 go 1.26.1

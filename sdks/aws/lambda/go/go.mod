@@ -1,4 +1,4 @@
-module github.com/devpablocristo/core/providers/aws/lambda/go
+module github.com/devpablocristo/platform/sdks/aws/lambda/go
 
 go 1.26.1
 

@@ -1,6 +1,6 @@
 package entitlement
 
-import entitlementdomain "github.com/devpablocristo/core/saas/go/entitlement/usecases/domain"
+import entitlementdomain "github.com/devpablocristo/platform/kernels/saas/go/entitlement/usecases/domain"
 
 // UseCases expone reglas reutilizables de plan y límites.
 type UseCases struct{}

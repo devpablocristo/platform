@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strings"
 
-	authn "github.com/devpablocristo/core/authn/go"
-	"github.com/devpablocristo/core/security/go/contextkeys"
-	"github.com/devpablocristo/core/saas/go/identity"
-	kerneldomain "github.com/devpablocristo/core/saas/go/kernel/usecases/domain"
+	authn "github.com/devpablocristo/platform/authn/go"
+	"github.com/devpablocristo/platform/security/go/contextkeys"
+	"github.com/devpablocristo/platform/kernels/saas/go/identity"
+	kerneldomain "github.com/devpablocristo/platform/kernels/saas/go/kernel/usecases/domain"
 	"github.com/google/uuid"
 )
 

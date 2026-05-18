@@ -1,3 +1,3 @@
-module github.com/devpablocristo/core/config/go
+module github.com/devpablocristo/platform/config/go
 
 go 1.26.1

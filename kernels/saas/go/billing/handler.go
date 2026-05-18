@@ -3,7 +3,7 @@ package billing
 import (
 	"context"
 
-	"github.com/devpablocristo/core/saas/go/billing/handler/dto"
+	"github.com/devpablocristo/platform/kernels/saas/go/billing/handler/dto"
 )
 
 // Handler expone un adapter de aplicación listo para transporte externo.

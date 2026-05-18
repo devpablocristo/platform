@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { PageLayout } from '@devpablocristo/modules-ui-page-shell';
+import { PageLayout } from '@devpablocristo/platform-ui-page-shell';
 
 export type SectionHubSection<TSection extends string = string> = {
   id: TSection;

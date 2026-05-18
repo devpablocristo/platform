@@ -1,4 +1,4 @@
-module github.com/devpablocristo/core/providers/aws/s3/go
+module github.com/devpablocristo/platform/sdks/aws/s3/go
 
 go 1.26.1
 

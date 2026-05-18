@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	admindomain "github.com/devpablocristo/core/saas/go/admin/usecases/domain"
+	admindomain "github.com/devpablocristo/platform/kernels/saas/go/admin/usecases/domain"
 )
 
 type TenantSettings = admindomain.TenantSettings

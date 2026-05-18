@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/devpablocristo/core/errors/go/domainerr"
-	"github.com/devpablocristo/core/saas/go/notifications"
+	"github.com/devpablocristo/platform/errors/go/domainerr"
+	"github.com/devpablocristo/platform/kernels/saas/go/notifications"
 	"github.com/stripe/stripe-go/v81"
 
-	admindomain "github.com/devpablocristo/core/saas/go/admin/usecases/domain"
-	billingdomain "github.com/devpablocristo/core/saas/go/billing/usecases/domain"
+	admindomain "github.com/devpablocristo/platform/kernels/saas/go/admin/usecases/domain"
+	billingdomain "github.com/devpablocristo/platform/kernels/saas/go/billing/usecases/domain"
 )
 
 const (

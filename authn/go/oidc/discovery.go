@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	authnjwks "github.com/devpablocristo/core/authn/go/jwks"
+	authnjwks "github.com/devpablocristo/platform/authn/go/jwks"
 )
 
 type DiscoveryDocument struct {

@@ -1,6 +1,6 @@
 {
-  "name": "@devpablocristo/modules-admin-insights",
-  "version": "0.1.1",
+  "name": "@devpablocristo/platform-admin-insights",
+  "version": "0.1.0",
   "description": "Reusable admin surfaces for persisted business insight candidates.",
   "type": "module",
   "exports": {

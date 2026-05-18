@@ -1,12 +1,12 @@
-module github.com/devpablocristo/core/http/gin/go
+module github.com/devpablocristo/platform/http/gin/go
 
 go 1.26.1
 
 require (
-	github.com/devpablocristo/core/authn/go v0.2.1
-	github.com/devpablocristo/core/errors/go v0.1.0
-	github.com/devpablocristo/core/http/go v0.1.0
-	github.com/devpablocristo/core/security/go v0.1.0
+	github.com/devpablocristo/platform/authn/go v0.2.1
+	github.com/devpablocristo/platform/errors/go v0.1.0
+	github.com/devpablocristo/platform/http/go v0.1.0
+	github.com/devpablocristo/platform/security/go v0.1.0
 	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-playground/validator/v10 v10.30.1
@@ -44,10 +44,10 @@ require (
 	google.golang.org/protobuf v1.36.10 // indirect
 )
 
-replace github.com/devpablocristo/core/authn/go => ../../../authn/go
+replace github.com/devpablocristo/platform/authn/go => ../../../authn/go
 
-replace github.com/devpablocristo/core/errors/go => ../../../errors/go
+replace github.com/devpablocristo/platform/errors/go => ../../../errors/go
 
-replace github.com/devpablocristo/core/http/go => ../../go
+replace github.com/devpablocristo/platform/http/go => ../../go
 
-replace github.com/devpablocristo/core/security/go => ../../../security/go
+replace github.com/devpablocristo/platform/security/go => ../../../security/go

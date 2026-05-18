@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	userdomain "github.com/devpablocristo/core/saas/go/users/usecases/domain"
+	userdomain "github.com/devpablocristo/platform/kernels/saas/go/users/usecases/domain"
 )
 
 type stubSyncer struct {

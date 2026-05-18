@@ -1,4 +1,4 @@
-import { createBrowserStorageNamespace } from "@devpablocristo/core-browser/storage";
+import { createBrowserStorageNamespace } from "@devpablocristo/platform-browser/storage";
 
 export interface TokenPair {
   access_token: string;

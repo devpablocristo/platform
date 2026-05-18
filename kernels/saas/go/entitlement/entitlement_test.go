@@ -3,7 +3,7 @@ package entitlement
 import (
 	"testing"
 
-	kerneldomain "github.com/devpablocristo/core/saas/go/kernel/usecases/domain"
+	kerneldomain "github.com/devpablocristo/platform/kernels/saas/go/kernel/usecases/domain"
 )
 
 func TestDefaultHardLimits(t *testing.T) {

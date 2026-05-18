@@ -1,4 +1,4 @@
-module github.com/devpablocristo/core/observability/go
+module github.com/devpablocristo/platform/observability/go
 
 go 1.26.1
 

@@ -1,6 +1,6 @@
 package models
 
-import identitydomain "github.com/devpablocristo/core/saas/go/identity/usecases/domain"
+import identitydomain "github.com/devpablocristo/platform/kernels/saas/go/identity/usecases/domain"
 
 type Principal struct {
 	TenantID   string   `json:"tenant_id"`

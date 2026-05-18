@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	billingdomain "github.com/devpablocristo/core/saas/go/billing/usecases/domain"
+	billingdomain "github.com/devpablocristo/platform/kernels/saas/go/billing/usecases/domain"
 )
 
 func TestGetBillingStatusCreatesDefaultTenantBilling(t *testing.T) {

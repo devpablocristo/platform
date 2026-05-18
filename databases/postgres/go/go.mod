@@ -1,4 +1,4 @@
-module github.com/devpablocristo/core/databases/postgres/go
+module github.com/devpablocristo/platform/databases/postgres/go
 
 go 1.26.1
 

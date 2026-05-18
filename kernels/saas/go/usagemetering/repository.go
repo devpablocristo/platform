@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/devpablocristo/core/observability/go"
+	"github.com/devpablocristo/platform/observability/go"
 	"gorm.io/gorm"
 )
 

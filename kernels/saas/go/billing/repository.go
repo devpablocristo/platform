@@ -3,7 +3,7 @@ package billing
 import (
 	"context"
 
-	billingdomain "github.com/devpablocristo/core/saas/go/billing/usecases/domain"
+	billingdomain "github.com/devpablocristo/platform/kernels/saas/go/billing/usecases/domain"
 )
 
 // Repository define el puerto de persistencia del contexto billing.

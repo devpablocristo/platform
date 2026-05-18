@@ -4,7 +4,7 @@ import (
 	"embed"
 	"io/fs"
 
-	gormdb "github.com/devpablocristo/core/databases/postgres/go"
+	gormdb "github.com/devpablocristo/platform/databases/postgres/go"
 	"gorm.io/gorm"
 )
 

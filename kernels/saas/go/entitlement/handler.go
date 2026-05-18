@@ -1,6 +1,6 @@
 package entitlement
 
-import "github.com/devpablocristo/core/saas/go/entitlement/handler/dto"
+import "github.com/devpablocristo/platform/kernels/saas/go/entitlement/handler/dto"
 
 // Handler expone un adapter de aplicación listo para transporte externo.
 type Handler struct {

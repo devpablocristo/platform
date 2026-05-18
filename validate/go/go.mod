@@ -1,4 +1,4 @@
-module github.com/devpablocristo/core/validate/go
+module github.com/devpablocristo/platform/validate/go
 
 go 1.26.1
 

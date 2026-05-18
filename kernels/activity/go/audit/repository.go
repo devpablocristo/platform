@@ -3,7 +3,7 @@ package audit
 import (
 	"context"
 
-	domain "github.com/devpablocristo/core/activity/go/audit/usecases/domain"
+	domain "github.com/devpablocristo/platform/kernels/activity/go/audit/usecases/domain"
 )
 
 type Repository interface {

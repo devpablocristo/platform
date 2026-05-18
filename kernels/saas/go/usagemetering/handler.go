@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/devpablocristo/core/saas/go/usagemetering/handler/dto"
+	"github.com/devpablocristo/platform/kernels/saas/go/usagemetering/handler/dto"
 )
 
 // Handler expone un adapter de aplicación listo para transporte externo.

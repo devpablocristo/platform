@@ -1,5 +1,5 @@
 /**
- * CRUD de consola (React). Primitivas de layout en `@devpablocristo/core-browser/crud`.
+ * CRUD de consola (React). Primitivas de layout en `@devpablocristo/platform-browser/crud`.
  */
 export { CrudPage, type CrudPageProps } from "./CrudPage";
 export { CrudShellHeaderActionsColumn, type CrudShellHeaderActionsColumnProps, type CrudShellSearchFieldProps } from "./CrudShellHeaderActionsColumn";

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/devpablocristo/core/config/go/envconfig"
+	"github.com/devpablocristo/platform/config/go/envconfig"
 )
 
 func TestGet(t *testing.T) {

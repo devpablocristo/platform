@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	billingdomain "github.com/devpablocristo/core/saas/go/billing/usecases/domain"
+	billingdomain "github.com/devpablocristo/platform/kernels/saas/go/billing/usecases/domain"
 )
 
 type HardLimits struct {

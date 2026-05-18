@@ -1,6 +1,6 @@
 package dto
 
-import userdomain "github.com/devpablocristo/core/saas/go/users/usecases/domain"
+import userdomain "github.com/devpablocristo/platform/kernels/saas/go/users/usecases/domain"
 
 type OrgRequest struct {
 	OrgID string `json:"org_id"`

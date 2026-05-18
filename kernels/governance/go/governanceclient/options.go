@@ -1,7 +1,7 @@
 package governanceclient
 
 import (
-	"github.com/devpablocristo/core/http/go/httpclient"
+	"github.com/devpablocristo/platform/http/go/httpclient"
 )
 
 // RequestOption modifica una llamada individual sin tocar la config global

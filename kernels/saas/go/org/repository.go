@@ -3,7 +3,7 @@ package org
 import (
 	"context"
 
-	orgdomain "github.com/devpablocristo/core/saas/go/org/usecases/domain"
+	orgdomain "github.com/devpablocristo/platform/kernels/saas/go/org/usecases/domain"
 )
 
 // APIKeyResolver define el puerto de lookup de principal por API key.

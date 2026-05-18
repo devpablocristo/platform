@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/devpablocristo/core/errors/go/domainerr"
-	coreapikey "github.com/devpablocristo/core/security/go/apikey"
+	"github.com/devpablocristo/platform/errors/go/domainerr"
+	coreapikey "github.com/devpablocristo/platform/security/go/apikey"
 )
 
 const apiKeyPrincipalContextKey = "core.api_key_principal"

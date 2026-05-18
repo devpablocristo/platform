@@ -1,6 +1,6 @@
 package dto
 
-import admindomain "github.com/devpablocristo/core/saas/go/admin/usecases/domain"
+import admindomain "github.com/devpablocristo/platform/kernels/saas/go/admin/usecases/domain"
 
 type GetTenantSettingsRequest struct {
 	TenantID string   `json:"tenant_id"`

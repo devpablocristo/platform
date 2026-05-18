@@ -11,9 +11,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	handlers "github.com/devpablocristo/core/http/gin/go"
-	schedulingdomain "github.com/devpablocristo/modules/scheduling/go/domain"
-	schedulingdto "github.com/devpablocristo/modules/scheduling/go/httpgin/dto"
+	handlers "github.com/devpablocristo/platform/http/gin/go"
+	schedulingdomain "github.com/devpablocristo/platform/features/scheduling/go/domain"
+	schedulingdto "github.com/devpablocristo/platform/features/scheduling/go/httpgin/dto"
 )
 
 type usecasesPort interface {

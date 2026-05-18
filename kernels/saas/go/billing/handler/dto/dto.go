@@ -1,6 +1,6 @@
 package dto
 
-import billingdomain "github.com/devpablocristo/core/saas/go/billing/usecases/domain"
+import billingdomain "github.com/devpablocristo/platform/kernels/saas/go/billing/usecases/domain"
 
 type TenantRequest struct {
 	TenantID string `json:"tenant_id"`

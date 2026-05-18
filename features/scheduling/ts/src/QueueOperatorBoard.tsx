@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { confirmAction } from '@devpablocristo/core-browser';
+import { confirmAction } from '@devpablocristo/platform-browser';
 import type { SchedulingClient } from './client';
 import { resolveSchedulingCopyLocale } from './locale';
 import type {

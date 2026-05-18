@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/devpablocristo/core/artifact/go"
+	"github.com/devpablocristo/platform/kernels/artifact/go"
 	"github.com/go-pdf/fpdf"
 )
 

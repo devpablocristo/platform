@@ -1,6 +1,6 @@
 import type { PropsWithChildren, ReactNode } from 'react';
-import { AppShell, type AppShellNavItem, type AppShellNavSection } from '@devpablocristo/modules-shell-sidebar';
-import { PageSearchProvider } from '@devpablocristo/core-browser/search';
+import { AppShell, type AppShellNavItem, type AppShellNavSection } from '@devpablocristo/platform-shell-sidebar';
+import { PageSearchProvider } from '@devpablocristo/platform-browser/search';
 
 export type PageShellFrameProps = PropsWithChildren<{
   brandTitle: string;

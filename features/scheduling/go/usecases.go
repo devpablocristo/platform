@@ -12,12 +12,12 @@ import (
 	"strings"
 	"time"
 
-	corescheduling "github.com/devpablocristo/core/scheduling/go"
+	corescheduling "github.com/devpablocristo/platform/jobs/go"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/devpablocristo/core/errors/go/domainerr"
-	schedulingdomain "github.com/devpablocristo/modules/scheduling/go/domain"
+	"github.com/devpablocristo/platform/errors/go/domainerr"
+	schedulingdomain "github.com/devpablocristo/platform/features/scheduling/go/domain"
 )
 
 var (

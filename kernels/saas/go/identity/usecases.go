@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	authn "github.com/devpablocristo/core/authn/go"
-	identitydomain "github.com/devpablocristo/core/saas/go/identity/usecases/domain"
+	authn "github.com/devpablocristo/platform/authn/go"
+	identitydomain "github.com/devpablocristo/platform/kernels/saas/go/identity/usecases/domain"
 )
 
 var ErrVerifierRequired = errors.New("principal verifier is required")

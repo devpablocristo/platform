@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/devpablocristo/core/concurrency/go/worker"
+	"github.com/devpablocristo/platform/concurrency/go/worker"
 )
 
 func TestRunPeriodic(t *testing.T) {

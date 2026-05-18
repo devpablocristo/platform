@@ -1,6 +1,6 @@
 package dto
 
-import tenantdomain "github.com/devpablocristo/core/saas/go/tenant/usecases/domain"
+import tenantdomain "github.com/devpablocristo/platform/kernels/saas/go/tenant/usecases/domain"
 
 type NormalizeRequest struct {
 	Value string `json:"value"`

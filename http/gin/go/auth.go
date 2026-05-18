@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	authn "github.com/devpablocristo/core/authn/go"
-	ctxkeys "github.com/devpablocristo/core/security/go/contextkeys"
+	authn "github.com/devpablocristo/platform/authn/go"
+	ctxkeys "github.com/devpablocristo/platform/security/go/contextkeys"
 )
 
 // AuthMiddleware middleware de autenticación JWT + API Key para Gin.

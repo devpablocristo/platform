@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { search, type SearchEntry, type SearchOptions } from "@devpablocristo/core-browser/search";
+import { search, type SearchEntry, type SearchOptions } from "@devpablocristo/platform-browser/search";
 
 /**
  * Hook genérico de búsqueda fuzzy para listas client-side.

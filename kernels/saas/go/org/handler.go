@@ -3,7 +3,7 @@ package org
 import (
 	"context"
 
-	"github.com/devpablocristo/core/saas/go/org/handler/dto"
+	"github.com/devpablocristo/platform/kernels/saas/go/org/handler/dto"
 )
 
 // Handler expone un adapter de aplicación listo para transporte externo.

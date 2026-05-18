@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	oidc "github.com/devpablocristo/core/authn/go/oidc"
-	"github.com/devpablocristo/core/http/go/httperr"
-	identitydto "github.com/devpablocristo/core/saas/go/identity/handler/dto"
-	identitydomain "github.com/devpablocristo/core/saas/go/identity/usecases/domain"
+	oidc "github.com/devpablocristo/platform/authn/go/oidc"
+	"github.com/devpablocristo/platform/http/go/httperr"
+	identitydto "github.com/devpablocristo/platform/kernels/saas/go/identity/handler/dto"
+	identitydomain "github.com/devpablocristo/platform/kernels/saas/go/identity/usecases/domain"
 )
 
 type OIDCConfig struct {

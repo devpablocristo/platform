@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	billingdomain "github.com/devpablocristo/core/saas/go/billing/usecases/domain"
-	"github.com/devpablocristo/core/saas/go/notifications"
+	billingdomain "github.com/devpablocristo/platform/kernels/saas/go/billing/usecases/domain"
+	"github.com/devpablocristo/platform/kernels/saas/go/notifications"
 )
 
 type UseCases struct {

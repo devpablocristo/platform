@@ -4,7 +4,7 @@ import (
 	"strings"
 	"unicode"
 
-	kerneldomain "github.com/devpablocristo/core/saas/go/kernel/usecases/domain"
+	kerneldomain "github.com/devpablocristo/platform/kernels/saas/go/kernel/usecases/domain"
 )
 
 func NormalizeSlug(raw string) string {

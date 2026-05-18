@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "devpablocristo-core-ai"
+name = "devpablocristo-platform-ai-runtime"
 version = "0.8.2"
 description = "Reusable AI runtime primitives: provider protocol, messages, orchestration, provider registry and operational memory"
 readme = "README.md"

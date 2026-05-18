@@ -2,14 +2,14 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { EventClickArg, EventContentArg, EventInput } from '@fullcalendar/core';
 import FullCalendar from '@fullcalendar/react';
-import { confirmAction } from '@devpablocristo/core-browser';
+import { confirmAction } from '@devpablocristo/platform-browser';
 import {
   CalendarSurface,
   resolveInitialTimeGridScrollTime,
   resolveInitialTimeGridViewport,
   type CalendarSurfaceProps,
   type CalendarView,
-} from '@devpablocristo/modules-calendar-board/next';
+} from '@devpablocristo/platform-calendar-board/next';
 import type { SchedulingClient } from './client';
 import {
   formatSchedulingClock,

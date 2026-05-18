@@ -7,9 +7,9 @@
  * Shell de layout: `core/browser/ts`. Orquestación CRUD: `modules/crud/ui/ts`.
  */
 import { FormEvent, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CrudPageShell, parsePaginatedResponse } from "@devpablocristo/core-browser/crud";
+import { CrudPageShell, parsePaginatedResponse } from "@devpablocristo/platform-browser/crud";
 import { CrudShellHeaderActionsColumn } from "./CrudShellHeaderActionsColumn";
-import { search as fuzzySearch, type SearchEntry } from "@devpablocristo/core-browser/search";
+import { search as fuzzySearch, type SearchEntry } from "@devpablocristo/platform-browser/search";
 import { compareUnknown, getComparableFromRow, type SortDirection } from "./columnSort";
 import { crudItemPath, crudListPath } from "./restPaths";
 import { interpolate, mergeCrudStrings, type CrudStrings, defaultCrudStrings } from "./strings";

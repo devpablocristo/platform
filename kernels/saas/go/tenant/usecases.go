@@ -1,6 +1,6 @@
 package tenant
 
-import tenantdomain "github.com/devpablocristo/core/saas/go/tenant/usecases/domain"
+import tenantdomain "github.com/devpablocristo/platform/kernels/saas/go/tenant/usecases/domain"
 
 // UseCases agrupa helpers de tenancy y memberships.
 type UseCases struct{}

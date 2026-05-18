@@ -1,13 +1,13 @@
 {
-  "name": "@devpablocristo/modules-search",
-  "version": "0.2.0",
+  "name": "@devpablocristo/platform-search",
+  "version": "0.1.0",
   "private": false,
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@devpablocristo/core-browser": "^0.4.0"
+    "@devpablocristo/platform-browser": "^0.1.0"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0"

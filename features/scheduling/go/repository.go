@@ -7,13 +7,13 @@ import (
 	"strings"
 	"time"
 
-	corescheduling "github.com/devpablocristo/core/scheduling/go"
+	corescheduling "github.com/devpablocristo/platform/jobs/go"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	schedulingdomain "github.com/devpablocristo/modules/scheduling/go/domain"
-	schedulingmodels "github.com/devpablocristo/modules/scheduling/go/repository/models"
+	schedulingdomain "github.com/devpablocristo/platform/features/scheduling/go/domain"
+	schedulingmodels "github.com/devpablocristo/platform/features/scheduling/go/repository/models"
 )
 
 var bookingStatusesBlocking = []string{

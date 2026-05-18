@@ -7,10 +7,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/devpablocristo/core/saas/go/identity"
-	kerneldomain "github.com/devpablocristo/core/saas/go/kernel/usecases/domain"
-	saasmiddleware "github.com/devpablocristo/core/saas/go/middleware"
-	"github.com/devpablocristo/core/saas/go/session"
+	"github.com/devpablocristo/platform/kernels/saas/go/identity"
+	kerneldomain "github.com/devpablocristo/platform/kernels/saas/go/kernel/usecases/domain"
+	saasmiddleware "github.com/devpablocristo/platform/kernels/saas/go/middleware"
+	"github.com/devpablocristo/platform/kernels/saas/go/session"
 )
 
 type stubJWTVerifier struct {

@@ -45,7 +45,7 @@ vi.mock("@dnd-kit/core", () => ({
   }),
 }));
 
-vi.mock("@devpablocristo/core-browser/crud", () => ({
+vi.mock("@devpablocristo/platform-browser/crud", () => ({
   CrudPageShell: ({
     title,
     subtitle,

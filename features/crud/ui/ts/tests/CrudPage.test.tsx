@@ -12,11 +12,11 @@ type UserRow = {
 
 const searchMock = vi.hoisted(() => vi.fn());
 
-vi.mock("@devpablocristo/core-browser/search", () => ({
+vi.mock("@devpablocristo/platform-browser/search", () => ({
   search: (...args: unknown[]) => searchMock(...args),
 }));
 
-vi.mock("@devpablocristo/core-browser/crud", () => ({
+vi.mock("@devpablocristo/platform-browser/crud", () => ({
   CrudPageShell: ({
     title,
     subtitle,

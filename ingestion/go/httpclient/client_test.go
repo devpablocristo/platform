@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/devpablocristo/core/ingestion/go"
+	"github.com/devpablocristo/platform/ingestion/go"
 )
 
 func TestClientExtract_OK(t *testing.T) {

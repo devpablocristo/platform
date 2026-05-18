@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/devpablocristo/core/saas/go/middleware"
-	usage "github.com/devpablocristo/core/saas/go/usagemetering/usecases/domain"
+	"github.com/devpablocristo/platform/kernels/saas/go/middleware"
+	usage "github.com/devpablocristo/platform/kernels/saas/go/usagemetering/usecases/domain"
 )
 
 const maxConcurrentMetering = 512

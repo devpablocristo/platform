@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/devpablocristo/core/ingestion/go"
+	"github.com/devpablocristo/platform/ingestion/go"
 )
 
 const defaultPath = "/v1/extract"

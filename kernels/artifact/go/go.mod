@@ -1,4 +1,4 @@
-module github.com/devpablocristo/core/artifact/go
+module github.com/devpablocristo/platform/kernels/artifact/go
 
 go 1.26.1
 

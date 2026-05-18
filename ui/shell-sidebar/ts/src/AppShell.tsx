@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type PropsWithChildren, type ReactNode } from 'react';
-import { search, type SearchEntry } from '@devpablocristo/core-browser/search';
+import { search, type SearchEntry } from '@devpablocristo/platform-browser/search';
 
 export type AppShellNavItem = {
   to: string;
