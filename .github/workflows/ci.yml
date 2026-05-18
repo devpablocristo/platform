@@ -14,7 +14,7 @@ jobs:
   noop:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Bootstrap placeholder
         run: |
           echo "CI matrix pending — see docs/migration/MIGRATION_FROM_CORE_MODULES.md"
