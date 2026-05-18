@@ -147,5 +147,14 @@ func defaultTenantIDExtractor(c *gin.Context) (uuid.UUID, bool) {
 }
 
 func defaultIDParamExtractor(c *gin.Context) (uuid.UUID, bool) {
-	return ParseUUIDParam(c, "id")
+	value := strings.TrimSpace(c.Param("id"))
+	id, err := uuid.Parse(value)
+	if err != nil {
+		// Use VALIDATION envelope (consistent with WriteValidation) instead of
+		// the legacy SimpleErrorResponse shape returned by ParseUUIDParam, so
+		// the body matches what the status endpoint produces elsewhere.
+		WriteValidation(c, "invalid id")
+		return uuid.Nil, false
+	}
+	return id, true
 }
