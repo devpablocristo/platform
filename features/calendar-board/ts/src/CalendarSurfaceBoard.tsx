@@ -308,7 +308,7 @@ export function CalendarSurface({
             </div>
           )
         ) : (
-          <FullCalendar ref={calendarRef} {...fullCalendarProps} />
+          <FullCalendar ref={calendarRef as unknown as React.LegacyRef<FullCalendar>} {...fullCalendarProps} />
         )}
       </div>
     </div>
