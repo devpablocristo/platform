@@ -8,7 +8,7 @@
     "./styles.css": "./src/styles.css"
   },
   "dependencies": {
-    "@devpablocristo/platform-ui-page-shell": "file:../../page-shell/ts"
+    "@devpablocristo/platform-ui-page-shell": "file:../page-shell/ts"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",

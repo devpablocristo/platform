@@ -49,7 +49,8 @@ def main() -> None:
 
     module_rel = Path(sys.argv[1])
     output_dir = Path(sys.argv[2]).resolve()
-    module_dir = (Path(__file__).resolve().parents[1] / module_rel).resolve()
+    # Script lives in tooling/scripts/, so go 2 parents up to reach repo root.
+    module_dir = (Path(__file__).resolve().parents[2] / module_rel).resolve()
 
     package_json = module_dir / "package.json"
     if not package_json.exists():
