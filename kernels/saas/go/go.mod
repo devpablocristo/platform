@@ -3,12 +3,12 @@ module github.com/devpablocristo/platform/kernels/saas/go
 go 1.26.1
 
 require (
-	github.com/devpablocristo/platform/authn/go v0.2.1
-	github.com/devpablocristo/platform/authz/go v0.1.0
-	github.com/devpablocristo/platform/errors/go v0.1.0
-	github.com/devpablocristo/platform/http/go v0.1.0
-	github.com/devpablocristo/platform/observability/go v0.1.0
-	github.com/devpablocristo/platform/security/go v0.1.0
+	github.com/devpablocristo/platform/authn/go v0.0.0-00010101000000-000000000000
+	github.com/devpablocristo/platform/authz/go v0.0.0-00010101000000-000000000000
+	github.com/devpablocristo/platform/errors/go v0.0.0-00010101000000-000000000000
+	github.com/devpablocristo/platform/http/go v0.0.0-00010101000000-000000000000
+	github.com/devpablocristo/platform/observability/go v0.0.0-00010101000000-000000000000
+	github.com/devpablocristo/platform/security/go v0.0.0-00010101000000-000000000000
 	github.com/google/uuid v1.6.0
 	github.com/stripe/stripe-go/v81 v81.4.0
 	gorm.io/gorm v1.31.1
@@ -31,16 +31,16 @@ require (
 	google.golang.org/protobuf v1.36.8 // indirect
 )
 
-replace github.com/devpablocristo/platform/authn/go => ../../authn/go
 
-replace github.com/devpablocristo/platform/errors/go => ../../errors/go
 
-replace github.com/devpablocristo/platform/http/go => ../../http/go
 
-replace github.com/devpablocristo/platform/security/go => ../../security/go
 
-replace github.com/devpablocristo/platform/observability/go => ../../observability/go
 
-replace github.com/devpablocristo/platform/authz/go => ../../authz/go
 
-replace github.com/devpablocristo/platform/notifications/go => ../../notifications/go
+
+replace github.com/devpablocristo/platform/authn/go => ../../../authn/go
+replace github.com/devpablocristo/platform/authz/go => ../../../authz/go
+replace github.com/devpablocristo/platform/errors/go => ../../../errors/go
+replace github.com/devpablocristo/platform/http/go => ../../../http/go
+replace github.com/devpablocristo/platform/observability/go => ../../../observability/go
+replace github.com/devpablocristo/platform/security/go => ../../../security/go

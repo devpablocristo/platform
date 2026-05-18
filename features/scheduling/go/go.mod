@@ -3,10 +3,10 @@ module github.com/devpablocristo/platform/features/scheduling/go
 go 1.26.1
 
 require (
-	github.com/devpablocristo/platform/databases/postgres/go v0.1.1
-	github.com/devpablocristo/platform/errors/go v0.1.0
-	github.com/devpablocristo/platform/http/gin/go v0.1.1
-	github.com/devpablocristo/platform/jobs/go v0.1.0
+	github.com/devpablocristo/platform/databases/postgres/go v0.0.0-00010101000000-000000000000
+	github.com/devpablocristo/platform/errors/go v0.0.0-00010101000000-000000000000
+	github.com/devpablocristo/platform/http/gin/go v0.0.0-00010101000000-000000000000
+	github.com/devpablocristo/platform/jobs/go v0.0.0-00010101000000-000000000000
 	github.com/gin-gonic/gin v1.12.0
 	github.com/google/uuid v1.6.0
 	gorm.io/gorm v1.31.1
@@ -18,9 +18,9 @@ require (
 	github.com/bytedance/sonic v1.15.0 // indirect
 	github.com/bytedance/sonic/loader v0.5.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
-	github.com/devpablocristo/platform/authn/go v0.2.1 // indirect
-	github.com/devpablocristo/platform/http/go v0.1.1 // indirect
-	github.com/devpablocristo/platform/security/go v0.1.0 // indirect
+	github.com/devpablocristo/platform/authn/go v0.0.0-00010101000000-000000000000 // indirect
+	github.com/devpablocristo/platform/http/go v0.0.0-00010101000000-000000000000 // indirect
+	github.com/devpablocristo/platform/security/go v0.0.0-00010101000000-000000000000 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.12 // indirect
 	github.com/gin-contrib/cors v1.7.6 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
@@ -62,3 +62,11 @@ require (
 	gorm.io/driver/postgres v1.5.11 // indirect
 	gorm.io/driver/sqlite v1.6.0 // indirect
 )
+
+replace github.com/devpablocristo/platform/authn/go => ../../../authn/go
+replace github.com/devpablocristo/platform/databases/postgres/go => ../../../databases/postgres/go
+replace github.com/devpablocristo/platform/errors/go => ../../../errors/go
+replace github.com/devpablocristo/platform/http/gin/go => ../../../http/gin/go
+replace github.com/devpablocristo/platform/http/go => ../../../http/go
+replace github.com/devpablocristo/platform/jobs/go => ../../../jobs/go
+replace github.com/devpablocristo/platform/security/go => ../../../security/go
