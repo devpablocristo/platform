@@ -4,3 +4,4 @@ export * from "./search";
 export * from "./confirm";
 export * from "./theme";
 export * from "./observability";
+export * from "./slug";
