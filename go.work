@@ -18,12 +18,12 @@ use (
 	./http/go
 	./ingestion/go
 	./jobs/go
-	./lifecycle/go
 	./kernels/activity/go
 	./kernels/ai/go
 	./kernels/artifact/go
 	./kernels/governance/go
 	./kernels/saas/go
+	./lifecycle/go
 	./notifications/go
 	./observability/go
 	./sdks/aws/lambda/go

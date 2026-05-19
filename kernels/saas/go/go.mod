@@ -26,21 +26,20 @@ require (
 	github.com/prometheus/common v0.66.1 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
-	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
-	google.golang.org/protobuf v1.36.8 // indirect
+	golang.org/x/net v0.51.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/text v0.34.0 // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
 )
 
-
-
-
-
-
-
-
 replace github.com/devpablocristo/platform/authn/go => ../../../authn/go
+
 replace github.com/devpablocristo/platform/authz/go => ../../../authz/go
+
 replace github.com/devpablocristo/platform/errors/go => ../../../errors/go
+
 replace github.com/devpablocristo/platform/http/go => ../../../http/go
+
 replace github.com/devpablocristo/platform/observability/go => ../../../observability/go
+
 replace github.com/devpablocristo/platform/security/go => ../../../security/go
