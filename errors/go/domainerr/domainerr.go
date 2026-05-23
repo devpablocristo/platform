@@ -58,6 +58,25 @@ func NotFoundf(resource, id string) Error {
 	return Newf(KindNotFound, "%s '%s' not found", resource, id)
 }
 
+// --- Tenant-specific named factories ---
+//
+// Wrappers semánticos para errores tenant-aware. Mantienen el Kind subyacente
+// (FORBIDDEN/NOT_FOUND) para compat con clasificadores HTTP existentes, pero
+// con strings canónicos que evitan typos en mensajes de auditoría.
+
+// TenantMissing señala que el contexto/request no llegó con tenant.
+// Encoded as FORBIDDEN (no UNAUTHORIZED) porque el caller suele estar
+// autenticado pero le falta el ámbito tenant — fail-closed.
+func TenantMissing() Error { return Forbidden("tenant context required") }
+
+// TenantMismatch señala que el tenant del caller no matchea el recurso
+// requerido (cross-tenant attempt sin scope cross_org).
+func TenantMismatch() Error { return Forbidden("tenant mismatch") }
+
+// TenantNotFound señala que un tenant id/slug fue resuelto pero no existe.
+// Encoded as NOT_FOUND con formato canónico de NotFoundf.
+func TenantNotFound(id string) Error { return NotFoundf("tenant", id) }
+
 // Is compara por Kind (no por mensaje). Permite errors.Is(err, domainerr.NotFound("")).
 func (e Error) Is(target error) bool {
 	typed, ok := target.(Error)
