@@ -129,25 +129,44 @@ func RequireUUID(ctx context.Context) (uuid.UUID, error) {
 // --- Strict mode ---
 
 var (
-	strictOnce sync.Once
-	strictMode bool
+	strictOverrideMu  sync.RWMutex
+	strictOverrideSet bool
+	strictOverrideVal bool
 )
 
-// StrictModeEnabled retorna true si `TENANT_STRICT_MODE` env var está set
-// a un valor truthy (1, true, yes, y). Se evalúa una sola vez por proceso.
-// `SetStrictMode` puede sobrescribir esto en tests.
+// StrictModeEnabled retorna true si strict mode está activo. Precedencia:
+//  1. Override programático (vía SetStrictMode) si fue seteado.
+//  2. Env var `TENANT_STRICT_MODE` (1/true/yes/y/on) — leída en cada llamada
+//     para compatibilidad con tests que usan `t.Setenv`.
+//
+// Sin cache: el costo de un `os.Getenv` por query es trivial (~ns) y evita
+// edge cases de stale state.
 func StrictModeEnabled() bool {
-	strictOnce.Do(func() {
-		strictMode = parseBool(os.Getenv("TENANT_STRICT_MODE"))
-	})
-	return strictMode
+	strictOverrideMu.RLock()
+	defer strictOverrideMu.RUnlock()
+	if strictOverrideSet {
+		return strictOverrideVal
+	}
+	return parseBool(os.Getenv("TENANT_STRICT_MODE"))
 }
 
-// SetStrictMode fuerza el valor de strict mode. Pensado para tests.
-// No es concurrency-safe; llamar antes de spawn de goroutines.
+// SetStrictMode fuerza el valor de strict mode ignorando el env. Pensado
+// para tests que quieren control determinístico sin t.Setenv. Llamar con
+// `ResetStrictMode()` (o nuevo Set) para limpiar el override.
+// Concurrency-safe.
 func SetStrictMode(enabled bool) {
-	strictOnce.Do(func() {}) // marca la once como consumida
-	strictMode = enabled
+	strictOverrideMu.Lock()
+	defer strictOverrideMu.Unlock()
+	strictOverrideSet = true
+	strictOverrideVal = enabled
+}
+
+// ResetStrictMode borra el override programático; vuelve a leer env.
+func ResetStrictMode() {
+	strictOverrideMu.Lock()
+	defer strictOverrideMu.Unlock()
+	strictOverrideSet = false
+	strictOverrideVal = false
 }
 
 func parseBool(raw string) bool {
