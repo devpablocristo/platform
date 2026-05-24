@@ -136,18 +136,32 @@ var (
 
 // StrictModeEnabled retorna true si strict mode está activo. Precedencia:
 //  1. Override programático (vía SetStrictMode) si fue seteado.
-//  2. Env var `TENANT_STRICT_MODE` (1/true/yes/y/on) — leída en cada llamada
-//     para compatibilidad con tests que usan `t.Setenv`.
+//  2. Env var `TENANT_STRICT_MODE` — leída en cada llamada para compatibilidad
+//     con tests que usan `t.Setenv`.
 //
-// Sin cache: el costo de un `os.Getenv` por query es trivial (~ns) y evita
-// edge cases de stale state.
+// **Default ON desde Fase 7 del plan multitenancy** (2026-05-23). El env var
+// se evalúa así:
+//   - `TENANT_STRICT_MODE` no seteado o vacío → strict TRUE (default seguro).
+//   - `TENANT_STRICT_MODE=0|false|no|off|n` → strict FALSE (opt-out explícito).
+//   - cualquier otro valor → strict TRUE.
+//
+// Sin cache: el costo de un `os.Getenv` por query es trivial (~ns).
 func StrictModeEnabled() bool {
 	strictOverrideMu.RLock()
 	defer strictOverrideMu.RUnlock()
 	if strictOverrideSet {
 		return strictOverrideVal
 	}
-	return parseBool(os.Getenv("TENANT_STRICT_MODE"))
+	raw := strings.TrimSpace(strings.ToLower(os.Getenv("TENANT_STRICT_MODE")))
+	if raw == "" {
+		return true // default ON
+	}
+	switch raw {
+	case "0", "false", "no", "off", "n":
+		return false
+	default:
+		return true
+	}
 }
 
 // SetStrictMode fuerza el valor de strict mode ignorando el env. Pensado
