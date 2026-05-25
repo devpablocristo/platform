@@ -46,11 +46,15 @@ para detalles del proceso y registro de equivalencias de paquetes.
 
 ## Consumers
 
-- **pymes** — rata de laboratorio de esta migración (Ola A). Único consumer
-  migrado durante este ciclo; el resto seguirá importando de `core/modules`
-  hasta su propia migración futura.
-- **ponti, nexus, companion, medmory, toollab** — migración pendiente, fuera
-  del scope de esta Ola.
+- **pymes** — consumer de referencia: ya consume `platform-*`,
+  `platform/lifecycle/go`, Axis Companion y Nexus por HTTP.
+- **ponti** — migración parcial: backend y frontend usan `platform-*`; el
+  backend conversa con Axis Companion y conserva shapes legacy en el BFF.
+- **nexus** y **companion** — consumen piezas de `platform` durante desarrollo;
+  quitar `replace` locales requiere publicar la version correspondiente.
+- **medmory, toollab** — validar antes de eliminar definitivamente repos legacy.
+
+Ver [`docs/migration/CONSUMER_ALIGNMENT.md`](docs/migration/CONSUMER_ALIGNMENT.md).
 
 ## Documentación
 
@@ -70,9 +74,9 @@ El monorepo usa:
 
 ## Estado de la migración
 
-- ✅ Ola A — Fusión core + modules → platform (en curso al momento de escribir este README).
-- ⏳ Ola B — Extracción de transversales de pymes a platform + diseño `lifecycle/`.
-- ⏳ Ola C — Refactor de los módulos CRUDAR de pymes para uniformizar via `lifecycle/`.
+- ✅ Ola A — Fusión core + modules → platform.
+- 🔄 Ola B — Extracción de transversales de pymes a platform + diseño `lifecycle/`.
+- 🔄 Ola C — Refactor de módulos CRUDAR de pymes para uniformizar via `lifecycle/`.
 
 Ver [`docs/migration/MIGRATION_FROM_CORE_MODULES.md`](docs/migration/MIGRATION_FROM_CORE_MODULES.md)
 para el plan detallado.

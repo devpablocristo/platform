@@ -218,7 +218,7 @@ func (s *Service) HardDelete(ctx context.Context, req *HardDeleteRequest) error 
 func (s *Service) BulkArchive(
 	ctx context.Context,
 	resourceType string,
-	tenantID uuid.UUID,
+	tenantID string,
 	actor, reason string,
 	ids []uuid.UUID,
 ) ([]BulkArchiveResult, error) {

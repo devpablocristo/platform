@@ -13,8 +13,8 @@
 //   - Policies are infrastructure: this package defines the mechanism
 //     (interface, validator), the consumer registers concrete policies.
 //   - SQL column names are parametrizable via SoftDeleterConfig.
-//   - Identity (actor, tenant) is opaque strings/UUIDs; this package does not
-//     assume any auth provider.
+//   - Identity (actor, tenant) is opaque strings; this package does not assume
+//     any auth provider or UUID-based tenant format.
 package lifecycle
 
 import (
@@ -38,7 +38,8 @@ const (
 // ArchiveRequest captures the input to SoftDelete and BulkArchive.
 //
 // ResourceType is opaque (e.g. "customer", "quote" — chosen by the caller).
-// TenantID is the owner of the resource (org_id, workspace_id, etc.).
+// TenantID is the owner of the resource (org_id, workspace_id, etc.). It is an
+// opaque string because not every product uses UUID tenants.
 // Actor is the identity performing the action (subject_id, email, service
 // account, agent ID — opaque to this package).
 // Reason is optional and always logged when present.
@@ -46,7 +47,7 @@ const (
 type ArchiveRequest struct {
 	ResourceType string
 	ResourceID   uuid.UUID
-	TenantID     uuid.UUID
+	TenantID     string
 	Actor        string
 	Reason       string
 	BatchID      *uuid.UUID
@@ -56,7 +57,7 @@ type ArchiveRequest struct {
 type RestoreRequest struct {
 	ResourceType string
 	ResourceID   uuid.UUID
-	TenantID     uuid.UUID
+	TenantID     string
 	Actor        string
 	Reason       string
 }
@@ -67,12 +68,12 @@ type RestoreRequest struct {
 // not been archived first (forces a soft → hard transition). Callers that want
 // direct hard deletes can set this to false.
 type HardDeleteRequest struct {
-	ResourceType    string
-	ResourceID      uuid.UUID
-	TenantID        uuid.UUID
-	Actor           string
-	Reason          string
-	MustBeArchived  bool
+	ResourceType   string
+	ResourceID     uuid.UUID
+	TenantID       string
+	Actor          string
+	Reason         string
+	MustBeArchived bool
 }
 
 // ArchiveAudit is the append-only audit record produced by every action.
@@ -81,7 +82,7 @@ type HardDeleteRequest struct {
 // package integrates with by default.
 type ArchiveAudit struct {
 	ID               uuid.UUID
-	TenantID         uuid.UUID
+	TenantID         string
 	ResourceType     string
 	ResourceID       uuid.UUID
 	Action           Action
@@ -94,13 +95,13 @@ type ArchiveAudit struct {
 
 // ArchivedQuery filters ListArchived results.
 type ArchivedQuery struct {
-	TenantID     uuid.UUID
+	TenantID     string
 	ResourceType string // optional; empty = all
 	Since        *time.Time
 	Until        *time.Time
-	Actor        string  // optional
+	Actor        string // optional
 	BatchID      *uuid.UUID
-	Limit        int     // 0 = caller default
+	Limit        int // 0 = caller default
 }
 
 // BulkArchiveResult reports per-ID outcome of BulkArchive.
@@ -124,10 +125,10 @@ type AuditPort interface {
 // The implementation must scope every operation to TenantID for multi-tenant
 // safety.
 type RepositoryPort interface {
-	SoftDelete(ctx context.Context, tenantID, resourceID uuid.UUID, at time.Time) error
-	Restore(ctx context.Context, tenantID, resourceID uuid.UUID) error
-	HardDelete(ctx context.Context, tenantID, resourceID uuid.UUID) error
-	IsArchived(ctx context.Context, tenantID, resourceID uuid.UUID) (bool, error)
+	SoftDelete(ctx context.Context, tenantID string, resourceID uuid.UUID, at time.Time) error
+	Restore(ctx context.Context, tenantID string, resourceID uuid.UUID) error
+	HardDelete(ctx context.Context, tenantID string, resourceID uuid.UUID) error
+	IsArchived(ctx context.Context, tenantID string, resourceID uuid.UUID) (bool, error)
 }
 
 // Clock is used to inject time for tests. Default: time.Now().UTC.

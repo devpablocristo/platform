@@ -13,6 +13,7 @@ import (
 // fakeRepo implements RepositoryPort with an in-memory map.
 type fakeRepo struct {
 	rows         map[uuid.UUID]*time.Time // key = resourceID, value = archivedAt
+	lastTenantID string
 	failNotFound bool
 }
 
@@ -22,7 +23,8 @@ func newFakeRepo() *fakeRepo {
 
 func (r *fakeRepo) seed(id uuid.UUID) { r.rows[id] = nil }
 
-func (r *fakeRepo) SoftDelete(_ context.Context, _, id uuid.UUID, at time.Time) error {
+func (r *fakeRepo) SoftDelete(_ context.Context, tenantID string, id uuid.UUID, at time.Time) error {
+	r.lastTenantID = tenantID
 	v, ok := r.rows[id]
 	if !ok || v != nil {
 		return domainerr.NotFoundf("fake", id.String())
@@ -32,7 +34,8 @@ func (r *fakeRepo) SoftDelete(_ context.Context, _, id uuid.UUID, at time.Time) 
 	return nil
 }
 
-func (r *fakeRepo) Restore(_ context.Context, _, id uuid.UUID) error {
+func (r *fakeRepo) Restore(_ context.Context, tenantID string, id uuid.UUID) error {
+	r.lastTenantID = tenantID
 	v, ok := r.rows[id]
 	if !ok || v == nil {
 		return domainerr.NotFoundf("fake", id.String())
@@ -41,7 +44,8 @@ func (r *fakeRepo) Restore(_ context.Context, _, id uuid.UUID) error {
 	return nil
 }
 
-func (r *fakeRepo) HardDelete(_ context.Context, _, id uuid.UUID) error {
+func (r *fakeRepo) HardDelete(_ context.Context, tenantID string, id uuid.UUID) error {
+	r.lastTenantID = tenantID
 	if _, ok := r.rows[id]; !ok {
 		return domainerr.NotFoundf("fake", id.String())
 	}
@@ -49,7 +53,8 @@ func (r *fakeRepo) HardDelete(_ context.Context, _, id uuid.UUID) error {
 	return nil
 }
 
-func (r *fakeRepo) IsArchived(_ context.Context, _, id uuid.UUID) (bool, error) {
+func (r *fakeRepo) IsArchived(_ context.Context, tenantID string, id uuid.UUID) (bool, error) {
+	r.lastTenantID = tenantID
 	v, ok := r.rows[id]
 	if !ok {
 		return false, domainerr.NotFoundf("fake", id.String())
@@ -98,7 +103,7 @@ func TestSoftDelete_HappyPath(t *testing.T) {
 	err := svc.SoftDelete(context.Background(), &ArchiveRequest{
 		ResourceType: "widget",
 		ResourceID:   id,
-		TenantID:     uuid.New(),
+		TenantID:     "argos-local-org",
 		Actor:        "tester@example.com",
 		Reason:       "ad-hoc",
 	})
@@ -107,6 +112,9 @@ func TestSoftDelete_HappyPath(t *testing.T) {
 	}
 	if repo.rows[id] == nil {
 		t.Fatalf("expected row to be archived")
+	}
+	if repo.lastTenantID != "argos-local-org" {
+		t.Fatalf("expected opaque tenant string, got %q", repo.lastTenantID)
 	}
 	if len(audit.entries) != 1 || audit.entries[0].Action != ActionArchive {
 		t.Fatalf("expected 1 archive audit entry, got %+v", audit.entries)
@@ -122,7 +130,7 @@ func TestSoftDelete_RequiresReason(t *testing.T) {
 	err := svc.SoftDelete(context.Background(), &ArchiveRequest{
 		ResourceType: "widget",
 		ResourceID:   id,
-		TenantID:     uuid.New(),
+		TenantID:     "argos-local-org",
 	})
 	if !errors.Is(err, ErrReasonRequired) {
 		t.Fatalf("expected ErrReasonRequired, got %v", err)
@@ -134,7 +142,7 @@ func TestSoftDelete_BlockedByValidator(t *testing.T) {
 	policy := &ArchivePolicy{
 		ResourceType: "widget",
 		AllowArchive: true,
-		ValidateRelations: func(_ context.Context, _, _ uuid.UUID) error {
+		ValidateRelations: func(_ context.Context, _ string, _ uuid.UUID) error {
 			return sentinel
 		},
 	}
@@ -145,7 +153,7 @@ func TestSoftDelete_BlockedByValidator(t *testing.T) {
 	err := svc.SoftDelete(context.Background(), &ArchiveRequest{
 		ResourceType: "widget",
 		ResourceID:   id,
-		TenantID:     uuid.New(),
+		TenantID:     "argos-local-org",
 	})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("expected sentinel error, got %v", err)
@@ -166,13 +174,13 @@ func TestRestore_HappyPath(t *testing.T) {
 	_ = svc.SoftDelete(context.Background(), &ArchiveRequest{
 		ResourceType: "widget",
 		ResourceID:   id,
-		TenantID:     uuid.New(),
+		TenantID:     "argos-local-org",
 	})
 
 	if err := svc.Restore(context.Background(), &RestoreRequest{
 		ResourceType: "widget",
 		ResourceID:   id,
-		TenantID:     uuid.New(),
+		TenantID:     "argos-local-org",
 		Actor:        "tester@example.com",
 	}); err != nil {
 		t.Fatalf("Restore: %v", err)
@@ -194,7 +202,7 @@ func TestHardDelete_MustBeArchived(t *testing.T) {
 	err := svc.HardDelete(context.Background(), &HardDeleteRequest{
 		ResourceType:   "widget",
 		ResourceID:     id,
-		TenantID:       uuid.New(),
+		TenantID:       "argos-local-org",
 		MustBeArchived: true,
 	})
 	if !errors.Is(err, ErrArchiveNotAllowed) {
@@ -212,7 +220,7 @@ func TestBulkArchive_PerIDOutcomes(t *testing.T) {
 	repo.seed(id1)
 	// id2 not seeded → SoftDelete will return NotFound.
 
-	res, err := svc.BulkArchive(context.Background(), "widget", uuid.New(), "actor", "", []uuid.UUID{id1, id2})
+	res, err := svc.BulkArchive(context.Background(), "widget", "argos-local-org", "actor", "", []uuid.UUID{id1, id2})
 	if err != nil {
 		t.Fatalf("BulkArchive top-level: %v", err)
 	}

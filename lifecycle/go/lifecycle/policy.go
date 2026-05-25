@@ -21,7 +21,7 @@ type ArchivePolicy struct {
 	// ValidateRelations runs before SoftDelete; if it returns a non-nil error,
 	// the archive is rejected. Caller-defined (e.g. "no se puede archivar
 	// si tiene relaciones activas").
-	ValidateRelations func(ctx context.Context, tenantID, resourceID uuid.UUID) error
+	ValidateRelations func(ctx context.Context, tenantID string, resourceID uuid.UUID) error
 	// RetentionDays: 0 = retain forever; >0 = PurgeExpired hard-deletes
 	// records whose ArchivedAt + RetentionDays has elapsed.
 	RetentionDays int

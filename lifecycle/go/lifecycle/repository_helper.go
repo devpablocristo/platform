@@ -63,7 +63,7 @@ func NewSoftDeleter(db *sql.DB, cfg SoftDeleterConfig) (*SoftDeleter, error) {
 // SoftDelete sets ArchivedAtColumn to `at` for the matching row.
 // Returns domainerr.NotFound if no row matched (tenantID + resourceID combo
 // not found or already archived).
-func (s *SoftDeleter) SoftDelete(ctx context.Context, tenantID, resourceID uuid.UUID, at time.Time) error {
+func (s *SoftDeleter) SoftDelete(ctx context.Context, tenantID string, resourceID uuid.UUID, at time.Time) error {
 	q := fmt.Sprintf(
 		`UPDATE %s SET %s = $1 WHERE %s = $2 AND %s = $3 AND %s IS NULL`,
 		s.cfg.Table, s.cfg.ArchivedAtColumn,
@@ -85,7 +85,7 @@ func (s *SoftDeleter) SoftDelete(ctx context.Context, tenantID, resourceID uuid.
 
 // Restore clears ArchivedAtColumn on the matching row.
 // Returns domainerr.NotFound if no archived row matched.
-func (s *SoftDeleter) Restore(ctx context.Context, tenantID, resourceID uuid.UUID) error {
+func (s *SoftDeleter) Restore(ctx context.Context, tenantID string, resourceID uuid.UUID) error {
 	q := fmt.Sprintf(
 		`UPDATE %s SET %s = NULL WHERE %s = $1 AND %s = $2 AND %s IS NOT NULL`,
 		s.cfg.Table, s.cfg.ArchivedAtColumn,
@@ -106,7 +106,7 @@ func (s *SoftDeleter) Restore(ctx context.Context, tenantID, resourceID uuid.UUI
 }
 
 // HardDelete removes the row regardless of its archived state.
-func (s *SoftDeleter) HardDelete(ctx context.Context, tenantID, resourceID uuid.UUID) error {
+func (s *SoftDeleter) HardDelete(ctx context.Context, tenantID string, resourceID uuid.UUID) error {
 	q := fmt.Sprintf(
 		`DELETE FROM %s WHERE %s = $1 AND %s = $2`,
 		s.cfg.Table, s.cfg.IDColumn, s.cfg.TenantColumn,
@@ -127,7 +127,7 @@ func (s *SoftDeleter) HardDelete(ctx context.Context, tenantID, resourceID uuid.
 
 // IsArchived returns true when the row exists and its ArchivedAtColumn is not
 // NULL. Returns (false, domainerr.NotFound) when the row does not exist.
-func (s *SoftDeleter) IsArchived(ctx context.Context, tenantID, resourceID uuid.UUID) (bool, error) {
+func (s *SoftDeleter) IsArchived(ctx context.Context, tenantID string, resourceID uuid.UUID) (bool, error) {
 	q := fmt.Sprintf(
 		`SELECT %s IS NOT NULL FROM %s WHERE %s = $1 AND %s = $2`,
 		s.cfg.ArchivedAtColumn, s.cfg.Table, s.cfg.IDColumn, s.cfg.TenantColumn,

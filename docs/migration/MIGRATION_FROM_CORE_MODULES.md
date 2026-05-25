@@ -99,11 +99,12 @@ centralizada, agregar policies por entidad. Pymes queda como referencia.
 
 | Fase | Estado |
 |------|--------|
-| A0 | ✅ completed |
-| A1 | 🔄 in progress (este commit) |
-| A2-A9 | ⏳ pending |
+| A0-A9 | ✅ completed |
 | A10 | ⏳ futuro (+90 días tras A9) |
-| Olas B, C | ⏳ pending |
+| Ola B | 🔄 in progress |
+| Ola C | 🔄 in progress |
+
+El estado por consumer vive en [`CONSUMER_ALIGNMENT.md`](CONSUMER_ALIGNMENT.md).
 
 ## Snapshots de estado pre-migración
 
