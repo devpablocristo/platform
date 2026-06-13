@@ -1,15 +1,15 @@
-# typecheck + tests del paquete @devpablocristo/modules-crud-ui.
-# Build: context = padre que contiene `modules/`.
+# typecheck + tests del paquete @devpablocristo/platform-crud-ui.
+# Build: context = padre que contiene `platform/`.
 FROM node:20.19.0-bookworm-slim
-WORKDIR /repo/modules/crud/ui/ts
+WORKDIR /repo/platform/features/crud/ui/ts
 
-COPY modules/crud/ui/ts/package.json ./
-COPY modules/crud/ui/ts/package-lock.json ./
+COPY platform/features/crud/ui/ts/package.json ./
+COPY platform/features/crud/ui/ts/package-lock.json ./
 
 RUN npm ci --no-audit --no-fund
 
-COPY modules/crud/ui/ts/ ./
+COPY platform/features/crud/ui/ts/ ./
 
 RUN npm run typecheck && npm test
 
-CMD ["node", "-e", "console.log('modules-crud-ui OK')"]
+CMD ["node", "-e", "console.log('platform-crud-ui OK')"]

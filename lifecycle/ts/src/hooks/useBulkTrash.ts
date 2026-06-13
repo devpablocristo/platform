@@ -1,33 +1,27 @@
 import { useCallback, useState } from "react";
 import type { LifecycleClient } from "../api/lifecycleClient";
 
-export type BulkArchiveOutcome = {
+export type BulkTrashOutcome = {
   resourceId: string;
   ok: boolean;
   error?: Error;
 };
 
-export type UseBulkArchiveResult = {
-  bulkArchive: (params: {
+export type UseBulkTrashResult = {
+  bulkTrash: (params: {
     resourceType: string;
     resourceIds: string[];
     tenantId: string;
     actor: string;
     reason?: string;
-  }) => Promise<BulkArchiveOutcome[]>;
-  isArchiving: boolean;
+  }) => Promise<BulkTrashOutcome[]>;
+  isTrashing: boolean;
 };
 
-/**
- * Sequential bulk archive: archives each ID one at a time, collecting per-ID
- * outcomes. Useful for UIs that want to show a progress bar and report
- * partial failures. For high-throughput batch jobs, the consumer can wire a
- * server-side BulkArchive endpoint and call client.fetcher directly.
- */
-export function useBulkArchive(client: LifecycleClient): UseBulkArchiveResult {
-  const [isArchiving, setIsArchiving] = useState(false);
+export function useBulkTrash(client: LifecycleClient): UseBulkTrashResult {
+  const [isTrashing, setIsTrashing] = useState(false);
 
-  const bulkArchive = useCallback(
+  const bulkTrash = useCallback(
     async (params: {
       resourceType: string;
       resourceIds: string[];
@@ -35,13 +29,13 @@ export function useBulkArchive(client: LifecycleClient): UseBulkArchiveResult {
       actor: string;
       reason?: string;
     }) => {
-      setIsArchiving(true);
+      setIsTrashing(true);
       const batchId = generateBatchId();
-      const outcomes: BulkArchiveOutcome[] = [];
+      const outcomes: BulkTrashOutcome[] = [];
       try {
         for (const id of params.resourceIds) {
           try {
-            await client.archive({
+            await client.trash({
               resourceType: params.resourceType,
               resourceId: id,
               tenantId: params.tenantId,
@@ -59,19 +53,17 @@ export function useBulkArchive(client: LifecycleClient): UseBulkArchiveResult {
           }
         }
       } finally {
-        setIsArchiving(false);
+        setIsTrashing(false);
       }
       return outcomes;
     },
     [client],
   );
 
-  return { bulkArchive, isArchiving };
+  return { bulkTrash, isTrashing };
 }
 
 function generateBatchId(): string {
-  // Avoid pulling in crypto deps; uuid v4-ish from crypto.randomUUID() if
-  // available, otherwise a coarser timestamp-based identifier.
   const g = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
   if (g?.randomUUID) return g.randomUUID();
   return `batch-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;

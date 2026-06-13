@@ -1,23 +1,23 @@
 import { useState } from "react";
-import type { ArchivePolicy, RetentionLabels } from "../types";
+import type { LifecyclePolicy, RetentionLabels } from "../types";
 
 export type RetentionPolicyPanelProps = {
-  policy: ArchivePolicy;
-  onChange: (next: ArchivePolicy) => void;
+  policy: LifecyclePolicy;
+  onChange: (next: LifecyclePolicy) => void;
   labels: RetentionLabels;
   /** When true, disables interaction (e.g. read-only view for non-admins). */
   readOnly?: boolean;
 };
 
 /**
- * Editable view of an ArchivePolicy for admin surfaces. As with
+ * Editable view of a LifecyclePolicy for admin surfaces. As with
  * ArchiveConfirmDialog, this is unstyled and label-driven so the consumer can
  * wrap or restyle freely.
  */
 export function RetentionPolicyPanel(props: RetentionPolicyPanelProps) {
-  const [draft, setDraft] = useState<ArchivePolicy>(props.policy);
+  const [draft, setDraft] = useState<LifecyclePolicy>(props.policy);
 
-  const update = (patch: Partial<ArchivePolicy>) => {
+  const update = (patch: Partial<LifecyclePolicy>) => {
     const next = { ...draft, ...patch };
     setDraft(next);
     props.onChange(next);
@@ -41,11 +41,11 @@ export function RetentionPolicyPanel(props: RetentionPolicyPanelProps) {
       <label>
         <input
           type="checkbox"
-          checked={draft.allowHardDelete}
-          onChange={(e) => update({ allowHardDelete: e.target.checked })}
+          checked={draft.allowPurge}
+          onChange={(e) => update({ allowPurge: e.target.checked })}
           disabled={props.readOnly}
         />
-        <span>{props.labels.allowHardDeleteLabel}</span>
+        <span>{props.labels.allowPurgeLabel}</span>
       </label>
       <label>
         <input

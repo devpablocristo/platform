@@ -1,9 +1,9 @@
 import { useState } from "react";
-import type { ArchiveLabels, ArchivePolicy } from "../types";
+import type { ArchiveLabels, LifecyclePolicy } from "../types";
 
 export type ArchiveConfirmDialogProps = {
   open: boolean;
-  policy: ArchivePolicy;
+  policy: LifecyclePolicy;
   labels: ArchiveLabels;
   onConfirm: (reason?: string) => void | Promise<void>;
   onCancel: () => void;

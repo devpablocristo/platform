@@ -8,18 +8,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// Service is the default ArchiveService implementation. It composes a
-// RepositoryPort (mutates the resource's table), an AuditPort (records the
-// action), and a PolicyRegistry (enforces per-ResourceType rules).
-//
-// A single Service instance is *not* tied to a single ResourceType — the
-// caller passes ResourceType in each request, and Service dispatches to the
-// registered policy + the RepositoryPort registered for that type.
-//
-// Multi-table dispatch: consumers typically register a separate
-// RepositoryPort per ResourceType (e.g. one for customers, one for quotes).
-// See NewServiceWithRepos for that pattern. The single-repo constructor
-// (NewService) is convenient when all resources share one table.
+// Service composes repositories that mutate resource tables, an AuditPort and
+// a PolicyRegistry. A single Service can handle multiple ResourceTypes.
 type Service struct {
 	repos    map[string]RepositoryPort
 	audit    AuditPort
@@ -29,9 +19,7 @@ type Service struct {
 }
 
 // NewServiceWithRepos wires a Service against one RepositoryPort per
-// ResourceType. Required: at least one entry in repos, plus audit and
-// policies. Optional: clock (defaults to time.Now().UTC) and newID
-// (defaults to uuid.New).
+// ResourceType.
 func NewServiceWithRepos(
 	repos map[string]RepositoryPort,
 	audit AuditPort,
@@ -63,7 +51,7 @@ func NewServiceWithRepos(
 // ServiceOption customizes the Service at construction time.
 type ServiceOption func(*Service)
 
-// WithClock overrides the time source (test injection).
+// WithClock overrides the time source.
 func WithClock(c Clock) ServiceOption {
 	return func(s *Service) {
 		if c != nil {
@@ -72,7 +60,7 @@ func WithClock(c Clock) ServiceOption {
 	}
 }
 
-// WithIDGenerator overrides the audit ID generator (test injection).
+// WithIDGenerator overrides the audit ID generator.
 func WithIDGenerator(gen func() uuid.UUID) ServiceOption {
 	return func(s *Service) {
 		if gen != nil {
@@ -89,15 +77,8 @@ func (s *Service) repoFor(resourceType string) (RepositoryPort, error) {
 	return r, nil
 }
 
-// SoftDelete archives a resource. Steps:
-//  1. Resolve policy for req.ResourceType.
-//  2. Check AllowArchive and RequireReason.
-//  3. Run policy.ValidateRelations if defined.
-//  4. Resolve RepositoryPort and call SoftDelete (idempotency: a 2nd call
-//     against an already-archived resource returns domainerr.NotFound — see
-//     SoftDeleter.SoftDelete).
-//  5. Append audit record.
-func (s *Service) SoftDelete(ctx context.Context, req *ArchiveRequest) error {
+// Archive moves an active resource to the archived state.
+func (s *Service) Archive(ctx context.Context, req *ArchiveRequest) error {
 	if req == nil {
 		return fmt.Errorf("lifecycle: nil ArchiveRequest")
 	}
@@ -108,11 +89,11 @@ func (s *Service) SoftDelete(ctx context.Context, req *ArchiveRequest) error {
 	if !policy.AllowArchive {
 		return ErrArchiveNotAllowed
 	}
-	if policy.RequireReason && req.Reason == "" {
-		return ErrReasonRequired
+	if err := requireReason(policy, req.Reason); err != nil {
+		return err
 	}
-	if policy.ValidateRelations != nil {
-		if err := policy.ValidateRelations(ctx, req.TenantID, req.ResourceID); err != nil {
+	if policy.ValidateArchive != nil {
+		if err := policy.ValidateArchive(ctx, req.TenantID, req.ResourceID); err != nil {
 			return err
 		}
 	}
@@ -121,14 +102,85 @@ func (s *Service) SoftDelete(ctx context.Context, req *ArchiveRequest) error {
 		return err
 	}
 	now := s.clock()
-	if err := repo.SoftDelete(ctx, req.TenantID, req.ResourceID, now); err != nil {
+	if err := repo.Archive(ctx, req.TenantID, req.ResourceID, now); err != nil {
 		return err
 	}
-	return s.appendAudit(ctx, req, policy, ActionArchive, now)
+	return s.appendAudit(ctx, auditInput{
+		tenantID: req.TenantID, resourceType: req.ResourceType, resourceID: req.ResourceID,
+		action: ActionArchive, occurredAt: now, actor: req.Actor, reason: req.Reason,
+		batchID: req.BatchID, fromState: StateActive, toState: StateArchived,
+	})
 }
 
-// Restore brings an archived resource back. Returns domainerr.NotFound if
-// it wasn't archived.
+// Unarchive moves an archived resource back to active.
+func (s *Service) Unarchive(ctx context.Context, req *UnarchiveRequest) error {
+	if req == nil {
+		return fmt.Errorf("lifecycle: nil UnarchiveRequest")
+	}
+	policy, err := s.policies.Get(req.ResourceType)
+	if err != nil {
+		return err
+	}
+	if !policy.AllowArchive {
+		return ErrArchiveNotAllowed
+	}
+	repo, err := s.repoFor(req.ResourceType)
+	if err != nil {
+		return err
+	}
+	if err := repo.Unarchive(ctx, req.TenantID, req.ResourceID); err != nil {
+		return err
+	}
+	now := s.clock()
+	return s.appendAudit(ctx, auditInput{
+		tenantID: req.TenantID, resourceType: req.ResourceType, resourceID: req.ResourceID,
+		action: ActionUnarchive, occurredAt: now, actor: req.Actor, reason: req.Reason,
+		fromState: StateArchived, toState: StateActive,
+	})
+}
+
+// Trash moves a resource to the reversible delete state.
+func (s *Service) Trash(ctx context.Context, req *TrashRequest) error {
+	if req == nil {
+		return fmt.Errorf("lifecycle: nil TrashRequest")
+	}
+	policy, err := s.policies.Get(req.ResourceType)
+	if err != nil {
+		return err
+	}
+	if !policy.AllowTrash {
+		return ErrTrashNotAllowed
+	}
+	if err := requireReason(policy, req.Reason); err != nil {
+		return err
+	}
+	if policy.ValidateTrash != nil {
+		if err := policy.ValidateTrash(ctx, req.TenantID, req.ResourceID); err != nil {
+			return err
+		}
+	}
+	repo, err := s.repoFor(req.ResourceType)
+	if err != nil {
+		return err
+	}
+	now := s.clock()
+	var purgeAfter *time.Time
+	if policy.RetentionDays > 0 {
+		t := now.AddDate(0, 0, policy.RetentionDays)
+		purgeAfter = &t
+	}
+	if err := repo.Trash(ctx, req.TenantID, req.ResourceID, now, purgeAfter); err != nil {
+		return err
+	}
+	return s.appendAudit(ctx, auditInput{
+		tenantID: req.TenantID, resourceType: req.ResourceType, resourceID: req.ResourceID,
+		action: ActionTrash, occurredAt: now, actor: req.Actor, reason: req.Reason,
+		batchID: req.BatchID, fromState: StateActive, toState: StateTrashed,
+		retentionExpires: purgeAfter,
+	})
+}
+
+// Restore moves a trashed resource back to active.
 func (s *Service) Restore(ctx context.Context, req *RestoreRequest) error {
 	if req == nil {
 		return fmt.Errorf("lifecycle: nil RestoreRequest")
@@ -137,11 +189,8 @@ func (s *Service) Restore(ctx context.Context, req *RestoreRequest) error {
 	if err != nil {
 		return err
 	}
-	// AllowArchive=false also disables Restore (you can't restore what you
-	// can't archive). Consumers wanting one-way archival should set AllowArchive=true
-	// but reject Restore via ValidateRelations on the consumer side.
-	if !policy.AllowArchive {
-		return ErrArchiveNotAllowed
+	if !policy.AllowTrash {
+		return ErrTrashNotAllowed
 	}
 	repo, err := s.repoFor(req.ResourceType)
 	if err != nil {
@@ -151,70 +200,58 @@ func (s *Service) Restore(ctx context.Context, req *RestoreRequest) error {
 		return err
 	}
 	now := s.clock()
-	reason := optionalReason(req.Reason)
-	return s.audit.Append(ctx, ArchiveAudit{
-		ID:           s.newID(),
-		TenantID:     req.TenantID,
-		ResourceType: req.ResourceType,
-		ResourceID:   req.ResourceID,
-		Action:       ActionRestore,
-		OccurredAt:   now,
-		Actor:        req.Actor,
-		Reason:       reason,
+	return s.appendAudit(ctx, auditInput{
+		tenantID: req.TenantID, resourceType: req.ResourceType, resourceID: req.ResourceID,
+		action: ActionRestore, occurredAt: now, actor: req.Actor, reason: req.Reason,
+		fromState: StateTrashed, toState: StateActive,
 	})
 }
 
-// HardDelete permanently removes the resource. Enforces policy.AllowHardDelete.
-// When req.MustBeArchived = true, the resource must be already archived (per
-// policy intent of soft-then-hard).
-func (s *Service) HardDelete(ctx context.Context, req *HardDeleteRequest) error {
+// Purge permanently removes the resource. Prefer MustBeTrashed=true for
+// user-facing products.
+func (s *Service) Purge(ctx context.Context, req *PurgeRequest) error {
 	if req == nil {
-		return fmt.Errorf("lifecycle: nil HardDeleteRequest")
+		return fmt.Errorf("lifecycle: nil PurgeRequest")
 	}
 	policy, err := s.policies.Get(req.ResourceType)
 	if err != nil {
 		return err
 	}
-	if !policy.AllowHardDelete {
-		return ErrHardDeleteNotAllowed
+	if !policy.AllowPurge {
+		return ErrPurgeNotAllowed
 	}
-	if policy.RequireReason && req.Reason == "" {
-		return ErrReasonRequired
+	if err := requireReason(policy, req.Reason); err != nil {
+		return err
+	}
+	if policy.ValidatePurge != nil {
+		if err := policy.ValidatePurge(ctx, req.TenantID, req.ResourceID); err != nil {
+			return err
+		}
 	}
 	repo, err := s.repoFor(req.ResourceType)
 	if err != nil {
 		return err
 	}
-	if req.MustBeArchived {
-		archived, err := repo.IsArchived(ctx, req.TenantID, req.ResourceID)
-		if err != nil {
-			return err
-		}
-		if !archived {
-			return ErrArchiveNotAllowed // misuse: caller wanted soft-first
-		}
+	fromState, err := repo.State(ctx, req.TenantID, req.ResourceID)
+	if err != nil {
+		return err
 	}
-	if err := repo.HardDelete(ctx, req.TenantID, req.ResourceID); err != nil {
+	if req.MustBeTrashed && fromState != StateTrashed {
+		return ErrMustBeTrashed
+	}
+	if err := repo.Purge(ctx, req.TenantID, req.ResourceID); err != nil {
 		return err
 	}
 	now := s.clock()
-	reason := optionalReason(req.Reason)
-	return s.audit.Append(ctx, ArchiveAudit{
-		ID:           s.newID(),
-		TenantID:     req.TenantID,
-		ResourceType: req.ResourceType,
-		ResourceID:   req.ResourceID,
-		Action:       ActionHardDelete,
-		OccurredAt:   now,
-		Actor:        req.Actor,
-		Reason:       reason,
+	return s.appendAudit(ctx, auditInput{
+		tenantID: req.TenantID, resourceType: req.ResourceType, resourceID: req.ResourceID,
+		action: ActionPurge, occurredAt: now, actor: req.Actor, reason: req.Reason,
+		fromState: fromState, toState: StatePurged,
 	})
 }
 
-// BulkArchive archives multiple resources of the same ResourceType. Each ID
-// is processed independently; per-ID errors are accumulated and returned in
-// the result slice. A non-nil top-level error indicates a configuration
-// problem (e.g. unknown ResourceType, policy lookup failed).
+// BulkArchive archives multiple resources of the same ResourceType. Each ID is
+// processed independently; per-ID errors are accumulated and returned.
 func (s *Service) BulkArchive(
 	ctx context.Context,
 	resourceType string,
@@ -229,8 +266,8 @@ func (s *Service) BulkArchive(
 	if !policy.AllowArchive {
 		return nil, ErrArchiveNotAllowed
 	}
-	if policy.RequireReason && reason == "" {
-		return nil, ErrReasonRequired
+	if err := requireReason(policy, reason); err != nil {
+		return nil, err
 	}
 	batchID := s.newID()
 	results := make([]BulkArchiveResult, 0, len(ids))
@@ -245,36 +282,85 @@ func (s *Service) BulkArchive(
 		}
 		results = append(results, BulkArchiveResult{
 			ResourceID: id,
-			Err:        s.SoftDelete(ctx, req),
+			Err:        s.Archive(ctx, req),
 		})
 	}
 	return results, nil
 }
 
-func (s *Service) appendAudit(
+// BulkTrash trashes multiple resources of the same ResourceType. Each ID is
+// processed independently; per-ID errors are accumulated and returned.
+func (s *Service) BulkTrash(
 	ctx context.Context,
-	req *ArchiveRequest,
-	policy *ArchivePolicy,
-	action Action,
-	occurredAt time.Time,
-) error {
-	var retention *time.Time
-	if policy.RetentionDays > 0 {
-		t := occurredAt.AddDate(0, 0, policy.RetentionDays)
-		retention = &t
+	resourceType string,
+	tenantID string,
+	actor, reason string,
+	ids []uuid.UUID,
+) ([]BulkTrashResult, error) {
+	policy, err := s.policies.Get(resourceType)
+	if err != nil {
+		return nil, err
 	}
-	reason := optionalReason(req.Reason)
-	return s.audit.Append(ctx, ArchiveAudit{
+	if !policy.AllowTrash {
+		return nil, ErrTrashNotAllowed
+	}
+	if err := requireReason(policy, reason); err != nil {
+		return nil, err
+	}
+	batchID := s.newID()
+	results := make([]BulkTrashResult, 0, len(ids))
+	for _, id := range ids {
+		req := &TrashRequest{
+			ResourceType: resourceType,
+			ResourceID:   id,
+			TenantID:     tenantID,
+			Actor:        actor,
+			Reason:       reason,
+			BatchID:      &batchID,
+		}
+		results = append(results, BulkTrashResult{
+			ResourceID: id,
+			Err:        s.Trash(ctx, req),
+		})
+	}
+	return results, nil
+}
+
+func requireReason(policy *LifecyclePolicy, reason string) error {
+	if policy.RequireReason && reason == "" {
+		return ErrReasonRequired
+	}
+	return nil
+}
+
+type auditInput struct {
+	tenantID         string
+	resourceType     string
+	resourceID       uuid.UUID
+	action           Action
+	occurredAt       time.Time
+	actor            string
+	reason           string
+	batchID          *uuid.UUID
+	fromState        LifecycleState
+	toState          LifecycleState
+	retentionExpires *time.Time
+}
+
+func (s *Service) appendAudit(ctx context.Context, in auditInput) error {
+	return s.audit.Append(ctx, LifecycleAudit{
 		ID:               s.newID(),
-		TenantID:         req.TenantID,
-		ResourceType:     req.ResourceType,
-		ResourceID:       req.ResourceID,
-		Action:           action,
-		OccurredAt:       occurredAt,
-		Actor:            req.Actor,
-		Reason:           reason,
-		BatchID:          req.BatchID,
-		RetentionExpires: retention,
+		TenantID:         in.tenantID,
+		ResourceType:     in.resourceType,
+		ResourceID:       in.resourceID,
+		Action:           in.action,
+		OccurredAt:       in.occurredAt,
+		Actor:            in.actor,
+		Reason:           optionalReason(in.reason),
+		BatchID:          in.batchID,
+		FromState:        in.fromState,
+		ToState:          in.toState,
+		RetentionExpires: in.retentionExpires,
 	})
 }
 

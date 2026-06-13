@@ -1,40 +1,45 @@
-# @devpablocristo/modules-crud-ui
+# @devpablocristo/platform-crud-ui
 
-Componentes React + utilidades para construir páginas CRUD configurables
-(lista paginada + búsqueda + filtros + bulk actions + edición). Pensado para
-montar verticales de negocio (billing, scheduling, etc.) sin reescribir
-shell de tabla.
+React components and utilities for configurable CRUD pages with explicit
+lifecycle views.
 
-## Instalación
+The lifecycle surface is:
+
+- `active`
+- `archived`
+- `trash`
+
+Archive is not deletion. Trash is reversible deletion. Purge is irreversible.
+
+## Install
 
 ```bash
-npm install @devpablocristo/modules-crud-ui
+npm install @devpablocristo/platform-crud-ui
 ```
 
-## Uso
+## Usage
 
 ```tsx
-import { CrudPage } from '@devpablocristo/modules-crud-ui'
+import { CrudPage } from "@devpablocristo/platform-crud-ui";
 
 <CrudPage
-  resource="invoices"
-  columns={invoiceColumns}
-  fetchPage={fetchInvoicesPage}
-  features={{ sort: true, filters: true, export: true }}
-/>
+  basePath="/v1/documents"
+  supportsArchived
+  supportsTrash
+  label="document"
+  labelPlural="documents"
+  labelPluralCap="Documents"
+  columns={columns}
+  formFields={fields}
+  searchText={(row) => row.title}
+  toFormValues={(row) => ({ title: row.title })}
+  isValid={(values) => String(values.title ?? "").trim().length > 0}
+/>;
 ```
 
-## Qué incluye
+## Included
 
-- `CrudPage.tsx` — shell de página CRUD con paginación cursor/offset
-- `crudFeatureDefaults.ts` — opt-in de features (sort, filters, export, etc.)
-- `crudUiPreferences.ts` + `CrudUiPreferencesPanel.tsx` — persistencia local de columnas/sort por usuario
-- `columnSort.ts`, `csvToolbarMerge.ts` — helpers internos
-
-## Peer deps
-
-- `react`: `^18.0.0 || ^19.0.0`
-
-## Consumidores
-
-pymes/frontend
+- `CrudPage.tsx`: CRUD page shell with lifecycle views.
+- `restPaths.ts`: route helpers aligned with `platform/lifecycle/go/paths`.
+- `crudUiPreferences.ts` and `CrudUiPreferencesPanel.tsx`: local UI preferences.
+- `columnSort.ts`, `csvToolbarMerge.ts`: table helpers.

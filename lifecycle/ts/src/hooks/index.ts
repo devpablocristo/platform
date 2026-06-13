@@ -1,4 +1,7 @@
 export { useArchive } from "./useArchive";
+export { useUnarchive } from "./useUnarchive";
+export { useTrash } from "./useTrash";
 export { useRestore } from "./useRestore";
-export { useHardDelete } from "./useHardDelete";
+export { usePurge } from "./usePurge";
 export { useBulkArchive } from "./useBulkArchive";
+export { useBulkTrash } from "./useBulkTrash";

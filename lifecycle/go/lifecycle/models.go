@@ -1,20 +1,13 @@
-// Package lifecycle provides a domain-agnostic API for the CRUDAR cycle:
-// Create-Read-Update-Delete-Archive-Restore (and bulk archive, retention,
-// audit, policies).
+// Package lifecycle provides domain-agnostic primitives for the canonical
+// resource lifecycle:
 //
-// Design constraints (see platform/docs/migration plan — Invariantes de
-// agnosticidad):
+//	active -> archived -> active
+//	active/archived -> trashed -> active
+//	trashed -> purged
 //
-//   - ResourceType and Action are opaque strings. This package does not know
-//     any product entity (no "customer", "quote", "invoice", etc.). The
-//     consumer (e.g. pymes) supplies the vocabulary.
-//   - Audit schema is polymorphic via resource_type + resource_id. No foreign
-//     keys to domain tables.
-//   - Policies are infrastructure: this package defines the mechanism
-//     (interface, validator), the consumer registers concrete policies.
-//   - SQL column names are parametrizable via SoftDeleterConfig.
-//   - Identity (actor, tenant) is opaque strings; this package does not assume
-//     any auth provider or UUID-based tenant format.
+// Archive is not deletion. Archived resources are retained but excluded from
+// active workflows by default. Trash is the reversible delete state. Purge is
+// irreversible deletion.
 package lifecycle
 
 import (
@@ -24,26 +17,35 @@ import (
 	"github.com/google/uuid"
 )
 
-// Action is the action recorded in audit. Conventional values used by this
-// package: ActionArchive, ActionRestore, ActionHardDelete. Callers can extend
-// with their own values (the field is a plain string).
+// LifecycleState is the canonical state of a resource.
+type LifecycleState string
+
+const (
+	StateActive   LifecycleState = "active"
+	StateArchived LifecycleState = "archived"
+	StateTrashed  LifecycleState = "trashed"
+	StatePurged   LifecycleState = "purged"
+)
+
+// ParticipatesInAutomation returns true when resources in state should be
+// included by default in automation, derived intelligence and active workflows.
+func ParticipatesInAutomation(state LifecycleState) bool {
+	return state == "" || state == StateActive
+}
+
+// Action is the action recorded in audit. Callers can extend with their own
+// values because the field is a plain string.
 type Action string
 
 const (
-	ActionArchive    Action = "archive"
-	ActionRestore    Action = "restore"
-	ActionHardDelete Action = "hard_delete"
+	ActionArchive   Action = "archive"
+	ActionUnarchive Action = "unarchive"
+	ActionTrash     Action = "trash"
+	ActionRestore   Action = "restore"
+	ActionPurge     Action = "purge"
 )
 
-// ArchiveRequest captures the input to SoftDelete and BulkArchive.
-//
-// ResourceType is opaque (e.g. "customer", "quote" — chosen by the caller).
-// TenantID is the owner of the resource (org_id, workspace_id, etc.). It is an
-// opaque string because not every product uses UUID tenants.
-// Actor is the identity performing the action (subject_id, email, service
-// account, agent ID — opaque to this package).
-// Reason is optional and always logged when present.
-// BatchID groups bulk operations under a single correlation ID.
+// ArchiveRequest captures the input to Archive and BulkArchive.
 type ArchiveRequest struct {
 	ResourceType string
 	ResourceID   uuid.UUID
@@ -53,7 +55,27 @@ type ArchiveRequest struct {
 	BatchID      *uuid.UUID
 }
 
-// RestoreRequest captures the input to Restore.
+// UnarchiveRequest captures the input to Unarchive.
+type UnarchiveRequest struct {
+	ResourceType string
+	ResourceID   uuid.UUID
+	TenantID     string
+	Actor        string
+	Reason       string
+}
+
+// TrashRequest captures the input to Trash and BulkTrash.
+type TrashRequest struct {
+	ResourceType string
+	ResourceID   uuid.UUID
+	TenantID     string
+	Actor        string
+	Reason       string
+	BatchID      *uuid.UUID
+}
+
+// RestoreRequest captures the input to Restore, which moves a trashed resource
+// back to active.
 type RestoreRequest struct {
 	ResourceType string
 	ResourceID   uuid.UUID
@@ -62,25 +84,21 @@ type RestoreRequest struct {
 	Reason       string
 }
 
-// HardDeleteRequest captures the input to HardDelete.
+// PurgeRequest captures the input to Purge.
 //
-// MustBeArchived: when true, HardDelete refuses to delete a resource that has
-// not been archived first (forces a soft → hard transition). Callers that want
-// direct hard deletes can set this to false.
-type HardDeleteRequest struct {
-	ResourceType   string
-	ResourceID     uuid.UUID
-	TenantID       string
-	Actor          string
-	Reason         string
-	MustBeArchived bool
+// MustBeTrashed should be true for user-facing products. Set it to false only
+// for explicit administrative or compliance workflows that can purge directly.
+type PurgeRequest struct {
+	ResourceType  string
+	ResourceID    uuid.UUID
+	TenantID      string
+	Actor         string
+	Reason        string
+	MustBeTrashed bool
 }
 
-// ArchiveAudit is the append-only audit record produced by every action.
-// The hash chain (PrevHash → Hash) is computed by the implementation; see
-// platform/kernels/activity/go for the canonical hash-chain audit log this
-// package integrates with by default.
-type ArchiveAudit struct {
+// LifecycleAudit is the append-only audit record produced by every action.
+type LifecycleAudit struct {
 	ID               uuid.UUID
 	TenantID         string
 	ResourceType     string
@@ -90,13 +108,16 @@ type ArchiveAudit struct {
 	Actor            string
 	Reason           *string
 	BatchID          *uuid.UUID
+	FromState        LifecycleState
+	ToState          LifecycleState
 	RetentionExpires *time.Time
 }
 
-// ArchivedQuery filters ListArchived results.
-type ArchivedQuery struct {
+// LifecycleQuery filters lifecycle listings.
+type LifecycleQuery struct {
 	TenantID     string
 	ResourceType string // optional; empty = all
+	State        LifecycleState
 	Since        *time.Time
 	Until        *time.Time
 	Actor        string // optional
@@ -110,25 +131,28 @@ type BulkArchiveResult struct {
 	Err        error // nil on success
 }
 
-// AuditPort is the dependency this package needs to persist audit records.
-// Consumers typically wire platform/kernels/activity/go but any
-// implementation that respects the contract is acceptable.
-type AuditPort interface {
-	Append(ctx context.Context, entry ArchiveAudit) error
+// BulkTrashResult reports per-ID outcome of BulkTrash.
+type BulkTrashResult struct {
+	ResourceID uuid.UUID
+	Err        error // nil on success
 }
 
-// RepositoryPort is the dependency this package needs to persist the soft
-// archive on the resource's own table. Implementations are typically
-// generated by NewSoftDeleter (see repository_helper.go) or hand-written by
-// the consumer for tables with non-standard schemas.
+// AuditPort persists lifecycle audit records.
+type AuditPort interface {
+	Append(ctx context.Context, entry LifecycleAudit) error
+}
+
+// RepositoryPort persists lifecycle transitions on the resource's own table.
 //
-// The implementation must scope every operation to TenantID for multi-tenant
+// Implementations must scope every operation to TenantID for multi-tenant
 // safety.
 type RepositoryPort interface {
-	SoftDelete(ctx context.Context, tenantID string, resourceID uuid.UUID, at time.Time) error
+	Archive(ctx context.Context, tenantID string, resourceID uuid.UUID, at time.Time) error
+	Unarchive(ctx context.Context, tenantID string, resourceID uuid.UUID) error
+	Trash(ctx context.Context, tenantID string, resourceID uuid.UUID, at time.Time, purgeAfter *time.Time) error
 	Restore(ctx context.Context, tenantID string, resourceID uuid.UUID) error
-	HardDelete(ctx context.Context, tenantID string, resourceID uuid.UUID) error
-	IsArchived(ctx context.Context, tenantID string, resourceID uuid.UUID) (bool, error)
+	Purge(ctx context.Context, tenantID string, resourceID uuid.UUID) error
+	State(ctx context.Context, tenantID string, resourceID uuid.UUID) (LifecycleState, error)
 }
 
 // Clock is used to inject time for tests. Default: time.Now().UTC.

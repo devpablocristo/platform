@@ -9,6 +9,7 @@ export type CrudListHeaderSlotContext<T> = { items: T[] };
 
 export type CrudFieldValue = string | boolean;
 export type CrudFormValues = Record<string, CrudFieldValue>;
+export type CrudLifecycleView = "active" | "archived" | "trash";
 
 export type CrudColumn<T> = {
   key: keyof T & string;
@@ -38,17 +39,15 @@ export type CrudFormField = {
   options?: Array<{ label: string; value: string }>;
 };
 
-/**
- * Puertos de datos: la app implementa llamadas a su API.
- * deleteItem: archivo lógico o POST /archive, según el backend.
- */
 export type CrudDataSource<T extends { id: string }> = {
-  list?: (params: { archived: boolean }) => Promise<T[]>;
+  list?: (params: { view: CrudLifecycleView }) => Promise<T[]>;
   create?: (values: CrudFormValues) => Promise<unknown>;
   update?: (row: T, values: CrudFormValues) => Promise<unknown>;
-  deleteItem?: (row: T) => Promise<unknown>;
+  archive?: (row: T) => Promise<unknown>;
+  trash?: (row: T) => Promise<unknown>;
+  unarchive?: (row: T) => Promise<unknown>;
   restore?: (row: T) => Promise<unknown>;
-  hardDelete?: (row: T) => Promise<unknown>;
+  purge?: (row: T) => Promise<unknown>;
 };
 
 export type CrudHelpers<T extends { id: string }> = {
@@ -61,7 +60,7 @@ export type CrudToolbarAction<T extends { id: string }> = {
   id: string;
   label: string;
   kind?: "primary" | "secondary" | "danger" | "success";
-  isVisible?: (ctx: { archived: boolean; items: T[] }) => boolean;
+  isVisible?: (ctx: { view: CrudLifecycleView; items: T[] }) => boolean;
   onClick: (helpers: CrudHelpers<T>) => Promise<void> | void;
 };
 
@@ -69,7 +68,7 @@ export type CrudRowAction<T extends { id: string }> = {
   id: string;
   label: string;
   kind?: "primary" | "secondary" | "danger" | "success";
-  isVisible?: (row: T, ctx: { archived: boolean }) => boolean;
+  isVisible?: (row: T, ctx: { view: CrudLifecycleView }) => boolean;
   onClick: (row: T, helpers: CrudHelpers<T>) => Promise<void> | void;
 };
 
@@ -106,6 +105,8 @@ export type CrudFeatureFlags = {
   pagination?: boolean;
   /** Botón «Ver archivados» en toolbar. `false` equivale a `supportsArchived: false` al aplicar override. */
   archivedToggle?: boolean;
+  /** Botón «Ver papelera» en toolbar. `false` equivale a `supportsTrash: false` al aplicar override. */
+  trashToggle?: boolean;
   /** Botón «Crear» en toolbar. `false` equivale a `allowCreate: false` al aplicar override. */
   createAction?: boolean;
   tagsColumn?: boolean;
@@ -120,23 +121,28 @@ export type CrudPageConfig<T extends { id: string }> = {
   basePath?: string;
   /** Query sin `?`; se concatena al GET de listado. */
   listQuery?: string;
-  /** Nombre del parámetro de cursor. Por defecto `cursor`; usar `after` solo para backends legacy. */
+  /** Nombre del parámetro de cursor. Por defecto `cursor`. */
   paginationCursorParam?: "cursor" | "after" | (string & {});
   dataSource?: CrudDataSource<T>;
   /** Obligatorio si hay `basePath` y no hay `dataSource.list`. */
   httpClient?: CrudHttpClient;
   supportsArchived?: boolean;
+  supportsTrash?: boolean;
   allowCreate?: boolean;
   allowEdit?: boolean;
-  allowDelete?: boolean;
+  allowArchive?: boolean;
+  allowTrash?: boolean;
+  allowUnarchive?: boolean;
   allowRestore?: boolean;
-  allowHardDelete?: boolean;
+  allowPurge?: boolean;
   label: string;
   labelPlural: string;
   labelPluralCap: string;
   columns: CrudColumn<T>[];
   /** Variante opcional de columnas para la vista de archivados. */
   archivedColumns?: CrudColumn<T>[];
+  /** Variante opcional de columnas para la vista de papelera. */
+  trashColumns?: CrudColumn<T>[];
   formFields: CrudFormField[];
   searchText: (row: T) => string;
   toFormValues: (row: T) => CrudFormValues;
@@ -145,6 +151,7 @@ export type CrudPageConfig<T extends { id: string }> = {
   searchPlaceholder?: string;
   emptyState?: string;
   archivedEmptyState?: string;
+  trashEmptyState?: string;
   createLabel?: string;
   toolbarActions?: CrudToolbarAction<T>[];
   rowActions?: CrudRowAction<T>[];
@@ -179,8 +186,6 @@ export type CrudPageConfig<T extends { id: string }> = {
   viewModes?: CrudViewModeConfig[];
   /** Interruptores de plantilla del listado; por defecto todo encendido vía `mergeCanonicalCrudDefaults`. */
   featureFlags?: CrudFeatureFlags;
-  /**
-   * Si es true y el recurso `supportsArchived`, el listado arranca mostrando archivados (p. ej. `?archived=1` en la URL).
-   */
-  initialShowArchived?: boolean;
+  /** Vista inicial del listado. */
+  initialView?: CrudLifecycleView;
 };

@@ -1,7 +1,7 @@
 {
   "name": "@devpablocristo/platform-lifecycle",
   "version": "0.1.0",
-  "description": "Domain-agnostic CRUDAR (archive/restore/hard-delete/bulk/audit/policies) for React frontends in the platform ecosystem.",
+  "description": "Domain-agnostic lifecycle (archive/trash/restore/purge/bulk/audit/policies) for React frontends in the platform ecosystem.",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",

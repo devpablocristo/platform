@@ -113,6 +113,8 @@ export function createCrudUiPreferencesApi(options: CreateCrudUiPreferencesApiOp
       featureFlags: mergedFlags,
       supportsArchived:
         override.featureFlags?.archivedToggle === false ? false : config.supportsArchived,
+      supportsTrash:
+        override.featureFlags?.trashToggle === false ? false : config.supportsTrash,
       allowCreate:
         override.featureFlags?.createAction === false ? false : config.allowCreate,
     };
@@ -126,6 +128,7 @@ export const CRUD_UI_PREFERENCES_FEATURE_KEYS = [
   ["searchBar", "Buscador"],
   ["creatorFilter", "Filtro de responsable"],
   ["archivedToggle", "Ver archivados"],
+  ["trashToggle", "Ver papelera"],
   ["createAction", "Acción crear"],
   ["csvToolbar", "Acciones CSV"],
   ["pagination", "Paginación"],

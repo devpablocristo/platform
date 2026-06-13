@@ -5,6 +5,8 @@ export const CRUD_FEATURE_FLAGS_ALL_ON: CrudFeatureFlags = {
   creatorFilter: true,
   headerQuickFilterStrip: true,
   csvToolbar: true,
+  archivedToggle: true,
+  trashToggle: true,
   pagination: true,
   tagsColumn: true,
   columnSort: true,

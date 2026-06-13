@@ -207,7 +207,7 @@ export function buildCsvToolbarActions<T extends { id: string }>(
           id: "csv-export",
           label: "Exportar CSV",
           kind: "secondary",
-          isVisible: ({ archived }) => !archived,
+          isVisible: ({ view }) => view === "active",
           onClick: async () => {
             if (!serverExport) return;
             await serverExport.download(entity);
@@ -219,7 +219,7 @@ export function buildCsvToolbarActions<T extends { id: string }>(
         id: "csv-export",
         label: "Exportar CSV",
         kind: "secondary",
-        isVisible: ({ archived }) => !archived,
+        isVisible: ({ view }) => view === "active",
         onClick: async ({ items }) => {
           const content = buildCSV(
             columns,
@@ -236,7 +236,7 @@ export function buildCsvToolbarActions<T extends { id: string }>(
       id: "csv-import",
       label: "Importar CSV",
       kind: "secondary",
-      isVisible: ({ archived }) => !archived,
+      isVisible: ({ view }) => view === "active",
       onClick: async ({ reload }) => {
         if (canServerImport) {
           if (!serverImport) return;

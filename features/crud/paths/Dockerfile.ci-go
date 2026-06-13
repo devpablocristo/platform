@@ -1,10 +1,10 @@
-# Tests del módulo github.com/devpablocristo/modules/crud/paths/go.
-# Build: context = padre de `modules`.
+# Tests del módulo github.com/devpablocristo/platform/features/crud/paths/go.
+# Build: context = padre de `platform`.
 FROM golang:1.26-bookworm
-WORKDIR /repo/modules/crud/paths/go
+WORKDIR /repo/platform/features/crud/paths/go
 
-COPY modules/crud/paths/go/go.mod ./
-COPY modules/crud/paths/go/ ./
+COPY platform/features/crud/paths/go/go.mod ./
+COPY platform/features/crud/paths/go/ ./
 
 RUN go test ./...
 

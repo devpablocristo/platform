@@ -13,17 +13,22 @@ export type CrudStrings = {
   actionSave: string;
   actionCancel: string;
   actionEdit: string;
-  actionDelete: string;
   actionArchive: string;
+  actionUnarchive: string;
+  actionTrash: string;
   actionRestore: string;
+  actionPurge: string;
   actionConfirm: string;
   titleArchived: string;
+  titleTrash: string;
   searchPlaceholder: string;
   selectPlaceholder: string;
   toggleShowActive: string;
   toggleShowArchived: string;
+  toggleShowTrash: string;
   emptySearch: string;
   emptyArchived: string;
+  emptyTrash: string;
   emptyActive: string;
   tableActions: string;
   buttonNew: string;
@@ -42,17 +47,22 @@ export const defaultCrudStrings: CrudStrings = {
   actionSave: "Save",
   actionCancel: "Cancel",
   actionEdit: "Edit",
-  actionDelete: "Delete",
   actionArchive: "Archive",
+  actionUnarchive: "Unarchive",
+  actionTrash: "Move to trash",
   actionRestore: "Restore",
+  actionPurge: "Purge",
   actionConfirm: "Confirm",
   titleArchived: "Archived {{labelPluralCap}}",
+  titleTrash: "Trash",
   searchPlaceholder: "Search {{labelPlural}}…",
   selectPlaceholder: "Select…",
   toggleShowActive: "Show active",
   toggleShowArchived: "Show archived",
+  toggleShowTrash: "Show trash",
   emptySearch: "No {{labelPlural}} match “{{search}}”.",
   emptyArchived: "No archived {{labelPlural}}.",
+  emptyTrash: "Trash is empty.",
   emptyActive: "No {{labelPlural}} yet.",
   tableActions: "Actions",
   buttonNew: "New {{label}}",
@@ -71,17 +81,22 @@ export const crudStringsEs: CrudStrings = {
   actionSave: "Guardar",
   actionCancel: "Cancelar",
   actionEdit: "Editar",
-  actionDelete: "Eliminar",
   actionArchive: "Archivar",
+  actionUnarchive: "Desarchivar",
+  actionTrash: "Enviar a papelera",
   actionRestore: "Restaurar",
+  actionPurge: "Purgar",
   actionConfirm: "Confirmar",
   titleArchived: "{{labelPluralCap}} archivados",
+  titleTrash: "Papelera",
   searchPlaceholder: "Buscar {{labelPlural}}…",
   selectPlaceholder: "Seleccionar…",
   toggleShowActive: "Ver activos",
   toggleShowArchived: "Ver archivados",
+  toggleShowTrash: "Ver papelera",
   emptySearch: "No hay {{labelPlural}} que coincidan con “{{search}}”.",
   emptyArchived: "No hay {{labelPlural}} archivados.",
+  emptyTrash: "La papelera está vacía.",
   emptyActive: "Todavía no hay {{labelPlural}}.",
   tableActions: "Acciones",
   buttonNew: "Nuevo {{label}}",

@@ -72,7 +72,7 @@ function renderPage(overrides?: Partial<ComponentProps<typeof CrudPage<UserRow>>
     dataSource: {
       list: vi.fn().mockResolvedValue([]),
       create: vi.fn().mockResolvedValue(undefined),
-      restore: vi.fn().mockResolvedValue(undefined),
+      unarchive: vi.fn().mockResolvedValue(undefined),
     },
     ...overrides,
   };
@@ -128,44 +128,44 @@ describe("CrudPage", () => {
     expect(screen.getByText("Grace Hopper")).toBeTruthy();
   });
 
-  it("starts in archived view when initialShowArchived is true", async () => {
-    const list = vi.fn().mockImplementation(async ({ archived }: { archived: boolean }) =>
-      archived ? [{ id: "a1", name: "Old" }] : [{ id: "1", name: "Active user" }],
+  it("starts in archived view when initialView is archived", async () => {
+    const list = vi.fn().mockImplementation(async ({ view }: { view: string }) =>
+      view === "archived" ? [{ id: "a1", name: "Old" }] : [{ id: "1", name: "Active user" }],
     );
 
     renderPage({
       supportsArchived: true,
-      initialShowArchived: true,
+      initialView: "archived",
       dataSource: { list },
     });
 
     expect(await screen.findByText("Old")).toBeTruthy();
-    expect(list).toHaveBeenNthCalledWith(1, { archived: true });
+    expect(list).toHaveBeenNthCalledWith(1, { view: "archived" });
   });
 
-  it("switches to archived mode and restores rows through the data source", async () => {
+  it("switches to archived mode and unarchives rows through the data source", async () => {
     const archivedRow = { id: "arch-1", name: "Archived user" };
-    const list = vi.fn().mockImplementation(async ({ archived }: { archived: boolean }) =>
-      archived ? [archivedRow] : [{ id: "1", name: "Active user" }],
+    const list = vi.fn().mockImplementation(async ({ view }: { view: string }) =>
+      view === "archived" ? [archivedRow] : [{ id: "1", name: "Active user" }],
     );
-    const restore = vi.fn().mockResolvedValue(undefined);
+    const unarchive = vi.fn().mockResolvedValue(undefined);
 
     renderPage({
       supportsArchived: true,
-      dataSource: { list, restore },
+      dataSource: { list, unarchive },
     });
 
     expect(await screen.findByText("Active user")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Show archived" }));
 
     expect(await screen.findByText("Archived user")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Restore" }));
+    fireEvent.click(screen.getByRole("button", { name: "Unarchive" }));
 
     await waitFor(() => {
-      expect(restore).toHaveBeenCalledWith(archivedRow);
+      expect(unarchive).toHaveBeenCalledWith(archivedRow);
     });
-    expect(list).toHaveBeenNthCalledWith(1, { archived: false });
-    expect(list).toHaveBeenNthCalledWith(2, { archived: true });
+    expect(list).toHaveBeenNthCalledWith(1, { view: "active" });
+    expect(list).toHaveBeenNthCalledWith(2, { view: "archived" });
   });
 
   it("invoca onRowClick al pulsar la fila y no muestra columna Acciones si no hay acciones", async () => {
@@ -174,7 +174,7 @@ describe("CrudPage", () => {
 
     renderPage({
       allowEdit: false,
-      allowDelete: false,
+      allowTrash: false,
       rowActions: [],
       dataSource: { list: vi.fn().mockResolvedValue(rows) },
       onRowClick,

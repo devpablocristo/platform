@@ -1,32 +1,33 @@
+import type { CrudLifecycleView } from "./types";
+
 /**
  * Segmentos de URL para el modo `basePath` de CrudPage.
- * Deben coincidir con `github.com/devpablocristo/modules/crud/paths/go` (constantes Segment*).
+ * Deben coincidir con `platform/lifecycle/go/paths`.
  */
 export const CrudPathSegment = {
   archived: "archived",
   archive: "archive",
+  unarchive: "unarchive",
+  trash: "trash",
   restore: "restore",
-  hard: "hard",
+  purge: "purge",
 } as const;
+
+export type CrudItemAction = "archive" | "unarchive" | "trash" | "restore" | "purge";
 
 function trimTrailingSlash(path: string): string {
   return path.replace(/\/+$/, "");
 }
 
-/** GET colección: activos o `/archived`. */
-export function crudListPath(basePath: string, archived: boolean): string {
+export function crudListPath(basePath: string, view: CrudLifecycleView): string {
   const base = trimTrailingSlash(basePath);
-  return archived ? `${base}/${CrudPathSegment.archived}` : base;
+  if (view === "archived") return `${base}/${CrudPathSegment.archived}`;
+  if (view === "trash") return `${base}/${CrudPathSegment.trash}`;
+  return base;
 }
 
-/** Recurso por id; `suffix` para restore/hard. */
-export function crudItemPath(basePath: string, id: string, suffix?: "restore" | "hard"): string {
+export function crudItemPath(basePath: string, id: string, action?: CrudItemAction): string {
   const base = trimTrailingSlash(basePath);
-  if (suffix === "restore") {
-    return `${base}/${id}/${CrudPathSegment.restore}`;
-  }
-  if (suffix === "hard") {
-    return `${base}/${id}/${CrudPathSegment.hard}`;
-  }
-  return `${base}/${id}`;
+  if (!action) return `${base}/${id}`;
+  return `${base}/${id}/${CrudPathSegment[action]}`;
 }

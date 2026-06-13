@@ -81,13 +81,13 @@ describe("createCrudUiPreferencesApi", () => {
     expect(next.featureFlags?.creatorFilter).toBe(true);
   });
 
-  it("translates archivedToggle and createAction flags into config props", () => {
+  it("translates lifecycle and createAction flags into config props", () => {
     const api = createCrudUiPreferencesApi({
       storageKey: "t.crud-ui-3",
       knownResourceIds: ["products"],
     });
     api.writeState({
-      products: { featureFlags: { archivedToggle: false, createAction: false } },
+      products: { featureFlags: { archivedToggle: false, trashToggle: false, createAction: false } },
     });
     const config: CrudPageConfig<{ id: string }> = {
       label: "p",
@@ -99,10 +99,12 @@ describe("createCrudUiPreferencesApi", () => {
       toFormValues: () => ({}),
       isValid: () => true,
       supportsArchived: true,
+      supportsTrash: true,
       allowCreate: true,
     };
     const next = api.applyCrudUiOverride("products", config);
     expect(next.supportsArchived).toBe(false);
+    expect(next.supportsTrash).toBe(false);
     expect(next.allowCreate).toBe(false);
   });
 });

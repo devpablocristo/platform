@@ -65,7 +65,7 @@ describe("CrudPage pagination", () => {
     expect(await screen.findByText("Two")).not.toBeNull();
   });
 
-  it("allows after as a legacy pagination parameter", async () => {
+  it("allows after as an alternate pagination parameter", async () => {
     const json = vi
       .fn()
       .mockResolvedValueOnce({ items: [{ id: "1", name: "One" }], hasMore: true, nextCursor: "abc" })

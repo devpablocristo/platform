@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import type { ArchiveClient } from "../api/archiveClient";
+import type { LifecycleClient } from "../api/lifecycleClient";
 import type { ArchiveRequest } from "../types";
 
 export type UseArchiveResult = {
@@ -16,7 +16,7 @@ export type UseArchiveResult = {
  * data (typically inside its react-query mutation onSuccess). For
  * fire-and-forget archives use the client directly.
  */
-export function useArchive(client: ArchiveClient): UseArchiveResult {
+export function useArchive(client: LifecycleClient): UseArchiveResult {
   const [isArchiving, setIsArchiving] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 

@@ -1,9 +1,9 @@
 import { useState } from "react";
-import type { ArchivePolicy, BulkArchiveLabels } from "../types";
+import type { BulkArchiveLabels, LifecyclePolicy } from "../types";
 
 export type BulkArchiveToolbarProps = {
   selectedIds: string[];
-  policy: ArchivePolicy;
+  policy: LifecyclePolicy;
   labels: BulkArchiveLabels;
   onArchive: (reason?: string) => void | Promise<void>;
   onCancel: () => void;

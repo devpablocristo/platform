@@ -4,7 +4,7 @@
  * Responsabilidad: orquestar lista, formulario y acciones sobre datos inyectados (`dataSource` o
  * `basePath` + `httpClient`). No contiene reglas de negocio ni llamadas acopladas a un producto.
  *
- * Shell de layout: `core/browser/ts`. Orquestación CRUD: `modules/crud/ui/ts`.
+ * Shell de layout: `platform/browser/ts`. Orquestación CRUD: `platform/features/crud/ui/ts`.
  */
 import { FormEvent, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CrudPageShell, parsePaginatedResponse } from "@devpablocristo/platform-browser/crud";
@@ -16,6 +16,7 @@ import { interpolate, mergeCrudStrings, type CrudStrings, defaultCrudStrings } f
 import type {
   CrudColumn,
   CrudFormValues,
+  CrudLifecycleView,
   CrudPageConfig,
   CrudRowAction,
   CrudToolbarAction,
@@ -56,16 +57,20 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
     dataSource,
     httpClient: httpClientProp,
     supportsArchived = false,
+    supportsTrash = false,
     allowCreate,
     allowEdit,
-    allowDelete,
+    allowArchive,
+    allowTrash,
+    allowUnarchive,
     allowRestore,
-    allowHardDelete,
+    allowPurge,
     label,
     labelPlural,
     labelPluralCap,
     columns,
     archivedColumns,
+    trashColumns,
     formFields,
     searchText,
     toFormValues,
@@ -74,6 +79,7 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
     searchPlaceholder,
     emptyState,
     archivedEmptyState,
+    trashEmptyState,
     createLabel,
     toolbarActions = [],
     rowActions = [],
@@ -88,7 +94,7 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
     externalSearch,
     viewModes: _viewModes,
     featureFlags,
-    initialShowArchived = false,
+    initialView = "active",
   } = props;
 
   const str = useMemo(() => mergeCrudStrings(stringsBase, stringsPartial), [stringsBase, stringsPartial]);
@@ -112,9 +118,11 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
   const [error, setError] = useState("");
   const [internalSearch, setInternalSearch] = useState("");
   const search = externalSearch ?? internalSearch;
-  const [showArchived, setShowArchived] = useState(() =>
-    Boolean(initialShowArchived && supportsArchived),
-  );
+  const [lifecycleView, setLifecycleView] = useState<CrudLifecycleView>(() => {
+    if (initialView === "archived" && supportsArchived) return "archived";
+    if (initialView === "trash" && supportsTrash) return "trash";
+    return "active";
+  });
 
   const [editing, setEditing] = useState<T | null>(null);
   const [creating, setCreating] = useState(false);
@@ -143,22 +151,32 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
   const canEdit =
     allowEdit ??
     (Boolean(onExternalEdit) || (formFields.length > 0 && Boolean(dataSource?.update || basePath)));
-  const canDelete = allowDelete ?? Boolean(dataSource?.deleteItem || basePath);
-  const canRestore = allowRestore ?? (supportsArchived && Boolean(dataSource?.restore || basePath));
-  const canHardDelete = allowHardDelete ?? (supportsArchived && Boolean(dataSource?.hardDelete || basePath));
+  const canArchive = allowArchive ?? (supportsArchived && Boolean(dataSource?.archive || basePath));
+  const canTrash = allowTrash ?? Boolean(dataSource?.trash || basePath);
+  const canUnarchive = allowUnarchive ?? (supportsArchived && Boolean(dataSource?.unarchive || basePath));
+  const canRestore = allowRestore ?? (supportsTrash && Boolean(dataSource?.restore || basePath));
+  const canPurge = allowPurge ?? (supportsTrash && Boolean(dataSource?.purge || basePath));
   const showForm = (creating || (editing !== null && !onExternalEdit)) && formFields.length > 0;
-  const hardDeleteWord = str.confirmWord;
+  const purgeWord = str.confirmWord;
 
-  const showActionsColumn = showArchived
-    ? canRestore || canHardDelete
-    : canEdit || rowActions.length > 0 || canDelete;
-  const visibleColumns = showArchived && archivedColumns?.length ? archivedColumns : columns;
-  const rowClickHandler = showArchived ? undefined : onRowClick;
+  const showActionsColumn =
+    lifecycleView === "archived"
+      ? canUnarchive
+      : lifecycleView === "trash"
+        ? canRestore || canPurge
+        : canEdit || rowActions.length > 0 || canArchive || canTrash;
+  const visibleColumns =
+    lifecycleView === "archived" && archivedColumns?.length
+      ? archivedColumns
+      : lifecycleView === "trash" && trashColumns?.length
+        ? trashColumns
+        : columns;
+  const rowClickHandler = lifecycleView === "active" ? onRowClick : undefined;
 
   const defaultPageSize = 100;
 
   function buildListPath(cursor?: string): string {
-    let path = crudListPath(basePath!, showArchived && supportsArchived);
+    let path = crudListPath(basePath!, lifecycleView);
     const params: string[] = [];
     if (listQuery) params.push(listQuery);
     params.push(`limit=${defaultPageSize}`);
@@ -177,7 +195,7 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
     setNextCursor(null);
     try {
       if (dataSource?.list) {
-        const rows = await dataSource.list({ archived: showArchived });
+        const rows = await dataSource.list({ view: lifecycleView });
         if (seq !== loadSeqRef.current) return;
         setItems(rows);
         return;
@@ -220,7 +238,7 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
 
   useEffect(() => {
     void loadItems();
-  }, [showArchived]);
+  }, [lifecycleView]);
 
   function closeForm(): void {
     setCreating(false);
@@ -240,7 +258,7 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
     setFormValues(toFormValues(row));
   }
 
-  function cancelHardDelete(): void {
+  function cancelPurge(): void {
     setConfirmDeleteId(null);
     setConfirmDeleteText("");
   }
@@ -276,15 +294,51 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
     }
   }
 
-  async function deleteRow(row: T): Promise<void> {
-    const nextBusyKey = `${row.id}:delete`;
+  async function archiveRow(row: T): Promise<void> {
+    const nextBusyKey = `${row.id}:archive`;
     setBusyKey(nextBusyKey);
     setError("");
     try {
-      if (dataSource?.deleteItem) {
-        await dataSource.deleteItem(row);
+      if (dataSource?.archive) {
+        await dataSource.archive(row);
       } else if (basePath && httpClient) {
-        await httpClient.json(crudItemPath(basePath, row.id), { method: "DELETE" });
+        await httpClient.json(crudItemPath(basePath, row.id, "archive"), { method: "POST", body: {} });
+      }
+      await loadItems();
+    } catch (err) {
+      setError(normalizeError(err));
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
+  async function trashRow(row: T): Promise<void> {
+    const nextBusyKey = `${row.id}:trash`;
+    setBusyKey(nextBusyKey);
+    setError("");
+    try {
+      if (dataSource?.trash) {
+        await dataSource.trash(row);
+      } else if (basePath && httpClient) {
+        await httpClient.json(crudItemPath(basePath, row.id, "trash"), { method: "POST", body: {} });
+      }
+      await loadItems();
+    } catch (err) {
+      setError(normalizeError(err));
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
+  async function unarchiveRow(row: T): Promise<void> {
+    const nextBusyKey = `${row.id}:unarchive`;
+    setBusyKey(nextBusyKey);
+    setError("");
+    try {
+      if (dataSource?.unarchive) {
+        await dataSource.unarchive(row);
+      } else if (basePath && httpClient) {
+        await httpClient.json(crudItemPath(basePath, row.id, "unarchive"), { method: "POST", body: {} });
       }
       await loadItems();
     } catch (err) {
@@ -312,17 +366,17 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
     }
   }
 
-  async function hardDeleteRow(row: T): Promise<void> {
-    const nextBusyKey = `${row.id}:hard-delete`;
+  async function purgeRow(row: T): Promise<void> {
+    const nextBusyKey = `${row.id}:purge`;
     setBusyKey(nextBusyKey);
     setError("");
     try {
-      if (dataSource?.hardDelete) {
-        await dataSource.hardDelete(row);
+      if (dataSource?.purge) {
+        await dataSource.purge(row);
       } else if (basePath && httpClient) {
-        await httpClient.json(crudItemPath(basePath, row.id, "hard"), { method: "DELETE" });
+        await httpClient.json(crudItemPath(basePath, row.id, "purge"), { method: "DELETE" });
       }
-      cancelHardDelete();
+      cancelPurge();
       await loadItems();
     } catch (err) {
       setError(normalizeError(err));
@@ -402,11 +456,11 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
     [columnSortEnabled, sortKey],
   );
 
-  const visibleToolbarActions = toolbarActions.filter((action) => action.isVisible?.({ archived: showArchived, items }) ?? true);
+  const visibleToolbarActions = toolbarActions.filter((action) => action.isVisible?.({ view: lifecycleView, items }) ?? true);
   const rawToolbarActionCount = toolbarActions?.length ?? 0;
   /** Incluye acciones declaradas aunque `isVisible` las oculte en este momento (evita fila vacía sin CSV/archivados). */
   const showToolbarButtonRow =
-    visibleToolbarActions.length > 0 || canCreate || supportsArchived || rawToolbarActionCount > 0;
+    visibleToolbarActions.length > 0 || canCreate || supportsArchived || supportsTrash || rawToolbarActionCount > 0;
 
   const searchPlaceholderResolved =
     searchPlaceholder != null && searchPlaceholder !== ""
@@ -415,6 +469,7 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
 
   const titleActive = sentenceCase(labelPluralCap);
   const titleArchivedView = sentenceCase(interpolate(str.titleArchived, { ...vars, labelPluralCap }));
+  const titleTrashView = sentenceCase(interpolate(str.titleTrash, { ...vars, labelPluralCap }));
 
   const shellSearchField =
     externalSearch == null && featureFlags?.searchBar !== false
@@ -448,14 +503,27 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
       {supportsArchived && (
         <button
           type="button"
-          className={`btn-sm ${showArchived ? "btn-primary" : "btn-secondary"}`}
+          className={`btn-sm ${lifecycleView === "archived" ? "btn-primary" : "btn-secondary"}`}
           onClick={() => {
             closeForm();
-            cancelHardDelete();
-            setShowArchived((current) => !current);
+            cancelPurge();
+            setLifecycleView((current) => current === "archived" ? "active" : "archived");
           }}
         >
-          {showArchived ? str.toggleShowActive : str.toggleShowArchived}
+          {lifecycleView === "archived" ? str.toggleShowActive : str.toggleShowArchived}
+        </button>
+      )}
+      {supportsTrash && (
+        <button
+          type="button"
+          className={`btn-sm ${lifecycleView === "trash" ? "btn-primary" : "btn-secondary"}`}
+          onClick={() => {
+            closeForm();
+            cancelPurge();
+            setLifecycleView((current) => current === "trash" ? "active" : "trash");
+          }}
+        >
+          {lifecycleView === "trash" ? str.toggleShowActive : str.toggleShowTrash}
         </button>
       )}
     </>
@@ -468,7 +536,7 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
 
   return (
     <CrudPageShell
-      title={showArchived ? titleArchivedView : titleActive}
+      title={lifecycleView === "archived" ? titleArchivedView : lifecycleView === "trash" ? titleTrashView : titleActive}
       subtitle={
         loading
           ? str.statusLoading
@@ -482,7 +550,7 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
       headerActions={headerActionsResolved}
       error={error ? <div className="alert alert-error">{error}</div> : undefined}
       form={
-        showForm && (!showArchived || creating) ? (
+        showForm && (lifecycleView === "active" || creating) ? (
           <div className="card crud-form-card">
             <div className="card-header">
               <h2>
@@ -570,10 +638,14 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
           <p>
             {search.trim()
               ? interpolate(str.emptySearch, { ...vars, search: search.trim() })
-              : showArchived
+              : lifecycleView === "archived"
                 ? archivedEmptyState
                   ? formatFieldText(archivedEmptyState)
                   : interpolate(str.emptyArchived, vars)
+                : lifecycleView === "trash"
+                  ? trashEmptyState
+                    ? formatFieldText(trashEmptyState)
+                    : interpolate(str.emptyTrash, vars)
                 : emptyState
                   ? formatFieldText(emptyState)
                   : interpolate(str.emptyActive, vars)}
@@ -629,7 +701,7 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
             <tbody>
               {sortedRows.map((row) => {
                 const visibleRowActions = rowActions.filter(
-                  (action) => action.isVisible?.(row, { archived: showArchived }) ?? true,
+                  (action) => action.isVisible?.(row, { view: lifecycleView }) ?? true,
                 );
                 return (
                   <tr
@@ -647,7 +719,22 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
                       className="col-actions"
                       onClick={rowClickHandler ? (event) => { event.stopPropagation(); } : undefined}
                     >
-                      {showArchived ? (
+                      {lifecycleView === "archived" ? (
+                        <div className="crud-row-actions">
+                          {canUnarchive && (
+                            <button
+                              type="button"
+                              className="btn-sm btn-primary"
+                              disabled={busyKey === `${row.id}:unarchive`}
+                              onClick={() => {
+                                void unarchiveRow(row);
+                              }}
+                            >
+                              {busyKey === `${row.id}:unarchive` ? "..." : str.actionUnarchive}
+                            </button>
+                          )}
+                        </div>
+                      ) : lifecycleView === "trash" ? (
                         <div className="crud-row-actions">
                           {canRestore && (
                             <button
@@ -661,12 +748,12 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
                               {busyKey === `${row.id}:restore` ? "..." : str.actionRestore}
                             </button>
                           )}
-                          {canHardDelete &&
+                          {canPurge &&
                             (confirmDeleteId === row.id ? (
-                              <div className="confirm-delete-inline" role="group" aria-label={`${str.actionDelete} ${label}`}>
+                              <div className="confirm-delete-inline" role="group" aria-label={`${str.actionPurge} ${label}`}>
                                 <div className="confirm-delete-copy">
                                   <span className="confirm-delete-hint">
-                                    {interpolate(str.confirmHint, { word: hardDeleteWord })}
+                                    {interpolate(str.confirmHint, { word: purgeWord })}
                                   </span>
                                 </div>
                                 <input
@@ -682,16 +769,16 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
                                     type="button"
                                     className="btn-sm btn-danger"
                                     disabled={
-                                      confirmDeleteText.toLowerCase() !== hardDeleteWord.toLowerCase() ||
-                                      busyKey === `${row.id}:hard-delete`
+                                      confirmDeleteText.toLowerCase() !== purgeWord.toLowerCase() ||
+                                      busyKey === `${row.id}:purge`
                                     }
                                     onClick={() => {
-                                      void hardDeleteRow(row);
+                                      void purgeRow(row);
                                     }}
                                   >
-                                    {busyKey === `${row.id}:hard-delete` ? "..." : str.actionConfirm}
+                                    {busyKey === `${row.id}:purge` ? "..." : str.actionConfirm}
                                   </button>
-                                  <button type="button" className="btn-sm btn-secondary" onClick={cancelHardDelete}>
+                                  <button type="button" className="btn-sm btn-secondary" onClick={cancelPurge}>
                                     {str.actionCancel}
                                   </button>
                                 </div>
@@ -700,13 +787,13 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
                               <button
                                 type="button"
                                 className="btn-sm btn-danger"
-                                disabled={busyKey === `${row.id}:hard-delete`}
+                                disabled={busyKey === `${row.id}:purge`}
                                 onClick={() => {
                                   setConfirmDeleteId(row.id);
                                   setConfirmDeleteText("");
                                 }}
                               >
-                                {str.actionDelete}
+                                {str.actionPurge}
                               </button>
                             ))}
                         </div>
@@ -734,16 +821,28 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
                               {busyKey === `${row.id}:${action.id}` ? "..." : formatFieldText(action.label)}
                             </button>
                           ))}
-                          {canDelete && (
+                          {canArchive && (
+                            <button
+                              type="button"
+                              className="btn-sm btn-secondary"
+                              disabled={busyKey === `${row.id}:archive`}
+                              onClick={() => {
+                                void archiveRow(row);
+                              }}
+                            >
+                              {busyKey === `${row.id}:archive` ? "..." : str.actionArchive}
+                            </button>
+                          )}
+                          {canTrash && (
                             <button
                               type="button"
                               className="btn-sm btn-danger"
-                              disabled={busyKey === `${row.id}:delete`}
+                              disabled={busyKey === `${row.id}:trash`}
                               onClick={() => {
-                                void deleteRow(row);
+                                void trashRow(row);
                               }}
                             >
-                              {busyKey === `${row.id}:delete` ? "..." : supportsArchived ? str.actionArchive : str.actionDelete}
+                              {busyKey === `${row.id}:trash` ? "..." : str.actionTrash}
                             </button>
                           )}
                         </div>

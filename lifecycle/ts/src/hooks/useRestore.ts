@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import type { ArchiveClient } from "../api/archiveClient";
+import type { LifecycleClient } from "../api/lifecycleClient";
 import type { RestoreRequest } from "../types";
 
 export type UseRestoreResult = {
@@ -8,7 +8,7 @@ export type UseRestoreResult = {
   error: Error | null;
 };
 
-export function useRestore(client: ArchiveClient): UseRestoreResult {
+export function useRestore(client: LifecycleClient): UseRestoreResult {
   const [isRestoring, setIsRestoring] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 

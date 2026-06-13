@@ -1,8 +1,7 @@
-// Package archive provee helpers para el estado de archivado (soft delete)
-// del contrato CRUD canónico (ver github.com/devpablocristo/platform/features/crud/paths).
+// Package archive provides small helpers for resources in archived state.
 //
-// ErrArchived es un domainerr.Error con KindConflict: los middlewares HTTP
-// estándar (ej. platform/http/gin/go) lo mapean automáticamente a 409 Conflict.
+// Archive means retained but outside active workflows. It is not trash and it
+// is not deletion.
 package archive
 
 import (
@@ -12,22 +11,12 @@ import (
 	"github.com/devpablocristo/platform/errors/go/domainerr"
 )
 
-// ErrArchived indica que la operación no se puede ejecutar porque el recurso
-// está archivado (soft-deleted). Como es domainerr.Conflict, los routers HTTP
-// lo mapean a 409.
-//
-// Uso típico:
-//
-//	if err := archive.IfArchived(current.DeletedAt, "product"); err != nil {
-//	    return err
-//	}
+// ErrArchived indicates the operation cannot proceed because the resource is
+// archived. Wrapped errors satisfy domainerr.IsConflict, so HTTP middleware
+// maps them to 409.
 var ErrArchived = domainerr.Conflict("resource is archived")
 
-// IfArchived retorna ErrArchived envuelto si archivedAt no es nil.
-// El prefijo resource se incluye en el mensaje para trazabilidad.
-//
-// El puntero archivedAt sigue la convención GORM/SQL: nil ⇒ activo,
-// valor ⇒ archivado en ese timestamp.
+// IfArchived returns a wrapped ErrArchived when archivedAt is non-nil.
 func IfArchived(archivedAt *time.Time, resource string) error {
 	if archivedAt == nil {
 		return nil
@@ -35,8 +24,7 @@ func IfArchived(archivedAt *time.Time, resource string) error {
 	return fmt.Errorf("%s archived: %w", resource, ErrArchived)
 }
 
-// IsArchived es el predicado puro equivalente a archivedAt != nil.
-// Útil cuando sólo se necesita saber el estado sin propagar error.
+// IsArchived is the pure predicate equivalent of archivedAt != nil.
 func IsArchived(archivedAt *time.Time) bool {
 	return archivedAt != nil
 }
