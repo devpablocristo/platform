@@ -40,6 +40,25 @@ export {
 } from "./strings";
 export { CrudPathSegment, crudItemPath, crudListPath } from "./restPaths";
 export {
+  FileUploadReview,
+  PromptEditorReview,
+  ReadonlyContentViewer,
+  downloadTextFile,
+  downloadZipFile,
+  ensureTrailingNewline,
+  safeFileName,
+  useTextFileUpload,
+  type DownloadZipFileEntry,
+  type FileUploadReviewProps,
+  type PromptEditorReviewProps,
+  type ReadonlyContentViewerProps,
+  type ReadonlyMetadataItem,
+  type TextFileUploadResult,
+  type TextFileInputProps,
+  type UseTextFileUploadOptions,
+  type UseTextFileUploadResult,
+} from "./promptFiles";
+export {
   INTERNAL_FAVORITE_FIELD_KEY,
   INTERNAL_FAVORITE_LABEL,
   INTERNAL_NOTES_FIELD_KEY,

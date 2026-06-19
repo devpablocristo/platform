@@ -1,8 +1,13 @@
 {
-  "name": "@devpablocristo/platform-crud-ui",
-  "version": "0.4.0",
+  "name": "@devpablocristo/platform-chat-ui",
+  "version": "0.1.2",
   "private": false,
   "type": "module",
+  "description": "Reusable React chat workspace for product AI assistants.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles.css"
+  },
   "files": [
     "src",
     "!src/**/*.test.ts",
@@ -10,29 +15,17 @@
     "!src/**/*.spec.ts",
     "!src/**/*.spec.tsx"
   ],
-  "exports": {
-    ".": "./src/index.ts",
-    "./csv": "./src/csv.ts",
-    "./csv-toolbar": "./src/csvToolbarMerge.ts",
-    "./entity-fields": "./src/entityFields.ts",
-    "./prompt-files": "./src/promptFiles.tsx",
-    "./surface": "./src/surface.ts",
-    "./preferences": "./src/crudUiPreferences.ts"
+  "publishConfig": {
+    "access": "public"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0"
   },
-  "dependencies": {
-    "@devpablocristo/platform-browser": "^0.2.0"
-  },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --globals --passWithNoTests tests src",
+    "test": "vitest run --globals --passWithNoTests",
     "prepublishOnly": "npm run typecheck && npm test"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.2",
