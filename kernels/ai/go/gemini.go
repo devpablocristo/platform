@@ -56,12 +56,14 @@ func NewGemini(apiKey string, opts ...GeminiOption) *Gemini {
 func (g *Gemini) Chat(ctx context.Context, req ChatRequest) (ChatResponse, error) {
 	contents := buildGeminiContents(req.SystemPrompt, req.Messages)
 
+	genConfig := map[string]any{
+		"maxOutputTokens": maxTokensOrDefault(req.MaxTokens, 1024),
+		"temperature":     0.7,
+	}
+	applyGeminiResponseSchema(genConfig, req.ResponseSchema)
 	body := map[string]any{
-		"contents": contents,
-		"generationConfig": map[string]any{
-			"maxOutputTokens": maxTokensOrDefault(req.MaxTokens, 1024),
-			"temperature":     0.7,
-		},
+		"contents":         contents,
+		"generationConfig": genConfig,
 	}
 
 	url := fmt.Sprintf(
@@ -144,12 +146,14 @@ func (v *VertexAI) Chat(ctx context.Context, req ChatRequest) (ChatResponse, err
 
 	contents := buildGeminiContents(req.SystemPrompt, req.Messages)
 
+	genConfig := map[string]any{
+		"maxOutputTokens": maxTokensOrDefault(req.MaxTokens, 1024),
+		"temperature":     0.2,
+	}
+	applyGeminiResponseSchema(genConfig, req.ResponseSchema)
 	body := map[string]any{
-		"contents": contents,
-		"generationConfig": map[string]any{
-			"maxOutputTokens": maxTokensOrDefault(req.MaxTokens, 1024),
-			"temperature":     0.2,
-		},
+		"contents":         contents,
+		"generationConfig": genConfig,
 	}
 
 	url := fmt.Sprintf(
@@ -182,6 +186,18 @@ func (v *VertexAI) SimpleChat(ctx context.Context, systemPrompt, userMessage str
 }
 
 // --- Shared Gemini/Vertex helpers ---
+
+// applyGeminiResponseSchema activa el structured output de Gemini/Vertex cuando
+// el caller provee un ResponseSchema. Gemini fuerza la respuesta a JSON conforme
+// al schema (subset OpenAPI: type/properties/items/enum/required; sin $schema ni
+// additionalProperties). Si schema está vacío no toca la config (texto libre).
+func applyGeminiResponseSchema(genConfig map[string]any, schema map[string]any) {
+	if len(schema) == 0 {
+		return
+	}
+	genConfig["responseMimeType"] = "application/json"
+	genConfig["responseSchema"] = schema
+}
 
 func buildGeminiContents(systemPrompt string, msgs []Message) []map[string]any {
 	var contents []map[string]any
