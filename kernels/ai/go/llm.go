@@ -28,6 +28,12 @@ type ChatRequest struct {
 	Messages     []Message `json:"messages"`
 	Tools        []Tool    `json:"tools,omitempty"`
 	MaxTokens    int       `json:"max_tokens,omitempty"`
+	// ResponseSchema fuerza structured output: el provider obliga al modelo a
+	// devolver JSON conforme a este schema (subset OpenAPI). Si está vacío, el
+	// provider responde texto libre como siempre. Cada adapter lo traduce a su
+	// mecanismo nativo (Gemini/Vertex responseSchema; Ollama format=json best
+	// effort). Providers que no lo soporten lo ignoran.
+	ResponseSchema map[string]any `json:"response_schema,omitempty"`
 }
 
 // Message mensaje en el hilo del LLM.

@@ -72,6 +72,12 @@ func (o *Ollama) Chat(ctx context.Context, req ChatRequest) (ChatResponse, error
 		body["options"] = options
 	}
 
+	// Structured output: Ollama acepta un JSON schema en el campo top-level
+	// "format" y obliga la respuesta a conformarlo.
+	if len(req.ResponseSchema) > 0 {
+		body["format"] = req.ResponseSchema
+	}
+
 	if len(req.Tools) > 0 {
 		tools := make([]map[string]any, 0, len(req.Tools))
 		for _, t := range req.Tools {
