@@ -14,6 +14,7 @@ Checks iniciales relevantes:
 
 Fixes aplicados en esta pasada:
 - `.github/workflows/ci.yml` dejo de ser placeholder y ahora corre guardrails + tests Go/TS/Python/Rust en jobs separados.
+- `authn/ts` ya no depende de tipos ambientales `vite/client` no declarados; el typecheck limpio de CI valida el modulo sin dependencias hoisted.
 - Scripts de tooling ahora resuelven la raiz real del repo.
 - `validate-module-versions`, `test-go`, `list-module-versions` y `check-remote-tags` descubren tambien `testing/go/tenancy`.
 - `validate-boundaries` valida imports/manifests de codigo contra dependencias legacy `core/modules` sin fallar por docs de migracion.
