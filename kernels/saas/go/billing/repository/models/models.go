@@ -24,8 +24,9 @@ type UsageSummary struct {
 	Counters UsageCounters `json:"counters"`
 }
 
-type TenantBilling struct {
-	TenantID           string                      `json:"tenant_id"`
+type OrgBilling struct {
+	OrgID              string                      `json:"org_id"`
+	TenantID           string                      `json:"tenant_id,omitempty"`
 	PlanCode           billingdomain.PlanCode      `json:"plan_code"`
 	HardLimits         HardLimits                  `json:"hard_limits"`
 	BillingStatus      billingdomain.BillingStatus `json:"billing_status"`
@@ -36,8 +37,11 @@ type TenantBilling struct {
 	CreatedAt          time.Time                   `json:"created_at"`
 }
 
+type TenantBilling = OrgBilling
+
 func FromDomain(item billingdomain.TenantBilling) TenantBilling {
 	return TenantBilling{
+		OrgID:              item.EffectiveOrgID(),
 		TenantID:           item.TenantID,
 		PlanCode:           item.PlanCode,
 		HardLimits:         HardLimits(item.HardLimits),
@@ -52,6 +56,7 @@ func FromDomain(item billingdomain.TenantBilling) TenantBilling {
 
 func (m TenantBilling) ToDomain() billingdomain.TenantBilling {
 	return billingdomain.TenantBilling{
+		OrgID:              m.OrgID,
 		TenantID:           m.TenantID,
 		PlanCode:           m.PlanCode,
 		HardLimits:         billingdomain.HardLimits(m.HardLimits),

@@ -53,7 +53,7 @@ func NewUsecasesWithOrgResolver(verifier TokenVerifierPort, orgs legacyOrgResolv
 	resolver := NewClaimsResolverWithOrgResolver(verifier, resolverPort, ClaimsConfig{
 		Issuer:      cfg.Issuer,
 		Audience:    cfg.Audience,
-		TenantClaim: cfg.OrgClaim,
+		OrgClaim:    cfg.OrgClaim,
 		RoleClaim:   cfg.RoleClaim,
 		ScopesClaim: cfg.ScopesClaim,
 		ActorClaim:  cfg.ActorClaim,

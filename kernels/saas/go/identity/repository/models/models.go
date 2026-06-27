@@ -3,7 +3,8 @@ package models
 import identitydomain "github.com/devpablocristo/platform/kernels/saas/go/identity/usecases/domain"
 
 type Principal struct {
-	TenantID   string   `json:"tenant_id"`
+	OrgID      string   `json:"org_id"`
+	TenantID   string   `json:"-"`
 	Actor      string   `json:"actor,omitempty"`
 	Role       string   `json:"role,omitempty"`
 	Scopes     []string `json:"scopes,omitempty"`
@@ -12,6 +13,7 @@ type Principal struct {
 
 func FromDomain(item identitydomain.Principal) Principal {
 	return Principal{
+		OrgID:      item.EffectiveOrgID(),
 		TenantID:   item.TenantID,
 		Actor:      item.Actor,
 		Role:       item.Role,
@@ -22,6 +24,7 @@ func FromDomain(item identitydomain.Principal) Principal {
 
 func (m Principal) ToDomain() identitydomain.Principal {
 	return identitydomain.Principal{
+		OrgID:      m.OrgID,
 		TenantID:   m.TenantID,
 		Actor:      m.Actor,
 		Role:       m.Role,

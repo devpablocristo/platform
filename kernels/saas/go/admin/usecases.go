@@ -37,37 +37,39 @@ func Capabilities(role *string, scopes []string) (bool, bool) {
 	return canRead, canWrite
 }
 
-func (u *UseCases) GetTenantSettings(ctx context.Context, tenantID string, actor, role *string, scopes []string) (admindomain.TenantSettings, error) {
+func (u *UseCases) GetOrgSettings(ctx context.Context, orgID string, actor, role *string, scopes []string) (admindomain.OrgSettings, error) {
 	canRead, _ := Capabilities(role, scopes)
 	if !canRead {
-		return admindomain.TenantSettings{}, fmt.Errorf("admin console read permission required")
+		return admindomain.OrgSettings{}, fmt.Errorf("admin console read permission required")
 	}
-	item, ok, err := u.repo.GetTenantSettings(ctx, strings.TrimSpace(tenantID))
+	item, ok, err := u.repo.GetTenantSettings(ctx, strings.TrimSpace(orgID))
 	if err != nil {
-		return admindomain.TenantSettings{}, err
+		return admindomain.OrgSettings{}, err
 	}
 	if ok {
 		return item, nil
 	}
 	now := u.now()
-	return admindomain.TenantSettings{
-		TenantID:   strings.TrimSpace(tenantID),
+	orgID = strings.TrimSpace(orgID)
+	return admindomain.OrgSettings{
+		OrgID:      orgID,
+		TenantID:   orgID,
 		PlanCode:   "starter",
-		Status:     admindomain.TenantStatusActive,
+		Status:     admindomain.OrgStatusActive,
 		CreatedAt:  now,
 		UpdatedAt:  now,
 		HardLimits: map[string]any{"tools_max": 10, "run_rpm": 30, "audit_retention_days": 30},
 	}, nil
 }
 
-func (u *UseCases) UpsertTenantSettings(ctx context.Context, tenantID string, actor, role *string, scopes []string, planCode string, hardLimits map[string]any) (admindomain.TenantSettings, error) {
+func (u *UseCases) UpsertOrgSettings(ctx context.Context, orgID string, actor, role *string, scopes []string, planCode string, hardLimits map[string]any) (admindomain.OrgSettings, error) {
 	_, canWrite := Capabilities(role, scopes)
 	if !canWrite {
-		return admindomain.TenantSettings{}, fmt.Errorf("admin console write permission required")
+		return admindomain.OrgSettings{}, fmt.Errorf("admin console write permission required")
 	}
-	current, err := u.GetTenantSettings(ctx, tenantID, actor, role, scopes)
+	current, err := u.GetOrgSettings(ctx, orgID, actor, role, scopes)
 	if err != nil {
-		return admindomain.TenantSettings{}, err
+		return admindomain.OrgSettings{}, err
 	}
 	current.PlanCode = strings.TrimSpace(planCode)
 	current.HardLimits = cloneMap(hardLimits)
@@ -75,20 +77,28 @@ func (u *UseCases) UpsertTenantSettings(ctx context.Context, tenantID string, ac
 	current.UpdatedAt = u.now()
 	stored, err := u.repo.UpsertTenantSettings(ctx, current)
 	if err != nil {
-		return admindomain.TenantSettings{}, err
+		return admindomain.OrgSettings{}, err
 	}
 	_ = u.repo.CreateAdminActivityEvent(ctx, admindomain.AdminActivityEvent{
-		TenantID:     stored.TenantID,
+		OrgID:        stored.EffectiveOrgID(),
 		Actor:        actor,
-		Action:       "tenant_settings.upsert",
-		ResourceType: "tenant_settings",
+		Action:       "org_settings.upsert",
+		ResourceType: "org_settings",
 		Payload:      map[string]any{"plan_code": stored.PlanCode},
 		CreatedAt:    u.now(),
 	})
 	return stored, nil
 }
 
-func (u *UseCases) UpdateLifecycle(ctx context.Context, tenantID string, actor, role *string, scopes []string, status admindomain.TenantStatus) (admindomain.TenantSettings, error) {
+func (u *UseCases) GetTenantSettings(ctx context.Context, tenantID string, actor, role *string, scopes []string) (admindomain.TenantSettings, error) {
+	return u.GetOrgSettings(ctx, tenantID, actor, role, scopes)
+}
+
+func (u *UseCases) UpsertTenantSettings(ctx context.Context, tenantID string, actor, role *string, scopes []string, planCode string, hardLimits map[string]any) (admindomain.TenantSettings, error) {
+	return u.UpsertOrgSettings(ctx, tenantID, actor, role, scopes, planCode, hardLimits)
+}
+
+func (u *UseCases) UpdateLifecycle(ctx context.Context, orgID string, actor, role *string, scopes []string, status admindomain.TenantStatus) (admindomain.TenantSettings, error) {
 	_, canWrite := Capabilities(role, scopes)
 	if !canWrite {
 		return admindomain.TenantSettings{}, fmt.Errorf("admin console write permission required")
@@ -98,12 +108,12 @@ func (u *UseCases) UpdateLifecycle(ctx context.Context, tenantID string, actor, 
 		value := u.now()
 		deletedAt = &value
 	}
-	stored, err := u.repo.UpdateTenantLifecycle(ctx, strings.TrimSpace(tenantID), status, deletedAt, actor)
+	stored, err := u.repo.UpdateTenantLifecycle(ctx, strings.TrimSpace(orgID), status, deletedAt, actor)
 	if err != nil {
 		return admindomain.TenantSettings{}, err
 	}
 	if u.notifications != nil {
-		_ = u.notifications.Notify(ctx, stored.TenantID, "tenant_lifecycle_changed", map[string]string{
+		_ = u.notifications.Notify(ctx, stored.EffectiveOrgID(), "org_lifecycle_changed", map[string]string{
 			"status": string(status),
 		})
 	}

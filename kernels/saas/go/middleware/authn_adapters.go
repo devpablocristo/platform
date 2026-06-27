@@ -50,7 +50,7 @@ func (a apiKeyPrincipalVerifier) Authenticate(ctx context.Context, cred authn.Cr
 
 func kernelToAuthnPrincipal(kp kerneldomain.Principal) *authn.Principal {
 	return &authn.Principal{
-		OrgID:      kp.TenantID,
+		OrgID:      kp.EffectiveOrgID(),
 		Actor:      kp.Actor,
 		Role:       kp.Role,
 		Scopes:     append([]string(nil), kp.Scopes...),
@@ -67,6 +67,7 @@ func authnToKernelPrincipal(p *authn.Principal, fallbackMethod string) kerneldom
 		method = fallbackMethod
 	}
 	return kerneldomain.Principal{
+		OrgID:      p.OrgID,
 		TenantID:   p.OrgID,
 		Actor:      p.Actor,
 		Role:       p.Role,

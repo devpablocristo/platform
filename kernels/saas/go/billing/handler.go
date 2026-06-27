@@ -15,16 +15,18 @@ func NewHandler(usecases *UseCases) *Handler {
 	return &Handler{usecases: usecases}
 }
 
-func (h *Handler) EnsureTenantBilling(ctx context.Context, input dto.TenantRequest) (dto.TenantBillingResponse, error) {
-	item, err := h.usecases.EnsureTenantBilling(ctx, input.TenantID)
+func (h *Handler) EnsureOrgBilling(ctx context.Context, input dto.OrgRequest) (dto.OrgBillingResponse, error) {
+	orgID := firstNonEmpty(input.OrgID, input.TenantID)
+	item, err := h.usecases.EnsureOrgBilling(ctx, orgID)
 	if err != nil {
-		return dto.TenantBillingResponse{}, err
+		return dto.OrgBillingResponse{}, err
 	}
-	return dto.TenantBillingResponse{Billing: item}, nil
+	return dto.OrgBillingResponse{Billing: item}, nil
 }
 
-func (h *Handler) GetBillingStatus(ctx context.Context, input dto.TenantRequest) (dto.BillingStatusResponse, error) {
-	view, err := h.usecases.GetBillingStatus(ctx, input.TenantID)
+func (h *Handler) GetBillingStatus(ctx context.Context, input dto.OrgRequest) (dto.BillingStatusResponse, error) {
+	orgID := firstNonEmpty(input.OrgID, input.TenantID)
+	view, err := h.usecases.GetBillingStatus(ctx, orgID)
 	if err != nil {
 		return dto.BillingStatusResponse{}, err
 	}
@@ -48,9 +50,14 @@ func (h *Handler) CreatePortalSession(ctx context.Context, input dto.PortalReque
 }
 
 func (h *Handler) ApplyPlanChange(ctx context.Context, input dto.ApplyPlanChangeRequest) (dto.TenantBillingResponse, error) {
-	item, err := h.usecases.ApplyPlanChange(ctx, input.TenantID, input.PlanCode, input.Status, input.Actor)
+	orgID := firstNonEmpty(input.OrgID, input.TenantID)
+	item, err := h.usecases.ApplyOrgPlanChange(ctx, orgID, input.PlanCode, input.Status, input.Actor)
 	if err != nil {
 		return dto.TenantBillingResponse{}, err
 	}
 	return dto.TenantBillingResponse{Billing: item}, nil
+}
+
+func (h *Handler) EnsureTenantBilling(ctx context.Context, input dto.TenantRequest) (dto.TenantBillingResponse, error) {
+	return h.EnsureOrgBilling(ctx, input)
 }

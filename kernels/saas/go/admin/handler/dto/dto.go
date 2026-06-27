@@ -2,15 +2,17 @@ package dto
 
 import admindomain "github.com/devpablocristo/platform/kernels/saas/go/admin/usecases/domain"
 
-type GetTenantSettingsRequest struct {
-	TenantID string   `json:"tenant_id"`
+type GetOrgSettingsRequest struct {
+	OrgID    string   `json:"org_id"`
+	TenantID string   `json:"-"`
 	Actor    *string  `json:"actor,omitempty"`
 	Role     *string  `json:"role,omitempty"`
 	Scopes   []string `json:"scopes,omitempty"`
 }
 
-type UpsertTenantSettingsRequest struct {
-	TenantID   string         `json:"tenant_id"`
+type UpsertOrgSettingsRequest struct {
+	OrgID      string         `json:"org_id"`
+	TenantID   string         `json:"-"`
 	Actor      *string        `json:"actor,omitempty"`
 	Role       *string        `json:"role,omitempty"`
 	Scopes     []string       `json:"scopes,omitempty"`
@@ -19,13 +21,18 @@ type UpsertTenantSettingsRequest struct {
 }
 
 type UpdateLifecycleRequest struct {
-	TenantID string                   `json:"tenant_id"`
+	OrgID    string                   `json:"org_id"`
+	TenantID string                   `json:"-"`
 	Actor    *string                  `json:"actor,omitempty"`
 	Role     *string                  `json:"role,omitempty"`
 	Scopes   []string                 `json:"scopes,omitempty"`
 	Status   admindomain.TenantStatus `json:"status"`
 }
 
-type TenantSettingsResponse struct {
-	Settings admindomain.TenantSettings `json:"settings"`
+type OrgSettingsResponse struct {
+	Settings admindomain.OrgSettings `json:"settings"`
 }
+
+type GetTenantSettingsRequest = GetOrgSettingsRequest
+type UpsertTenantSettingsRequest = UpsertOrgSettingsRequest
+type TenantSettingsResponse = OrgSettingsResponse

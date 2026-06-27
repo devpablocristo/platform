@@ -40,8 +40,9 @@ type UsageSummary struct {
 	Counters UsageCounters `json:"counters"`
 }
 
-type TenantBilling struct {
-	TenantID           string        `json:"tenant_id"`
+type OrgBilling struct {
+	OrgID              string        `json:"org_id"`
+	TenantID           string        `json:"-"`
 	PlanCode           PlanCode      `json:"plan_code"`
 	HardLimits         HardLimits    `json:"hard_limits"`
 	BillingStatus      BillingStatus `json:"billing_status"`
@@ -52,6 +53,15 @@ type TenantBilling struct {
 	CreatedAt          time.Time     `json:"created_at"`
 }
 
+func (b OrgBilling) EffectiveOrgID() string {
+	if b.OrgID != "" {
+		return b.OrgID
+	}
+	return b.TenantID
+}
+
+type TenantBilling = OrgBilling
+
 type BillingStatusView struct {
 	PlanCode         PlanCode      `json:"plan_code"`
 	BillingStatus    BillingStatus `json:"billing_status"`
@@ -61,7 +71,8 @@ type BillingStatusView struct {
 }
 
 type CheckoutInput struct {
-	TenantID      string   `json:"tenant_id"`
+	OrgID         string   `json:"org_id"`
+	TenantID      string   `json:"-"`
 	PlanCode      PlanCode `json:"plan_code"`
 	SuccessURL    string   `json:"success_url"`
 	CancelURL     string   `json:"cancel_url"`
@@ -70,7 +81,8 @@ type CheckoutInput struct {
 }
 
 type PortalInput struct {
-	TenantID  string  `json:"tenant_id"`
+	OrgID     string  `json:"org_id"`
+	TenantID  string  `json:"-"`
 	ReturnURL string  `json:"return_url"`
 	Actor     *string `json:"actor,omitempty"`
 }

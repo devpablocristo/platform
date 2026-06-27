@@ -198,7 +198,7 @@ func (h *OIDCHandler) callback(w http.ResponseWriter, r *http.Request) {
 		IDToken:     tokenResp.IDToken,
 		AccessToken: tokenResp.AccessToken,
 		ExpiresIn:   tokenResp.ExpiresIn,
-		TenantID:    principal.TenantID,
+		OrgID:       principal.EffectiveOrgID(),
 		Actor:       principal.Actor,
 		Role:        principal.Role,
 		Scopes:      append([]string(nil), principal.Scopes...),

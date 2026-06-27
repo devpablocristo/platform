@@ -33,7 +33,7 @@ func MigrateUp(ctx context.Context, db *sql.DB, scope string) error {
 		return err
 	}
 
-	// Nombre propio: golang-migrate (pymes-core/migrations) ya usa "schema_migrations" con otro esquema.
+	// Nombre propio para evitar colisiones con otros migrators que usen schema_migrations.
 	if _, err := db.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS saas_core_schema_migrations (
 			scope text NOT NULL,

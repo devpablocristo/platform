@@ -9,7 +9,7 @@ import (
 	identitydomain "github.com/devpablocristo/platform/kernels/saas/go/identity/usecases/domain"
 )
 
-// OrgResolverPort resuelve tenant IDs cuando el claim trae un external ID.
+// OrgResolverPort resuelve org IDs cuando el claim trae un external ID.
 type OrgResolverPort interface {
 	FindTenantIDByExternalID(context.Context, string) (string, bool, error)
 }
@@ -23,6 +23,7 @@ type TokenVerifierPort interface {
 type ClaimsConfig struct {
 	Issuer      string
 	Audience    string
+	OrgClaim    string
 	TenantClaim string
 	RoleClaim   string
 	ScopesClaim string
@@ -65,7 +66,7 @@ func (r *ClaimsResolver) ResolvePrincipal(ctx context.Context, bearerToken strin
 		return identitydomain.Principal{}, domainerr.Unauthorized("invalid token audience")
 	}
 
-	tenantID, err := r.resolveTenantID(ctx, claims)
+	orgID, err := r.resolveOrgID(ctx, claims)
 	if err != nil {
 		return identitydomain.Principal{}, err
 	}
@@ -76,7 +77,8 @@ func (r *ClaimsResolver) ResolvePrincipal(ctx context.Context, bearerToken strin
 	}
 
 	return identitydomain.Principal{
-		TenantID:   tenantID,
+		OrgID:      orgID,
+		TenantID:   orgID,
 		Actor:      strings.TrimSpace(toString(claimValue(claims, actorClaim))),
 		Role:       normalizeRoleValue(firstStringClaim(claims, r.cfg.RoleClaim, "role", "org_role", "o.rol")),
 		Scopes:     firstScopesClaim(claims, r.cfg.ScopesClaim, "scopes", "org_permissions", "o.per"),
@@ -84,15 +86,15 @@ func (r *ClaimsResolver) ResolvePrincipal(ctx context.Context, bearerToken strin
 	}, nil
 }
 
-func (r *ClaimsResolver) resolveTenantID(ctx context.Context, claims map[string]any) (string, error) {
-	tenantClaim := firstStringClaim(claims, r.cfg.TenantClaim, "tenant_id", "org_id", "o.id")
-	if tenantClaim == "" {
-		return "", domainerr.Newf(domainerr.KindUnauthorized, "missing %s claim", effectiveTenantClaimName(r.cfg.TenantClaim))
+func (r *ClaimsResolver) resolveOrgID(ctx context.Context, claims map[string]any) (string, error) {
+	orgClaim := firstStringClaim(claims, r.cfg.OrgClaim, r.cfg.TenantClaim, "org_id", "tenant_id", "o.id")
+	if orgClaim == "" {
+		return "", domainerr.Newf(domainerr.KindUnauthorized, "missing %s claim", effectiveOrgClaimName(r.cfg.OrgClaim, r.cfg.TenantClaim))
 	}
 	if r.orgs == nil {
-		return strings.TrimSpace(tenantClaim), nil
+		return strings.TrimSpace(orgClaim), nil
 	}
-	resolvedID, ok, err := r.orgs.FindTenantIDByExternalID(ctx, tenantClaim)
+	resolvedID, ok, err := r.orgs.FindTenantIDByExternalID(ctx, orgClaim)
 	if err != nil {
 		return "", domainerr.Internal("failed resolving tenant context")
 	}
@@ -102,18 +104,22 @@ func (r *ClaimsResolver) resolveTenantID(ctx context.Context, claims map[string]
 	return "", domainerr.Unauthorized("unknown organization claim")
 }
 
-// normalizeIssuerURL compara issuers de OIDC/Clerk aunque uno lleve barra final y el otro no.
+// normalizeIssuerURL compara issuers aunque uno lleve barra final y el otro no.
 func normalizeIssuerURL(raw string) string {
 	raw = strings.TrimSpace(raw)
 	return strings.TrimSuffix(raw, "/")
 }
 
-func effectiveTenantClaimName(configured string) string {
-	configured = strings.TrimSpace(configured)
-	if configured == "" {
-		return "tenant_id"
+func effectiveOrgClaimName(configuredOrg string, configuredTenant string) string {
+	configuredOrg = strings.TrimSpace(configuredOrg)
+	if configuredOrg != "" {
+		return configuredOrg
 	}
-	return configured
+	configuredTenant = strings.TrimSpace(configuredTenant)
+	if configuredTenant != "" {
+		return configuredTenant
+	}
+	return "org_id"
 }
 
 func firstStringClaim(claims map[string]any, names ...string) string {

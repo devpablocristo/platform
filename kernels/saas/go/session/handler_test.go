@@ -26,7 +26,7 @@ func (s stubJWTVerifier) Verify(ctx context.Context, token string) (kerneldomain
 func TestHandleSession_OK(t *testing.T) {
 	t.Parallel()
 	want := kerneldomain.Principal{
-		TenantID:   "org-1",
+		OrgID:      "org-1",
 		Actor:      "user_1",
 		Role:       "viewer",
 		Scopes:     []string{"a"},
@@ -58,7 +58,7 @@ func TestHandleSession_OK(t *testing.T) {
 	if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
 		t.Fatal(err)
 	}
-	if got.TenantID != want.TenantID || got.Actor != want.Actor || got.Role != want.Role {
+	if got.OrgID != want.OrgID || got.Actor != want.Actor || got.Role != want.Role {
 		t.Fatalf("got %+v want %+v", got, want)
 	}
 }

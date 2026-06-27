@@ -11,7 +11,8 @@ type OIDCCallbackResponse struct {
 	IDToken     string   `json:"id_token"`
 	AccessToken string   `json:"access_token"`
 	ExpiresIn   int      `json:"expires_in"`
-	TenantID    string   `json:"tenant_id,omitempty"`
+	OrgID       string   `json:"org_id,omitempty"`
+	TenantID    string   `json:"-"`
 	Actor       string   `json:"actor,omitempty"`
 	Role        string   `json:"role,omitempty"`
 	Scopes      []string `json:"scopes,omitempty"`

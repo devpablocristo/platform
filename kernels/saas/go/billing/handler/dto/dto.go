@@ -2,13 +2,17 @@ package dto
 
 import billingdomain "github.com/devpablocristo/platform/kernels/saas/go/billing/usecases/domain"
 
-type TenantRequest struct {
-	TenantID string `json:"tenant_id"`
+type OrgRequest struct {
+	OrgID    string `json:"org_id"`
+	TenantID string `json:"-"`
 }
 
-type TenantBillingResponse struct {
-	Billing billingdomain.TenantBilling `json:"billing"`
+type OrgBillingResponse struct {
+	Billing billingdomain.OrgBilling `json:"billing"`
 }
+
+type TenantRequest = OrgRequest
+type TenantBillingResponse = OrgBillingResponse
 
 type BillingStatusResponse struct {
 	Status billingdomain.BillingStatusView `json:"status"`
@@ -27,7 +31,8 @@ type SessionResponse struct {
 }
 
 type ApplyPlanChangeRequest struct {
-	TenantID string                      `json:"tenant_id"`
+	OrgID    string                      `json:"org_id"`
+	TenantID string                      `json:"-"`
 	PlanCode billingdomain.PlanCode      `json:"plan_code"`
 	Status   billingdomain.BillingStatus `json:"status"`
 	Actor    *string                     `json:"actor,omitempty"`

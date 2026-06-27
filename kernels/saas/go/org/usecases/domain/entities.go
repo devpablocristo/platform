@@ -19,6 +19,14 @@ type APIKey struct {
 }
 
 type Principal struct {
-	TenantID string   `json:"tenant_id"`
+	OrgID    string   `json:"org_id"`
+	TenantID string   `json:"-"`
 	Scopes   []string `json:"scopes,omitempty"`
+}
+
+func (p Principal) EffectiveOrgID() string {
+	if p.OrgID != "" {
+		return p.OrgID
+	}
+	return p.TenantID
 }

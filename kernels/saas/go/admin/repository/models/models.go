@@ -20,7 +20,8 @@ const (
 )
 
 type LifecycleRecord struct {
-	TenantID  string                   `json:"tenant_id"`
+	OrgID     string                   `json:"org_id"`
+	TenantID  string                   `json:"tenant_id,omitempty"`
 	Status    admindomain.TenantStatus `json:"status"`
 	DeletedAt *time.Time               `json:"deleted_at,omitempty"`
 	UpdatedBy *string                  `json:"updated_by,omitempty"`

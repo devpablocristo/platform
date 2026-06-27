@@ -39,17 +39,19 @@ func DefaultHardLimits(plan billingdomain.PlanCode) billingdomain.HardLimits {
 	}
 }
 
-func (u *UseCases) EnsureTenantBilling(ctx context.Context, tenantID string) (billingdomain.TenantBilling, error) {
-	current, ok, err := u.repo.GetTenantBilling(ctx, strings.TrimSpace(tenantID))
+func (u *UseCases) EnsureOrgBilling(ctx context.Context, orgID string) (billingdomain.OrgBilling, error) {
+	current, ok, err := u.repo.GetTenantBilling(ctx, strings.TrimSpace(orgID))
 	if err != nil {
-		return billingdomain.TenantBilling{}, err
+		return billingdomain.OrgBilling{}, err
 	}
 	if ok {
 		return current, nil
 	}
 	now := u.now()
-	return u.repo.UpsertTenantBilling(ctx, billingdomain.TenantBilling{
-		TenantID:      strings.TrimSpace(tenantID),
+	orgID = strings.TrimSpace(orgID)
+	return u.repo.UpsertTenantBilling(ctx, billingdomain.OrgBilling{
+		OrgID:         orgID,
+		TenantID:      orgID,
 		PlanCode:      billingdomain.PlanStarter,
 		HardLimits:    DefaultHardLimits(billingdomain.PlanStarter),
 		BillingStatus: billingdomain.BillingTrialing,
@@ -58,12 +60,16 @@ func (u *UseCases) EnsureTenantBilling(ctx context.Context, tenantID string) (bi
 	})
 }
 
-func (u *UseCases) GetBillingStatus(ctx context.Context, tenantID string) (billingdomain.BillingStatusView, error) {
-	settings, err := u.EnsureTenantBilling(ctx, tenantID)
+func (u *UseCases) EnsureTenantBilling(ctx context.Context, tenantID string) (billingdomain.TenantBilling, error) {
+	return u.EnsureOrgBilling(ctx, tenantID)
+}
+
+func (u *UseCases) GetBillingStatus(ctx context.Context, orgID string) (billingdomain.BillingStatusView, error) {
+	settings, err := u.EnsureOrgBilling(ctx, orgID)
 	if err != nil {
 		return billingdomain.BillingStatusView{}, err
 	}
-	usage, err := u.repo.GetUsageSummary(ctx, strings.TrimSpace(tenantID))
+	usage, err := u.repo.GetUsageSummary(ctx, strings.TrimSpace(orgID))
 	if err != nil {
 		return billingdomain.BillingStatusView{}, err
 	}
@@ -79,15 +85,15 @@ func (u *UseCases) CreateCheckoutSession(ctx context.Context, input billingdomai
 	if u.provider == nil {
 		return "", fmt.Errorf("billing provider is required")
 	}
-	input.TenantID = strings.TrimSpace(input.TenantID)
-	if input.TenantID == "" {
-		return "", fmt.Errorf("tenant id is required")
+	input.OrgID = firstNonEmpty(input.OrgID, input.TenantID)
+	if input.OrgID == "" {
+		return "", fmt.Errorf("org id is required")
 	}
 	input.PlanCode = normalizePlan(input.PlanCode)
 	if input.PlanCode == "" {
 		return "", fmt.Errorf("plan code is required")
 	}
-	settings, err := u.EnsureTenantBilling(ctx, input.TenantID)
+	settings, err := u.EnsureTenantBilling(ctx, input.OrgID)
 	if err != nil {
 		return "", err
 	}
@@ -98,21 +104,21 @@ func (u *UseCases) CreatePortalSession(ctx context.Context, input billingdomain.
 	if u.provider == nil {
 		return "", fmt.Errorf("billing provider is required")
 	}
-	input.TenantID = strings.TrimSpace(input.TenantID)
-	if input.TenantID == "" {
-		return "", fmt.Errorf("tenant id is required")
+	input.OrgID = firstNonEmpty(input.OrgID, input.TenantID)
+	if input.OrgID == "" {
+		return "", fmt.Errorf("org id is required")
 	}
-	settings, err := u.EnsureTenantBilling(ctx, input.TenantID)
+	settings, err := u.EnsureTenantBilling(ctx, input.OrgID)
 	if err != nil {
 		return "", err
 	}
 	return u.provider.CreatePortalSession(ctx, input, settings)
 }
 
-func (u *UseCases) ApplyPlanChange(ctx context.Context, tenantID string, plan billingdomain.PlanCode, status billingdomain.BillingStatus, actor *string) (billingdomain.TenantBilling, error) {
-	current, err := u.EnsureTenantBilling(ctx, tenantID)
+func (u *UseCases) ApplyOrgPlanChange(ctx context.Context, orgID string, plan billingdomain.PlanCode, status billingdomain.BillingStatus, actor *string) (billingdomain.OrgBilling, error) {
+	current, err := u.EnsureOrgBilling(ctx, orgID)
 	if err != nil {
-		return billingdomain.TenantBilling{}, err
+		return billingdomain.OrgBilling{}, err
 	}
 	current.PlanCode = normalizePlan(plan)
 	current.HardLimits = DefaultHardLimits(current.PlanCode)
@@ -120,16 +126,20 @@ func (u *UseCases) ApplyPlanChange(ctx context.Context, tenantID string, plan bi
 	current.UpdatedAt = u.now()
 	stored, err := u.repo.UpsertTenantBilling(ctx, current)
 	if err != nil {
-		return billingdomain.TenantBilling{}, err
+		return billingdomain.OrgBilling{}, err
 	}
 	if u.notifications != nil {
-		_ = u.notifications.Notify(ctx, tenantID, "billing_plan_changed", map[string]string{
+		_ = u.notifications.Notify(ctx, orgID, "billing_plan_changed", map[string]string{
 			"plan_code": string(stored.PlanCode),
 			"status":    string(stored.BillingStatus),
 			"actor":     deref(actor),
 		})
 	}
 	return stored, nil
+}
+
+func (u *UseCases) ApplyPlanChange(ctx context.Context, tenantID string, plan billingdomain.PlanCode, status billingdomain.BillingStatus, actor *string) (billingdomain.TenantBilling, error) {
+	return u.ApplyOrgPlanChange(ctx, tenantID, plan, status, actor)
 }
 
 func normalizePlan(plan billingdomain.PlanCode) billingdomain.PlanCode {
@@ -163,4 +173,13 @@ func deref(value *string) string {
 		return ""
 	}
 	return strings.TrimSpace(*value)
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if trimmed := strings.TrimSpace(value); trimmed != "" {
+			return trimmed
+		}
+	}
+	return ""
 }

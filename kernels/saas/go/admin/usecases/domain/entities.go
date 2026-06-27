@@ -2,18 +2,19 @@ package domain
 
 import "time"
 
-type TenantStatus string
+type OrgStatus string
 
 const (
-	TenantStatusActive    TenantStatus = "active"
-	TenantStatusSuspended TenantStatus = "suspended"
-	TenantStatusDeleted   TenantStatus = "deleted"
+	OrgStatusActive    OrgStatus = "active"
+	OrgStatusSuspended OrgStatus = "suspended"
+	OrgStatusDeleted   OrgStatus = "deleted"
 )
 
-type TenantSettings struct {
-	TenantID   string         `json:"tenant_id"`
+type OrgSettings struct {
+	OrgID      string         `json:"org_id"`
+	TenantID   string         `json:"-"`
 	PlanCode   string         `json:"plan_code"`
-	Status     TenantStatus   `json:"status"`
+	Status     OrgStatus      `json:"status"`
 	DeletedAt  *time.Time     `json:"deleted_at,omitempty"`
 	HardLimits map[string]any `json:"hard_limits,omitempty"`
 	UpdatedBy  *string        `json:"updated_by,omitempty"`
@@ -21,9 +22,17 @@ type TenantSettings struct {
 	CreatedAt  time.Time      `json:"created_at"`
 }
 
+func (s OrgSettings) EffectiveOrgID() string {
+	if s.OrgID != "" {
+		return s.OrgID
+	}
+	return s.TenantID
+}
+
 type AdminActivityEvent struct {
 	ID           string         `json:"id"`
-	TenantID     string         `json:"tenant_id"`
+	OrgID        string         `json:"org_id"`
+	TenantID     string         `json:"-"`
 	Actor        *string        `json:"actor,omitempty"`
 	Action       string         `json:"action"`
 	ResourceType string         `json:"resource_type"`
@@ -34,7 +43,8 @@ type AdminActivityEvent struct {
 
 type ProtectedResource struct {
 	ID           string    `json:"id"`
-	TenantID     string    `json:"tenant_id"`
+	OrgID        string    `json:"org_id"`
+	TenantID     string    `json:"-"`
 	Name         string    `json:"name"`
 	ResourceType string    `json:"resource_type"`
 	MatchValue   string    `json:"match_value"`
@@ -50,7 +60,8 @@ type ProtectedResource struct {
 
 type RestoreEvidence struct {
 	ID             string         `json:"id"`
-	TenantID       string         `json:"tenant_id"`
+	OrgID          string         `json:"org_id"`
+	TenantID       string         `json:"-"`
 	Environment    string         `json:"environment"`
 	System         string         `json:"system"`
 	Status         string         `json:"status"`
@@ -63,3 +74,14 @@ type RestoreEvidence struct {
 	Summary        map[string]any `json:"summary,omitempty"`
 	CreatedAt      time.Time      `json:"created_at"`
 }
+
+// Legacy aliases kept while existing consumers migrate.
+type TenantStatus = OrgStatus
+
+const (
+	TenantStatusActive    = OrgStatusActive
+	TenantStatusSuspended = OrgStatusSuspended
+	TenantStatusDeleted   = OrgStatusDeleted
+)
+
+type TenantSettings = OrgSettings

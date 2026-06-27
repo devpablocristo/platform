@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	authn "github.com/devpablocristo/platform/authn/go"
-	"github.com/devpablocristo/platform/security/go/contextkeys"
 	"github.com/devpablocristo/platform/kernels/saas/go/identity"
 	kerneldomain "github.com/devpablocristo/platform/kernels/saas/go/kernel/usecases/domain"
+	"github.com/devpablocristo/platform/security/go/contextkeys"
 	"github.com/google/uuid"
 )
 
@@ -80,9 +80,9 @@ func PrincipalFromContext(ctx context.Context) (kerneldomain.Principal, bool) {
 
 func withPrincipal(ctx context.Context, principal kerneldomain.Principal) context.Context {
 	ctx = context.WithValue(ctx, principalContextKey, principal)
-	if principal.TenantID != "" {
-		ctx = context.WithValue(ctx, ctxkeys.TenantID, principal.TenantID)
-		if orgID, err := uuid.Parse(strings.TrimSpace(principal.TenantID)); err == nil {
+	if orgRef := principal.EffectiveOrgID(); orgRef != "" {
+		ctx = context.WithValue(ctx, ctxkeys.TenantID, orgRef)
+		if orgID, err := uuid.Parse(strings.TrimSpace(orgRef)); err == nil {
 			ctx = context.WithValue(ctx, ctxkeys.OrgID, orgID)
 		}
 	}

@@ -23,12 +23,14 @@ type APIKey struct {
 }
 
 type Principal struct {
-	TenantID string   `json:"tenant_id"`
+	OrgID    string   `json:"org_id"`
+	TenantID string   `json:"-"`
 	Scopes   []string `json:"scopes,omitempty"`
 }
 
 func PrincipalFromDomain(item orgdomain.Principal) Principal {
 	return Principal{
+		OrgID:    item.EffectiveOrgID(),
 		TenantID: item.TenantID,
 		Scopes:   append([]string(nil), item.Scopes...),
 	}
@@ -36,6 +38,7 @@ func PrincipalFromDomain(item orgdomain.Principal) Principal {
 
 func (m Principal) ToDomain() orgdomain.Principal {
 	return orgdomain.Principal{
+		OrgID:    m.OrgID,
 		TenantID: m.TenantID,
 		Scopes:   append([]string(nil), m.Scopes...),
 	}
