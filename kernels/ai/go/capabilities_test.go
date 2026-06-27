@@ -78,7 +78,7 @@ func TestCapabilityToolToToolPreservesLLMSurface(t *testing.T) {
 func loadCapabilityManifestFixture(t *testing.T, name string) CapabilityManifest {
 	t.Helper()
 
-	data, err := os.ReadFile(filepath.Join("..", "contracts", "capabilities", "v1", "examples", name))
+	data, err := os.ReadFile(filepath.Join("..", "..", "..", "contracts", "ai", "capabilities", "v1", "examples", name))
 	if err != nil {
 		t.Fatal(err)
 	}

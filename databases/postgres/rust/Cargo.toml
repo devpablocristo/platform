@@ -6,7 +6,7 @@ license = "MIT"
 description = "PostgreSQL connection pool + migrations via sqlx with compile-time query checking"
 
 [lib]
-name = "platform-databases-postgres"
+name = "platform_databases_postgres"
 path = "src/lib.rs"
 
 [dependencies]

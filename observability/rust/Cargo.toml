@@ -6,7 +6,7 @@ license = "MIT"
 description = "Structured logging + request ID propagation via tracing"
 
 [lib]
-name = "platform-observability"
+name = "platform_observability"
 path = "src/lib.rs"
 
 [dependencies]

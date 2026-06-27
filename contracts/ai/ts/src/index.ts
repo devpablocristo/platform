@@ -1,5 +1,5 @@
 // DTOs canónicos del contrato AI/chat para Companion y sus consumidores.
-// Espejo TypeScript de github.com/devpablocristo/core/ai/contracts/go.
+// Espejo TypeScript de github.com/devpablocristo/platform/contracts/ai/go.
 // Cualquier app que produzca o consuma estos shapes debe importar este
 // paquete en vez de redeclarar los tipos.
 

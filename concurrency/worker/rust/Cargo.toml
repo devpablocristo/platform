@@ -6,7 +6,7 @@ license = "MIT"
 description = "Periodic background worker with graceful shutdown via tokio"
 
 [lib]
-name = "platform-concurrency-worker"
+name = "platform_concurrency_worker"
 path = "src/lib.rs"
 
 [dependencies]

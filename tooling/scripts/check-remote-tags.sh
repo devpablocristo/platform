@@ -2,14 +2,14 @@
 
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 REMOTE="${1:-origin}"
 TAGS_FILE="$(mktemp)"
 trap 'rm -f "${TAGS_FILE}"' EXIT
 
 discover_modules() {
   {
-    find "${ROOT_DIR}" -type f -path '*/go/go.mod'
+    find "${ROOT_DIR}" -type f -name go.mod
     find "${ROOT_DIR}" -type f -path '*/python/pyproject.toml'
     find "${ROOT_DIR}" -type f -path '*/rust/Cargo.toml'
     find "${ROOT_DIR}" -type f -path '*/ts/package.json'

@@ -6,7 +6,7 @@ license = "MIT"
 description = "Inbound authentication — JWT (JWKS) + API key verification via traits"
 
 [lib]
-name = "platform-authn"
+name = "platform_authn"
 path = "src/lib.rs"
 
 [dependencies]
