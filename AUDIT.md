@@ -13,6 +13,7 @@ Checks iniciales relevantes:
 - `npm run test:ts` tuvo un fallo flaky en `PublicSchedulingFlow` por timeout demasiado corto esperando disponibilidad async.
 
 Fixes aplicados en esta pasada:
+- `.github/workflows/ci.yml` dejo de ser placeholder y ahora corre guardrails + tests Go/TS/Python/Rust en jobs separados.
 - Scripts de tooling ahora resuelven la raiz real del repo.
 - `validate-module-versions`, `test-go`, `list-module-versions` y `check-remote-tags` descubren tambien `testing/go/tenancy`.
 - `validate-boundaries` valida imports/manifests de codigo contra dependencias legacy `core/modules` sin fallar por docs de migracion.
@@ -35,13 +36,13 @@ Verificacion despues de fixes:
 
 ### HIGH-01 — CI principal es un placeholder
 
-Estado: abierto.
+Estado: **corregido en working tree**.
 
 Evidencia: `.github/workflows/ci.yml` solo imprime que la matriz esta pendiente.
 
 Riesgo: PRs de `platform` pueden mergearse sin validar boundaries, versions ni tests por lenguaje; Axis/Medmory despues consumen paquetes rotos.
 
-Fix recomendado: reemplazar el noop por jobs para `validate:boundaries`, `validate:versions`, `validate:ts-deps`, `test:go`, `test:ts`, `test:python` y, cuando toolchain este disponible, Rust.
+Fix: el workflow principal ahora corre guardrails (`validate-runtime-layout`, boundaries, versions, TS deps) y tests separados para Go, TypeScript, Python y Rust.
 
 ### HIGH-02 — Guardrails de versionado/boundaries/test Go no estaban auditando el repo real
 
