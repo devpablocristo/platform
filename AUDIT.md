@@ -16,6 +16,7 @@ Fixes aplicados en esta pasada:
 - `.github/workflows/ci.yml` dejo de ser placeholder y ahora corre guardrails + tests Go/TS/Python/Rust en jobs separados.
 - `authn/ts` ya no depende de tipos ambientales `vite/client` no declarados; el typecheck limpio de CI valida el modulo sin dependencias hoisted.
 - Los workflows de publish TS/Python ahora fallan si falla el test del modulo taggeado; TS instala el workspace con `pnpm` para resolver dependencias internas sin depender de paquetes ya publicados.
+- Docs operativas raiz reemplazadas por guias vigentes de `platform`; `docs/platform/` contiene release/versioning actuales y `docs/core`/`docs/modules` quedan como historico.
 - Scripts de tooling ahora resuelven la raiz real del repo.
 - `validate-module-versions`, `test-go`, `list-module-versions` y `check-remote-tags` descubren tambien `testing/go/tenancy`.
 - `validate-boundaries` valida imports/manifests de codigo contra dependencias legacy `core/modules` sin fallar por docs de migracion.
@@ -78,13 +79,13 @@ Fix: ambos workflows quedaron fail-fast. En TS, el test del modulo taggeado corr
 
 ### MED-02 — Docs operativas siguen en estado legacy `core/modules`
 
-Estado: abierto.
+Estado: **corregido en working tree**.
 
 Evidencia: `AGENTS.md`, `CONTRIBUTING.md`, `GOVERNANCE.md` y `docs/core`/`docs/modules` todavia describen reglas como si el repo fuera `core` + `modules`; `CONTRIBUTING.md` referencia `docs/RELEASE_FLOW.md`, que no existe en esa ubicacion.
 
 Riesgo: agentes y humanos aplican reglas viejas, paths viejos o release flow equivocado.
 
-Fix recomendado: crear docs canonicas `docs/platform/*` o `docs/RELEASE_FLOW.md`, y dejar `docs/core`/`docs/modules` como historico/migracion.
+Fix: `AGENTS.md`, `CONTRIBUTING.md` y `GOVERNANCE.md` ahora describen `platform`; `docs/platform/RELEASE_FLOW.md` y `docs/platform/VERSIONING.md` son la fuente operativa; docs legacy tienen README/punteros historicos.
 
 ### MED-03 — Validacion TS interna estaba atada a `modules-*`
 

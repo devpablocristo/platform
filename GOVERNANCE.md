@@ -1,106 +1,72 @@
-# Gobernanza del ecosistema pablo
+# Gobernanza de `platform`
 
-> ⚠️ **En transición**. Este documento describe la gobernanza pre-fusión.
-> Tras la migración `core/` + `modules/` → `platform/` (ver
-> [`docs/migration/MIGRATION_FROM_CORE_MODULES.md`](docs/migration/MIGRATION_FROM_CORE_MODULES.md)),
-> las reglas se mantienen pero los paths físicos cambian. Las distinciones
-> conceptuales `core` (L0 capabilities) y `modules` (L2 features) persisten
-> como capas dentro de `platform/`. La sección 1 se actualiza en Fase A9.
+`platform` es la fuente de verdad para paquetes reutilizables del ecosistema
+`pablo`. Reemplaza a los repos legacy `core` y `modules`.
 
-Documento de referencia para el ecosistema multi-repo `pablo/*` (core, modules,
-companion, nexus, pymes, medmory). Vive en `core/` porque es la dependencia
-más universal; los demás repos lo referencian.
+## Capas
 
-## 1. Estructura del ecosistema
-
-Cuatro ejes:
-
-- **`core/`** — primitivas técnicas reusables, sin lógica de UI ni de dominio
-  (HTTP, auth, DB, observability, contratos canónicos, providers AWS).
-- **`modules/`** — componentes reutilizables con dominio acotado (UI React,
-  CRUD genérico, scheduling, kanban, inbox, etc.).
-- **Apps** — `companion`, `nexus`, `pymes`, `medmory`. Consumen `core` y
-  `modules`. Cada una tiene dominio propio.
-
-Reglas duras:
-
-- `core` NO contiene lógica de producto.
-- `modules` NO contiene código duplicado de apps.
-- Las apps NO reinventan lo que ya vive en `core` o `modules`.
-- No hay `replace` directives ni paths locales en go.mod de las apps.
-- No hay `file:./vendor/...` en package.json de las apps.
-
-## 2. Promoción a `core` / `modules` — regla de los 3
-
-Para promover código a `core` o `modules` se requieren **≥3 consumidores
-actuales o concretamente planificados en próximos 30 días**. Entre tanto,
-vive en la app y se duplica conscientemente (≤2 copias).
-
-Si encontrás un patrón duplicado en 2 apps, **dejalo**. Si aparece un 3er
-consumidor, ese commit es el trigger para extraer.
-
-## 3. `core` vs `modules`
-
-| | `core` | `modules` |
+| Capa | Path | Contenido |
 |---|---|---|
-| Lenguajes | Go + TS | TS principalmente (algún Go) |
-| Capa | Primitivas técnicas | Componentes/dominio acotado |
-| Ejemplo | `http/go`, `authn/go`, `errors/go` | `ui-conversation-inbox`, `crud-ui`, `scheduling` |
-| Dependencias | Mínimas, casi stdlib | Puede depender de `core` |
+| Transversal | raices como `http`, `authn`, `errors`, `observability` | Primitivas tecnicas agnosticas |
+| Contracts | `contracts/` | Contratos compartidos cross-runtime |
+| SDKs | `sdks/` | Clientes/adapters a servicios externos |
+| Kernels | `kernels/` | Mini-dominios embebibles o engines reutilizables |
+| Features | `features/` | Verticales o componentes reutilizables de dominio acotado |
+| UI | `ui/` | Primitivas visuales compartidas |
+| Testing | `testing/` | Helpers de test reutilizables |
 
-## 4. Versionado y tags
+## Reglas duras
 
-- **Semver estricto**: minor = nuevas APIs sin romper, patch = bugfix, major = breaking.
-- **Tag inmediato al publicar**: prohibido publicar a npm/Go-proxy sin git tag correspondiente.
-- **Convención de tag**: `<path>/v<X.Y.Z>` (e.g. `authn/ts/v0.3.0`, `ai/go/v0.3.0`).
-- **VERSION = source of truth**: el archivo `VERSION` o el campo `version` de package.json debe coincidir con el último tag. CI lo valida.
-- **Sin pseudo-versions en consumers**: prohibido `go.mod` con `vX.Y.Z-YYYYMMDDHHMMSS-sha`. Si necesitás cambio urgente, cortás patch del lib y consumís ese patch.
+- `platform` no contiene codigo especifico de una app.
+- Las apps no deben reinventar primitives ya publicadas en `platform`.
+- Los consumers productivos usan versiones publicadas, no paths locales.
+- Cada modulo versionable tiene `VERSION` propio.
+- El tag, el manifest y `VERSION` deben coincidir.
+- No publicar si fallan tests del modulo.
 
-## 5. Ghost packages
+## Promocion a `platform`
 
-Packages publicados sin consumidores tienen TTL:
+Para extraer codigo desde una app:
 
-- Si un package está **90 días sin un solo import nuevo**, se evalúa deprecación.
-- Deprecación se hace con `npm deprecate` (TS) o anotación en README + tag deprecation (Go).
-- Después de 180 días deprecado sin reactivación, se puede archivar la carpeta o borrar.
+1. Debe tener frontera reusable y estable.
+2. Debe tener consumidores reales o planificados.
+3. No debe arrastrar modelos privados, rutas privadas ni copy de producto.
+4. Debe incluir tests y documentacion suficiente para consumo externo.
+5. Debe publicarse antes de que otros repos lo consuman.
 
-## 6. Peer dependencies (TS)
+La "regla de 3 consumidores" sigue siendo una buena heuristica, pero no es
+absoluta: una primitiva critica puede entrar antes si evita duplicacion riesgosa
+o establece un contrato comun.
 
-- Política actual para `modules-ui-*`: `react: "^18.0.0 || ^19.0.0"` (dual compat).
-- Cuando React 20 salga: subir todos en bloque coordinado.
-- Nuevos packages UI deben declarar peerDeps explícitas.
+## Versionado
 
-## 7. Post-release housekeeping
+- Semver estricto.
+- Minor: API compatible.
+- Patch: bugfix compatible.
+- Major: breaking change.
+- Sin version global del repo.
 
-Si tras tagear vas a mergear docs/chores:
+Ver [`docs/platform/VERSIONING.md`](docs/platform/VERSIONING.md).
 
-- **Opción A** (preferida): no mergees nada hasta que tengas el próximo bump real planeado. El housekeeping va en el mismo PR del próximo bump.
-- **Opción B**: si urgen los docs, cortás patch (`vX.Y.Z+1`) inmediatamente.
-- **Prohibido**: acumular >5 commits post-tag sin tagear.
+## Release
 
-## 8. Release cadence
+- Go publica via tags `<path>/vX.Y.Z` y Go proxy.
+- TS publica via workflow `publish-ts-package` al pushear tags TS.
+- Python publica via workflow `publish-python-package` al pushear tags Python.
+- Rust se valida en CI; publicar crates requiere decision explicita.
 
-- **Mínimo mensual** para cada package con commits, aunque sean dev-deps bumps.
-- **Inmediato** al mergear feature/fix funcional.
-- CI auto-publica + tagea (ver `docs/RELEASE_FLOW.md` en core y modules).
+Ver [`docs/platform/RELEASE_FLOW.md`](docs/platform/RELEASE_FLOW.md).
 
-## 9. Responsabilidades
+## Consumers
 
-- **Dueño de `core`**: aprueba promociones, corta releases, mantiene compatibilidad. Pablo.
-- **Dueño de `modules`**: idem para UI/dominios reusables. Pablo.
-- **Dueños de apps**: NO copian código reusable; abren issue en core/modules si falta algo.
-- **Cualquier contribuyente** que copy-paste código de core/modules a una app: el reviewer debe rechazar el PR.
+Axis, Medmory y otros repos deben:
 
-## 10. Cómo se hace cumplir
+- consumir tags/versiones publicadas;
+- evitar `replace` o `file:` commiteados;
+- abrir PR de bump despues de publicar platform;
+- correr sus checks propios antes de cerrar la adopcion.
 
-- **Audit periódico** (ver `modular-swinging-hummingbird.md` plan + checklist N): regenera matrices de consumo, publicación, duplicación.
-- **CI cross-repo** (roadmap MP-05): post-publish en core/modules dispara build en companion/nexus/pymes/medmory.
-- **Renovate/Dependabot** (roadmap LP-01): PRs automáticos en consumers cuando core/modules publican.
+## Docs legacy
 
-## 11. Excepciones
-
-Cualquier desviación de este documento requiere:
-
-1. ADR (Architecture Decision Record) escrito justificando.
-2. Acuerdo de los dueños de los repos afectados.
-3. Plan de remediación o TTL para volver al estándar.
+`docs/core/` y `docs/modules/` quedan como historico de migracion. La fuente
+operativa actual es `docs/platform/` y este archivo.

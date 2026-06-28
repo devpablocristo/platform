@@ -60,8 +60,9 @@ Ver [`docs/migration/CONSUMER_ALIGNMENT.md`](docs/migration/CONSUMER_ALIGNMENT.m
 
 - [`AGENTS.md`](AGENTS.md) / [`CLAUDE.md`](CLAUDE.md) — reglas para agentes y Claude Code.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — flujo de trabajo, releases, validación.
-- [`GOVERNANCE.md`](GOVERNANCE.md) — gobernanza del ecosistema (en transición).
-- [`docs/`](docs/) — ADRs, naming, release flow, versioning.
+- [`GOVERNANCE.md`](GOVERNANCE.md) — gobernanza vigente del ecosistema `platform`.
+- [`docs/platform/`](docs/platform/) — release flow y versionado actuales.
+- [`docs/migration/`](docs/migration/) — historial de migracion desde `core`/`modules`.
 
 ## Workspace
 

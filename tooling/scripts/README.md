@@ -1,6 +1,6 @@
-# scripts
+# tooling/scripts
 
-Acá viven scripts transversales del monorepo `core`.
+Acá viven scripts transversales del monorepo `platform`.
 
 ## Uso esperado
 
@@ -11,15 +11,15 @@ Acá viven scripts transversales del monorepo `core`.
 
 ## Scripts actuales
 
-- `validate-runtime-layout.sh`: valida que todo runtime viva bajo `go/`, `python/` o `rust/`
-- `validate-boundaries.sh`: valida que `core` no apunte a `modules` ni por paquete ni por path local
+- `validate-runtime-layout.sh`: valida que todo runtime viva bajo `go/`, `python/`, `rust/` o `ts/`
+- `validate-boundaries.sh`: valida que el codigo no dependa de packages o paths legacy `core`/`modules`
 - `validate-module-versions.sh`: valida `VERSION`, semver y consistencia con manifests por módulo
 - `list-module-versions.sh`: lista módulos versionados y el tag esperado de release
 - `check-remote-tags.sh`: compara los tags remotos publicados contra los tags esperados por `VERSION`
 - `bump-module-version.sh`: sube la versión de un módulo concreto
 - `test-go-modules.sh`: corre `go test ./...` en cada módulo Go independiente
 - `test-rust-modules.sh`: corre `cargo test` en cada módulo Rust independiente
-- `test-ai.sh`: crea un `.venv` local para `ai/python`, instala dependencias de test y corre `compileall` + `unittest`
+- `test-ai.sh`: crea un `.venv` local para `kernels/ai/runtime/python`, instala dependencias de test y corre `compileall` + `pytest`
 - `test-all.sh`: ejecuta validación de layout, versionado y toda la suite del repo
 - `prepare-ts-package-release.py`: arma un paquete TS publicable sin romper los `file:` locales del workspace
 
