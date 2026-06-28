@@ -51,6 +51,11 @@ jobs:
           node-version: "20.19.0"
           registry-url: "https://registry.npmjs.org"
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
@@ -77,16 +82,12 @@ jobs:
           fi
 
       - name: Test source module
-        continue-on-error: true  # First publish round: internal platform-* deps
-                                 # don't exist on npm yet (circular). After all
-                                 # initial v0.1.0 tags are out, future bumps
-                                 # will fail-fast here.
         run: |
           module="${{ steps.tag.outputs.module }}"
-          cd "${module}"
-          npm install --no-audit --no-fund --no-package-lock --legacy-peer-deps
-          npm run typecheck || true
-          npm test || true
+          package_name="$(node -e "console.log(require('./${module}/package.json').name)")"
+          pnpm install --no-frozen-lockfile
+          pnpm --filter "${package_name}" run typecheck
+          pnpm --filter "${package_name}" run test
 
       - name: Prepare release package
         run: |
