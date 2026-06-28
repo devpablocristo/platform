@@ -62,11 +62,6 @@ jobs:
           VERSION: ${{ steps.tag.outputs.version }}
 
       - name: Test source module
-        continue-on-error: true  # First publish round: contract schemas now live
-                                 # in platform/contracts/ai/ (moved during the
-                                 # Ola A reorganization); tests still reference
-                                 # the old in-package path. To be re-enabled
-                                 # after tests are adapted in a follow-up.
         run: |
           module="${{ steps.tag.outputs.module }}"
           case "${module}" in

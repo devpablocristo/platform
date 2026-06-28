@@ -9,7 +9,8 @@ from jsonschema.exceptions import ValidationError as JSONSchemaValidationError
 from runtime import CapabilityManifest, ToolDeclaration, validate_capability_manifest
 
 
-CONTRACT_ROOT = Path(__file__).resolve().parents[2] / "contracts" / "capabilities" / "v1"
+REPO_ROOT = Path(__file__).resolve().parents[5]
+CONTRACT_ROOT = REPO_ROOT / "contracts" / "ai" / "capabilities" / "v1"
 EXAMPLES_ROOT = CONTRACT_ROOT / "examples"
 
 

@@ -6,7 +6,7 @@ license = "MIT"
 description = "Pure validation utilities — strings, numbers, IDs, time, enums, money, collections"
 
 [lib]
-name = "platform-validate"
+name = "platform_validate"
 path = "src/lib.rs"
 
 [dependencies]

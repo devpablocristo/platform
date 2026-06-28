@@ -6,7 +6,7 @@ license = "MIT"
 description = "Compile-time finite state machine — invalid transitions are unrepresentable"
 
 [lib]
-name = "platform-concurrency-fsm"
+name = "platform_concurrency_fsm"
 path = "src/lib.rs"
 
 [dependencies]

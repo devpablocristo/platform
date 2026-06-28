@@ -6,7 +6,7 @@ license = "MIT"
 description = "Reusable artifact runtime in Rust for asset metadata, attachments, and tabular CSV/XLSX flows"
 
 [lib]
-name = "platform-kernels-artifact"
+name = "artifact"
 path = "src/lib.rs"
 
 [dependencies]

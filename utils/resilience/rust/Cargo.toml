@@ -6,7 +6,7 @@ license = "MIT"
 description = "Retry with exponential backoff + async circuit breaker"
 
 [lib]
-name = "platform-utils-resilience"
+name = "platform_utils_resilience"
 path = "src/lib.rs"
 
 [dependencies]

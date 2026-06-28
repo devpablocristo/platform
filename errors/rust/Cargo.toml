@@ -6,7 +6,7 @@ license = "MIT"
 description = "Domain and HTTP error types with exhaustive matching — replaces domainerr + httperr"
 
 [lib]
-name = "platform-errors"
+name = "platform_errors"
 path = "src/lib.rs"
 
 [dependencies]

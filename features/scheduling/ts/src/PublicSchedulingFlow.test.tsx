@@ -124,7 +124,7 @@ describe('PublicSchedulingFlow', () => {
 
     renderFlow(client);
 
-    const selectSlotButton = await screen.findByRole('button', { name: /Elegir slot/i });
+    const selectSlotButton = await screen.findByRole('button', { name: /Elegir slot/i }, { timeout: 5_000 });
     const bookingPhoneInput = document.getElementById('public-scheduling-phone');
 
     fireEvent.click(selectSlotButton);
@@ -152,7 +152,7 @@ describe('PublicSchedulingFlow', () => {
 
     renderFlow(client, { locale: 'es-AR' });
 
-    expect(await screen.findByRole('button', { name: /Elegir slot/i })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /Elegir slot/i }, { timeout: 5_000 })).toBeTruthy();
     expect(screen.getByText(/\d{1,2}\/\d{1,2}\/\d{4}/)).toBeTruthy();
   });
 

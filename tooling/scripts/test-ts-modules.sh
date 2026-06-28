@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 mapfile -t modules < <(
   find "${ROOT_DIR}" -type f -path '*/ts/package.json' | while IFS= read -r manifest; do
@@ -11,8 +11,8 @@ mapfile -t modules < <(
 )
 
 if [[ "${#modules[@]}" -eq 0 ]]; then
-  echo "no ts modules found"
-  exit 0
+  echo "no ts modules found" >&2
+  exit 1
 fi
 
 for module in "${modules[@]}"; do

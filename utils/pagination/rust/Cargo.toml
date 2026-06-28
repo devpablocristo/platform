@@ -6,7 +6,7 @@ license = "MIT"
 description = "Cursor-based and offset-based pagination with true generics"
 
 [lib]
-name = "platform-utils-pagination"
+name = "platform_utils_pagination"
 path = "src/lib.rs"
 
 [dependencies]

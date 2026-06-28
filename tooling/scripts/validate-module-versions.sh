@@ -2,12 +2,12 @@
 
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SEMVER_REGEX='^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'
 
 discover_modules() {
   {
-    find "${ROOT_DIR}" -type f -path '*/go/go.mod' -printf '%h\n'
+    find "${ROOT_DIR}" -type f -name go.mod -printf '%h\n'
     find "${ROOT_DIR}" -type f -path '*/python/pyproject.toml' -printf '%h\n'
     find "${ROOT_DIR}" -type f -path '*/rust/Cargo.toml' -printf '%h\n'
     find "${ROOT_DIR}" -type f -path '*/ts/package.json' -printf '%h\n'
@@ -33,9 +33,9 @@ while IFS= read -r module; do
   fi
 
   case "${module}" in
-    */go)
+    */go|*/go/*)
       go_mod="${ROOT_DIR}/${module}/go.mod"
-      expected_module="github.com/devpablocristo/core/${module}"
+      expected_module="github.com/devpablocristo/platform/${module}"
       actual_module="$(sed -n 's/^module //p' "${go_mod}" | head -n1 | tr -d '[:space:]')"
       if [[ "${actual_module}" != "${expected_module}" ]]; then
         echo "go.mod module mismatch in ${module}: expected ${expected_module}, got ${actual_module}" >&2

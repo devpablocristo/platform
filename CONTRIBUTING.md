@@ -1,74 +1,79 @@
 # Contribuir a `platform`
 
-> ⚠️ **En transición**. Este documento conserva las reglas de contribución
-> previas a la fusión `core/` + `modules/` → `platform/`. La estructura física
-> mostrada abajo se actualiza en Fase A9. Las reglas de versionado y release
-> siguen siendo válidas (un VERSION + tag por subpaquete, semver
-> independiente). Las reglas específicas de packages npm que vivían en
-> `modules/CONTRIBUTING.md` aplican íntegramente a los paquetes
-> `@devpablocristo/platform-*` del monorepo.
+Antes de abrir PR, leer:
 
-Antes de abrir PR, leer [GOVERNANCE.md](./GOVERNANCE.md).
+- [`GOVERNANCE.md`](./GOVERNANCE.md)
+- [`docs/platform/VERSIONING.md`](./docs/platform/VERSIONING.md)
+- [`docs/platform/RELEASE_FLOW.md`](./docs/platform/RELEASE_FLOW.md)
+
+## Principios
+
+- `platform` contiene paquetes reutilizables, no aplicaciones.
+- No introducir dominio privado de consumers.
+- Preferir APIs chicas, estables y testeables.
+- No duplicar primitivas que ya existan en otro paquete del repo.
+- Mantener PRs por tema: bugfix, package release, tooling, docs o refactor.
 
 ## Estructura
 
-```
-core/
-├── ai/{go,ts,python}/         # contratos + clientes LLM
-├── authn/{go,ts}/             # auth primitivas
-├── http/{go,ts}/              # HTTP server/client
-├── databases/{postgres,dynamodb}/go/
-├── providers/aws/{lambda,s3,sqs}/go/
-├── ...
-└── <area>/<lang>/             # módulo individual con su go.mod o package.json
+Cada implementacion versionable vive en un path con runtime propio:
+
+```text
+http/go
+http/ts
+http/python
+authn/go
+authn/ts
+features/scheduling/go
+features/scheduling/ts
+ui/modal/ts
 ```
 
-Cada módulo es un Go module (`go.mod`) o package npm (`package.json`)
-independiente. La convención de path es `<area>/[<sub>/]<lang>/`.
+La raiz de cada implementacion contiene su manifest (`go.mod`,
+`package.json`, `pyproject.toml` o `Cargo.toml`) y su `VERSION`.
 
-## Proponer un nuevo módulo en `core`
+## Proponer un paquete nuevo
 
 Checklist:
 
-1. **Verificar la regla de los 3** (ver GOVERNANCE §2): ¿hay ≥3 consumidores reales o planificados?
-2. **No es lógica de producto**: si vive en una app de dominio, no pertenece a core. Considerá `modules/` si es UI/dominio acotado.
-3. **No duplica algo existente**: revisar inventario actual.
-4. Abrir PR con:
-   - Carpeta `<path>/` con go.mod o package.json
-   - `VERSION` file (empezar en `0.1.0`)
-   - `README.md` mínimo (qué es, cómo se usa, consumers actuales)
-   - Tests (ver §Tests)
-   - Si querés que arranque como experimental sin tag estable: README explícito + sin tag (ejemplo: `activity/go`).
+1. Confirmar que no existe una primitiva equivalente.
+2. Confirmar consumidores reales o planificados.
+3. Ubicarlo en la capa correcta: transversal, `contracts`, `sdks`, `kernels`,
+   `features` o `ui`.
+4. Agregar README minimo cuando el uso no sea obvio.
+5. Agregar tests del runtime correspondiente.
+6. Agregar `VERSION` inicial.
+7. Correr guardrails y tests relevantes.
 
 ## Tests
 
-- **Go**: tests al lado del archivo (`*_test.go`); cobertura no obligatoria pero recomendada en lógica crítica.
-- **TS**: vitest; `tests/` o `*.test.ts` colocados.
-- CI corre tests en cada PR (`.github/workflows/`).
+- Go: `go test ./...` dentro del modulo, o `npm run test:go` para todos.
+- TS: `pnpm --filter <package> run typecheck` y `pnpm --filter <package> run test`.
+- Python: scripts de `tooling/scripts/test-*.sh`.
+- Rust: `cargo test` dentro del crate, o `npm run test:rust` para todos.
 
 ## Release
 
-Ver [`docs/RELEASE_FLOW.md`](./docs/RELEASE_FLOW.md).
+Ver [`docs/platform/RELEASE_FLOW.md`](./docs/platform/RELEASE_FLOW.md).
 
-TL;DR:
-1. Bump `VERSION` (o `package.json` version).
-2. PR + merge.
-3. Workflow auto-publica a npm/Go-proxy + auto-tag.
-4. Verificar tag en GitHub + presencia en registry.
+Resumen:
+
+1. Cambiar codigo y tests.
+2. Bump del modulo con `tooling/scripts/bump-module-version.sh <path> <version>`.
+3. PR + CI verde.
+4. Merge a `main`.
+5. Crear/pushear tag `<path>/vX.Y.Z`.
+6. Verificar registry/proxy y consumers.
 
 ## Naming
 
-- Go: `github.com/devpablocristo/core/<area>/<sub>/go` — paths kebab-case
-- TS: `@devpablocristo/core-<area>` — packages kebab-case, sin sub-paths
-  (ej. `@devpablocristo/core-fsm` no `@devpablocristo/core-concurrency-fsm`)
-- Funciones exported: camelCase (TS) / PascalCase (Go)
+- Go modules: `github.com/devpablocristo/platform/<path>`.
+- npm packages: `@devpablocristo/platform-*`.
+- Python packages: `devpablocristo-platform-*`.
+- Rust crates: `platform-*`.
 
 ## Breaking changes
 
 - Major bump obligatorio.
-- ADR escrito.
-- Coordinar con consumers (ver lista de imports en cada README).
-
-## Preguntas / discusión
-
-Issues en este repo, taggear con `discussion` o `proposal`.
+- Documentar impacto y consumidores afectados.
+- Coordinar tag/publicacion con PRs de consumo en Axis, Medmory u otros repos.

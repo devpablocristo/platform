@@ -6,7 +6,8 @@ from pathlib import Path
 
 
 DEPENDENCY_SECTIONS = ("dependencies", "optionalDependencies", "peerDependencies", "devDependencies")
-INTERNAL_SCOPE = "@devpablocristo/modules-"
+INTERNAL_SCOPE = "@devpablocristo/platform-"
+SEMVER_PREFIXES = ("^", "~", ">=", "<=", ">", "<", "=", "*")
 
 
 def fail(message: str) -> None:
@@ -55,18 +56,24 @@ def validate_manifest_dependency(
     if dependency_name not in internal_packages:
         return 0
 
-    if not isinstance(dependency_value, str) or not dependency_value.startswith("file:"):
+    if not isinstance(dependency_value, str):
         fail(
             f"{source}: internal dependency {section}.{dependency_name} "
-            f"must use file:, got {dependency_value!r}"
+            f"must use file: or a publishable semver range, got {dependency_value!r}"
         )
 
-    target = (package_dir / dependency_value.removeprefix("file:")).resolve()
-    expected = internal_packages[dependency_name]
-    if target != expected:
+    if dependency_value.startswith("file:"):
+        target = (package_dir / dependency_value.removeprefix("file:")).resolve()
+        expected = internal_packages[dependency_name]
+        if target != expected:
+            fail(
+                f"{source}: internal dependency {section}.{dependency_name} "
+                f"points to {target}, expected {expected}"
+            )
+    elif not dependency_value[:1].isdigit() and not dependency_value.startswith(SEMVER_PREFIXES):
         fail(
             f"{source}: internal dependency {section}.{dependency_name} "
-            f"points to {target}, expected {expected}"
+            f"must use file: or a publishable semver range, got {dependency_value!r}"
         )
 
     return 1
@@ -168,7 +175,7 @@ def validate_tsconfig(tsconfig: Path) -> None:
 
 
 def main() -> None:
-    repo_root = Path(__file__).resolve().parents[1]
+    repo_root = Path(__file__).resolve().parents[2]
     internal_packages = discover_ts_packages(repo_root)
     internal_dependency_count = 0
 

@@ -6,12 +6,12 @@ license = "MIT"
 description = "Axum HTTP server with security headers, CORS, health endpoints, and graceful shutdown"
 
 [lib]
-name = "platform-http-server"
+name = "platform_http_server"
 path = "src/lib.rs"
 
 [dependencies]
 axum = "0.8"
-errors = { path = "../../../errors/rust" }
+errors = { package = "platform-errors", path = "../../../errors/rust" }
 http = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

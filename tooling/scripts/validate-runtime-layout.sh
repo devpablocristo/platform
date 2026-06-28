@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 invalid=0
 
@@ -10,7 +10,7 @@ while IFS= read -r manifest; do
   [[ -n "${manifest}" ]] || continue
   rel="${manifest#${ROOT_DIR}/}"
   case "${rel}" in
-    */go/go.mod|*/python/pyproject.toml|*/rust/Cargo.toml|*/ts/package.json)
+    Cargo.toml|*/go/go.mod|*/go/*/go.mod|*/python/pyproject.toml|*/rust/Cargo.toml|*/ts/package.json)
       ;;
     *)
       echo "invalid runtime manifest path: ${rel}" >&2

@@ -11,7 +11,7 @@
     "noEmit": true,
     "strict": true,
     "jsx": "react-jsx",
-    "types": ["vitest/globals", "vite/client", "node"]
+    "types": ["vitest/globals", "node"]
   },
   "include": ["src", "tests"]
 }
