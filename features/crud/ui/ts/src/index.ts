@@ -25,6 +25,8 @@ export type {
   CrudHelpers,
   CrudHttpClient,
   CrudListHeaderSlotContext,
+  CrudMutationAction,
+  CrudMutationSuccessEvent,
   CrudPageConfig,
   CrudRowAction,
   CrudToolbarAction,

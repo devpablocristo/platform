@@ -87,9 +87,11 @@ describe("CrudPage", () => {
   it("creates a new row through the data source and reloads the list", async () => {
     const list = vi.fn().mockResolvedValue([]);
     const create = vi.fn().mockResolvedValue(undefined);
+    const onMutationSuccess = vi.fn();
 
     renderPage({
       dataSource: { list, create },
+      onMutationSuccess,
     });
 
     expect((await screen.findAllByRole("button", { name: "Add user" })).length).toBeGreaterThan(0);
@@ -104,6 +106,7 @@ describe("CrudPage", () => {
     await waitFor(() => {
       expect(list).toHaveBeenCalledTimes(2);
     });
+    expect(onMutationSuccess).toHaveBeenCalledWith({ action: "create", row: undefined });
   });
 
   it("filters with the reusable search contract and shows only matched rows", async () => {
@@ -149,10 +152,12 @@ describe("CrudPage", () => {
       view === "archived" ? [archivedRow] : [{ id: "1", name: "Active user" }],
     );
     const unarchive = vi.fn().mockResolvedValue(undefined);
+    const onMutationSuccess = vi.fn();
 
     renderPage({
       supportsArchived: true,
       dataSource: { list, unarchive },
+      onMutationSuccess,
     });
 
     expect(await screen.findByText("Active user")).toBeTruthy();
@@ -166,6 +171,9 @@ describe("CrudPage", () => {
     });
     expect(list).toHaveBeenNthCalledWith(1, { view: "active" });
     expect(list).toHaveBeenNthCalledWith(2, { view: "archived" });
+    await waitFor(() => {
+      expect(onMutationSuccess).toHaveBeenCalledWith({ action: "unarchive", row: archivedRow });
+    });
   });
 
   it("invoca onRowClick al pulsar la fila y no muestra columna Acciones si no hay acciones", async () => {
