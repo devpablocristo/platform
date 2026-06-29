@@ -10,6 +10,12 @@ export type CrudListHeaderSlotContext<T> = { items: T[] };
 export type CrudFieldValue = string | boolean;
 export type CrudFormValues = Record<string, CrudFieldValue>;
 export type CrudLifecycleView = "active" | "archived" | "trash";
+export type CrudMutationAction = "create" | "update" | "archive" | "trash" | "unarchive" | "restore" | "purge";
+
+export type CrudMutationSuccessEvent<T extends { id: string }> = {
+  action: CrudMutationAction;
+  row?: T;
+};
 
 export type CrudColumn<T> = {
   key: keyof T & string;
@@ -164,6 +170,11 @@ export type CrudPageConfig<T extends { id: string }> = {
    * Útil cuando el producto tiene un editor dedicado (modal o ruta).
    */
   onExternalEdit?: (row: T) => void;
+  /**
+   * Callback post-mutación para sincronizar estado externo al CRUD (p. ej. selectors/shell del producto).
+   * Se invoca después de una mutación exitosa y del reload local del listado.
+   */
+  onMutationSuccess?: (event: CrudMutationSuccessEvent<T>) => Promise<void> | void;
   /**
    * Clic en la fila (fuera de la columna de acciones). Útil cuando no hay columna «Acciones» y el detalle
    * se abre en modal u otra superficie.

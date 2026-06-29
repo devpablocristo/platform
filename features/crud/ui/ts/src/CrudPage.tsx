@@ -88,6 +88,7 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
     strings: stringsPartial,
     stringsBase = defaultCrudStrings,
     onExternalEdit,
+    onMutationSuccess,
     onRowClick,
     preSearchFilter,
     listHeaderInlineSlot,
@@ -287,6 +288,7 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
       }
       closeForm();
       await loadItems();
+      await onMutationSuccess?.({ action: editing ? "update" : "create", row: editing ?? undefined });
     } catch (err) {
       setError(normalizeError(err));
     } finally {
@@ -305,6 +307,7 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
         await httpClient.json(crudItemPath(basePath, row.id, "archive"), { method: "POST", body: {} });
       }
       await loadItems();
+      await onMutationSuccess?.({ action: "archive", row });
     } catch (err) {
       setError(normalizeError(err));
     } finally {
@@ -323,6 +326,7 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
         await httpClient.json(crudItemPath(basePath, row.id, "trash"), { method: "POST", body: {} });
       }
       await loadItems();
+      await onMutationSuccess?.({ action: "trash", row });
     } catch (err) {
       setError(normalizeError(err));
     } finally {
@@ -341,6 +345,7 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
         await httpClient.json(crudItemPath(basePath, row.id, "unarchive"), { method: "POST", body: {} });
       }
       await loadItems();
+      await onMutationSuccess?.({ action: "unarchive", row });
     } catch (err) {
       setError(normalizeError(err));
     } finally {
@@ -359,6 +364,7 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
         await httpClient.json(crudItemPath(basePath, row.id, "restore"), { method: "POST", body: {} });
       }
       await loadItems();
+      await onMutationSuccess?.({ action: "restore", row });
     } catch (err) {
       setError(normalizeError(err));
     } finally {
@@ -378,6 +384,7 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
       }
       cancelPurge();
       await loadItems();
+      await onMutationSuccess?.({ action: "purge", row });
     } catch (err) {
       setError(normalizeError(err));
     } finally {

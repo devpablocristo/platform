@@ -171,3 +171,13 @@ Evidencia:
 - Busqueda de consumidores en Axis/Medmory: ambos consumen paquetes `github.com/devpablocristo/platform/...` y `@devpablocristo/platform-*` por version publicada; no se detectaron `replace`/`file:` locales accidentalmente commiteados hacia `platform`.
 
 Conclusion: la segunda pasada de `platform` no deja HIGH/MED abiertos confirmados. Las referencias legacy restantes fuera de `AUDIT.md` estan acotadas a tooling de migracion/deprecacion (`rename-imports.py`, `deprecate-legacy-npm.sh`) y a docs historicos excluidos por guardrails. No hace falta publicar nuevos tags ni hacer bumps en Axis/Medmory porque no hubo cambio de API publica.
+
+### MED-2P-05 — `platform-crud-ui` no exponia callback post-mutacion para sincronizar shells consumidores
+
+Estado: **corregido en PR #14**.
+
+Evidencia: Axis IAM necesitaba refrescar `session.tenants`/selectores globales despues de create/edit/lifecycle row actions dentro de `CrudPage`, pero el paquete solo exponia callbacks de toolbar/row custom y obligaba a hacks DOM o refresh parcial externo.
+
+Riesgo: consumidores como Axis podian quedar con shell stale tras mutaciones CRUD internas, o acoplarse a labels/markup privados para detectar acciones.
+
+Fix: `CrudPageConfig` ahora expone `onMutationSuccess({ action, row })` y lo invoca despues de mutaciones exitosas (`create`, `update`, `archive`, `trash`, `unarchive`, `restore`, `purge`) y del reload local. `@devpablocristo/platform-crud-ui` sube a `0.4.1`; Axis puede consumirlo para reemplazar el refresh parcial bulk-only por un hook canonico.
