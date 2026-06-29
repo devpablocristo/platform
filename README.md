@@ -30,11 +30,11 @@ platform/
 
 ## Origen
 
-Este repo nace de la fusión de:
+Este repo nace de la fusión de dos repos legacy:
 
-- `github.com/devpablocristo/core` (47 paquetes Go/Rust/TS/Python — capabilities
+- `core` (47 paquetes Go/Rust/TS/Python — capabilities
   transversales y kernels de dominio).
-- `github.com/devpablocristo/modules` (20 paquetes — features verticales y
+- `modules` (20 paquetes — features verticales y
   primitivas UI).
 
 Ambos repos siguen accesibles **read-only** (archivados al final de la Ola A).

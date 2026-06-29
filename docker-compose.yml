@@ -1,36 +1,26 @@
-# Verificación de los paquetes de modules sin Node/Go en el host.
-# Contexto de build: directorio padre (el que contiene `core/` y `modules/`).
+# Verificacion de paquetes platform sin Node/Go en el host.
+# Contexto de build: directorio padre (el que contiene `platform/`).
 #
-# Desde modules/:
+# Desde platform/:
 #   docker compose build
 
 services:
   crud-ui-ts-check:
     build:
       context: ..
-      dockerfile: modules/crud/ui/Dockerfile.ci-ts
+      dockerfile: platform/features/crud/ui/Dockerfile.ci-ts
 
   crud-paths-go-check:
     build:
       context: ..
-      dockerfile: modules/crud/paths/Dockerfile.ci-go
+      dockerfile: platform/features/crud/paths/Dockerfile.ci-go
 
   kanban-board-ts-check:
     build:
       context: ..
-      dockerfile: modules/kanban/board/Dockerfile.ci-ts
+      dockerfile: platform/features/kanban-board/Dockerfile.ci-ts
 
   ui-data-display-ts-check:
     build:
       context: ..
-      dockerfile: modules/ui/data-display/Dockerfile.ci-ts
-
-  ui-filters-ts-check:
-    build:
-      context: ..
-      dockerfile: modules/ui/filters/Dockerfile.ci-ts
-
-  ui-forms-ts-check:
-    build:
-      context: ..
-      dockerfile: modules/ui/forms/Dockerfile.ci-ts
+      dockerfile: platform/ui/data-display/Dockerfile.ci-ts

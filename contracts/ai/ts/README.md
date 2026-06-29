@@ -1,4 +1,4 @@
-# @devpablocristo/core-ai-contracts
+# @devpablocristo/platform-ai-contracts
 
 DTOs canónicos del contrato AI/chat para Companion y sus consumidores
 (`pymes/frontend`, `nexus/console`, etc).
@@ -27,4 +27,4 @@ verdad y permite evolucionar el contrato con bumps semver coordinados.
 nuevas a la unión `ChatBlock` no es breaking porque amplia el tipo;
 remover variantes existentes sí lo es. Tag git: `ai/contracts/ts/v0.1.0`.
 
-Versión Go paralela: `github.com/devpablocristo/core/ai/contracts/go`.
+Versión Go paralela: `github.com/devpablocristo/platform/contracts/ai/go`.

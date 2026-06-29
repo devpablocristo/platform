@@ -1,13 +1,13 @@
-# @devpablocristo/modules-ui-conversation-inbox
+# @devpablocristo/platform-conversation-inbox
 
 Componente React reutilizable para inbox de conversaciones (chat / notificaciones).
-Wrappea `@devpablocristo/modules-ui-notification-feed` con afordancias de
+Wrappea `@devpablocristo/platform-notification-feed` con afordancias de
 selección y slot de acciones por fila.
 
 ## Instalación
 
 ```bash
-npm install @devpablocristo/modules-ui-conversation-inbox
+npm install @devpablocristo/platform-conversation-inbox
 ```
 
 ## Uso
@@ -16,9 +16,9 @@ npm install @devpablocristo/modules-ui-conversation-inbox
 import {
   ConversationInbox,
   type ConversationInboxItem,
-} from '@devpablocristo/modules-ui-conversation-inbox'
-import '@devpablocristo/modules-ui-notification-feed/styles.css'
-import '@devpablocristo/modules-ui-conversation-inbox/styles.css'
+} from '@devpablocristo/platform-conversation-inbox'
+import '@devpablocristo/platform-notification-feed/styles.css'
+import '@devpablocristo/platform-conversation-inbox/styles.css'
 
 const items: ConversationInboxItem[] = conversations.map(c => ({
   id: c.id,

@@ -17,8 +17,8 @@ No incluye: refresh obligatorio, revoke de sesión, ni login browser completo co
 ```go
 import (
   "context"
-  authn "github.com/devpablocristo/core/authn/go"
-  "github.com/devpablocristo/core/authn/go/jwks"
+  authn "github.com/devpablocristo/platform/authn/go"
+  "github.com/devpablocristo/platform/authn/go/jwks"
 )
 
 v := jwks.NewVerifier("https://issuer.example/.well-known/jwks.json")
@@ -39,7 +39,7 @@ p, method, err := authn.TryInbound(ctx, jwtAuth, apiKeyAuth, authorizationHeader
 // method: "jwt" | "api_key"
 ```
 
-`core/saas/go/middleware.AuthMiddleware` delega en `TryInbound` con adaptadores al `PrincipalVerifier` del kernel.
+`platform/kernels/saas/go/middleware.AuthMiddleware` delega en `TryInbound` con adaptadores al `PrincipalVerifier` del kernel.
 
 ## Versión
 

@@ -142,3 +142,13 @@ Evidencia: despues de taggear los paquetes TS publicados, `bash tooling/scripts/
 Riesgo: el guardrail de tags mezclaba modulos publicables hoy con crates no publicables todavia, generando falso rojo e incentivando tags prematuros de Rust.
 
 Fix: `check-remote-tags.sh` valida por defecto Go/TypeScript/Python y expone `--include-rust` para el modo estricto cuando Rust publishing quede habilitado. `docs/platform/VERSIONING.md` documenta la distincion.
+
+### MED-2P-03 — Codigo/docs publicables conservaban referencias legacy `core/modules`
+
+Estado: **corregido en working tree**.
+
+Evidencia: `ui/page-shell/ts/src/styles.css` importaba `@devpablocristo/modules-shell-sidebar/styles.css`; `features/scheduling/ts/src/styles.css` importaba `@devpablocristo/modules-calendar-board/styles.css`; varios READMEs de paquetes Go/TS mostraban imports `github.com/devpablocristo/core/...` o `@devpablocristo/core-*`. `docker-compose.yml` y Dockerfiles CI locales apuntaban a paths `modules/...` y paquetes ya inexistentes.
+
+Riesgo: consumers que instalaran solo paquetes `platform-*` podian resolver mal CSS compartido, y la documentacion de paquetes publicables seguia guiando hacia repos legacy.
+
+Fix: actualizar imports CSS y READMEs a nombres `platform`, corregir compose/Dockerfiles locales a paths reales, remover servicios legacy inexistentes y ampliar `validate-boundaries` para cubrir CSS, READMEs de paquete y Dockerfiles.

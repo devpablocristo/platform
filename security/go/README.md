@@ -1,4 +1,4 @@
-# core/security/go
+# security/go
 
 Primitivas de seguridad cross-app: API keys, context keys para identidad, hashing utilitario. Estable (v0.1.0).
 
@@ -9,8 +9,8 @@ Primitivas de seguridad cross-app: API keys, context keys para identidad, hashin
 - `hashutil/` — wrappers convenience sobre `crypto/sha256` para tokens y digests
 
 ```go
-import "github.com/devpablocristo/core/security/go/apikey"
-import "github.com/devpablocristo/core/security/go/contextkeys"
+import "github.com/devpablocristo/platform/security/go/apikey"
+import "github.com/devpablocristo/platform/security/go/contextkeys"
 ```
 
 ## Consumidores
