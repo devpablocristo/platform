@@ -152,3 +152,22 @@ Evidencia: `ui/page-shell/ts/src/styles.css` importaba `@devpablocristo/modules-
 Riesgo: consumers que instalaran solo paquetes `platform-*` podian resolver mal CSS compartido, y la documentacion de paquetes publicables seguia guiando hacia repos legacy.
 
 Fix: actualizar imports CSS y READMEs a nombres `platform`, corregir compose/Dockerfiles locales a paths reales, remover servicios legacy inexistentes y ampliar `validate-boundaries` para cubrir CSS, READMEs de paquete y Dockerfiles.
+
+## Follow-up — 2026-06-29
+
+### 2P-VERIFY-04 — Tags, tests y consumidores revalidados tras la segunda pasada
+
+Estado: **verificado sin cambios de codigo requeridos**.
+
+Evidencia:
+- `bash tooling/scripts/check-remote-tags.sh` OK; todos los tags esperados para modulos publicables estan presentes en `origin`.
+- `npm run validate:boundaries` OK.
+- `npm run validate:versions` OK, 70 modulos versionados.
+- `npm run validate:ts-deps` OK, 16 referencias internas validadas.
+- `npm run test:go` OK.
+- `npm run test:ts` OK.
+- `npm run test:python` OK, 1 + 71 tests; queda solo warning upstream de Starlette/httpx.
+- `npm run test:rust` OK.
+- Busqueda de consumidores en Axis/Medmory: ambos consumen paquetes `github.com/devpablocristo/platform/...` y `@devpablocristo/platform-*` por version publicada; no se detectaron `replace`/`file:` locales accidentalmente commiteados hacia `platform`.
+
+Conclusion: la segunda pasada de `platform` no deja HIGH/MED abiertos confirmados. Las referencias legacy restantes fuera de `AUDIT.md` estan acotadas a tooling de migracion/deprecacion (`rename-imports.py`, `deprecate-legacy-npm.sh`) y a docs historicos excluidos por guardrails. No hace falta publicar nuevos tags ni hacer bumps en Axis/Medmory porque no hubo cambio de API publica.
