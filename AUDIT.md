@@ -132,3 +132,13 @@ Evidencia: Axis y Medmory consumen `@devpablocristo/platform-chat-ui@^0.1.2`; el
 Riesgo: `npm run test:ts` no typecheckeaba/testeaba un paquete publicado y usado por apps; futuros tags del paquete no dispararian el workflow de publish.
 
 Fix: agregar `features/chat/ui/ts` al workspace pnpm y al workflow de publish TS.
+
+### MED-2P-02 — `check-remote-tags` exigia tags Rust aunque Rust no esta publicado
+
+Estado: **corregido en working tree**.
+
+Evidencia: despues de taggear los paquetes TS publicados, `bash tooling/scripts/check-remote-tags.sh` seguia fallando por 14 tags Rust `v0.1.0` ausentes. La documentacion vigente indica que Rust todavia requiere decision explicita de registry/naming antes de publicarse.
+
+Riesgo: el guardrail de tags mezclaba modulos publicables hoy con crates no publicables todavia, generando falso rojo e incentivando tags prematuros de Rust.
+
+Fix: `check-remote-tags.sh` valida por defecto Go/TypeScript/Python y expone `--include-rust` para el modo estricto cuando Rust publishing quede habilitado. `docs/platform/VERSIONING.md` documenta la distincion.

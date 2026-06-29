@@ -3,15 +3,50 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-REMOTE="${1:-origin}"
+REMOTE="origin"
+INCLUDE_RUST=0
 TAGS_FILE="$(mktemp)"
 trap 'rm -f "${TAGS_FILE}"' EXIT
+
+usage() {
+  cat <<'EOF'
+Usage: check-remote-tags.sh [--include-rust] [remote]
+
+Validates that published module versions have matching remote tags.
+Rust crates are skipped by default because platform does not publish them yet;
+pass --include-rust when Rust crate publishing is explicitly enabled.
+EOF
+}
+
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --include-rust)
+      INCLUDE_RUST=1
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    -*)
+      echo "unknown option: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+    *)
+      REMOTE="$1"
+      shift
+      ;;
+  esac
+done
 
 discover_modules() {
   {
     find "${ROOT_DIR}" -type f -name go.mod
     find "${ROOT_DIR}" -type f -path '*/python/pyproject.toml'
-    find "${ROOT_DIR}" -type f -path '*/rust/Cargo.toml'
+    if [[ "${INCLUDE_RUST}" -eq 1 ]]; then
+      find "${ROOT_DIR}" -type f -path '*/rust/Cargo.toml'
+    fi
     find "${ROOT_DIR}" -type f -path '*/ts/package.json'
   } | while IFS= read -r manifest; do
     dirname "${manifest}"
