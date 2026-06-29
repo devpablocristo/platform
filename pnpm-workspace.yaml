@@ -28,5 +28,3 @@ packages:
   - "ui/page-shell/ts"
   - "ui/section-hub/ts"
   - "ui/shell-sidebar/ts"
-
-  # NOTE: lifecycle/ts will be added in Ola B Fase B0.

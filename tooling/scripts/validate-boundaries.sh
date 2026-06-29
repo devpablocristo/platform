@@ -16,11 +16,15 @@ violations="$(
     --include='go.mod' \
     --include='*.ts' \
     --include='*.tsx' \
+    --include='*.css' \
     --include='*.js' \
     --include='*.json' \
+    --include='*.md' \
+    --include='Dockerfile*' \
     --include='Cargo.toml' \
     --include='pyproject.toml' \
-    --include='package.json' || true
+    --include='package.json' \
+    --exclude=AUDIT.md || true
 )"
 
 if [[ -n "${violations}" ]]; then

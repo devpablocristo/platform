@@ -1,10 +1,10 @@
-# core/http/go
+# http/go
 
 Primitivas HTTP reutilizables para servicios Go del ecosistema. Estable (v0.1.x).
 
 ```go
-import "github.com/devpablocristo/core/http/go/httpserver"
-import "github.com/devpablocristo/core/http/go/httpclient"
+import "github.com/devpablocristo/platform/http/go/httpserver"
+import "github.com/devpablocristo/platform/http/go/httpclient"
 ```
 
 ## Subpaquetes

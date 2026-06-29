@@ -1,15 +1,14 @@
 # typecheck + tests del paquete @devpablocristo/platform-crud-ui.
 # Build: context = padre que contiene `platform/`.
 FROM node:20.19.0-bookworm-slim
-WORKDIR /repo/platform/features/crud/ui/ts
 
-COPY platform/features/crud/ui/ts/package.json ./
-COPY platform/features/crud/ui/ts/package-lock.json ./
+WORKDIR /repo/platform
+RUN corepack enable
 
-RUN npm ci --no-audit --no-fund
+COPY platform/ ./
 
-COPY platform/features/crud/ui/ts/ ./
-
-RUN npm run typecheck && npm test
+RUN pnpm install --no-frozen-lockfile
+RUN pnpm --filter @devpablocristo/platform-crud-ui run typecheck
+RUN pnpm --filter @devpablocristo/platform-crud-ui run test
 
 CMD ["node", "-e", "console.log('platform-crud-ui OK')"]

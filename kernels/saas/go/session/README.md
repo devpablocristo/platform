@@ -10,7 +10,7 @@ Eco HTTP del **Principal** autenticado (kernel), sin lógica de producto.
 ## Uso
 
 ```go
-import "github.com/devpablocristo/core/saas/go/session"
+import "github.com/devpablocristo/platform/kernels/saas/go/session"
 
 session.RegisterProtected(mux, authMW)
 ```

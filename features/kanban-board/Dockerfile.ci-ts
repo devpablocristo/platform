@@ -1,14 +1,14 @@
-# typecheck + tests del paquete @devpablocristo/modules-kanban-board.
+# typecheck + tests del paquete @devpablocristo/platform-kanban-board.
+# Build: context = padre que contiene `platform/`.
 FROM node:20.19.0-bookworm-slim
-WORKDIR /repo/modules/kanban/board/ts
 
-COPY modules/kanban/board/ts/package.json ./
-COPY modules/kanban/board/ts/package-lock.json ./
+WORKDIR /repo/platform
+RUN corepack enable
 
-RUN npm ci --no-audit --no-fund
+COPY platform/ ./
 
-COPY modules/kanban/board/ts/ ./
+RUN pnpm install --no-frozen-lockfile
+RUN pnpm --filter @devpablocristo/platform-kanban-board run typecheck
+RUN pnpm --filter @devpablocristo/platform-kanban-board run test
 
-RUN npm run typecheck && npm test
-
-CMD ["node", "-e", "console.log('modules-kanban-board OK')"]
+CMD ["node", "-e", "console.log('platform-kanban-board OK')"]
