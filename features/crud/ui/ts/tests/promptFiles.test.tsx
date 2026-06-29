@@ -6,6 +6,7 @@ import {
   FileUploadReview,
   PromptEditorReview,
   ReadonlyContentViewer,
+  TextFileUploadInput,
   downloadTextFile,
   downloadZipFile,
   ensureTrailingNewline,
@@ -87,7 +88,7 @@ describe("prompt file helpers", () => {
         invalidFileMessage: "invalid",
         emptyFileMessage: "empty",
       });
-      return <input aria-label="upload" ref={upload.inputRef} {...upload.inputProps} />;
+      return <TextFileUploadInput aria-label="upload" upload={upload} />;
     }
     render(<TestUpload />);
 
