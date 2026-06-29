@@ -39,7 +39,7 @@ Verificacion despues de fixes:
 
 ### HIGH-01 — CI principal es un placeholder
 
-Estado: **corregido en working tree**.
+Estado: **corregido en PR #8**.
 
 Evidencia: `.github/workflows/ci.yml` solo imprime que la matriz esta pendiente.
 
@@ -49,7 +49,7 @@ Fix: el workflow principal ahora corre guardrails (`validate-runtime-layout`, bo
 
 ### HIGH-02 — Guardrails de versionado/boundaries/test Go no estaban auditando el repo real
 
-Estado: **corregido en working tree**.
+Estado: **corregido en PR #8**.
 
 Evidencia: `validate:versions` reportaba `no modules discovered`; `test:go` salia OK sin ejecutar paquetes; `validate:boundaries` leia bajo `tooling/` y mantenia mensajes/reglas de `core`.
 
@@ -59,7 +59,7 @@ Fix: raiz del repo corregida, modulo Go `testing/go/tenancy` incluido y paths es
 
 ### HIGH-03 — Tests AI capabilities apuntaban a contracts movidos
 
-Estado: **corregido en working tree**.
+Estado: **corregido en PR #8**.
 
 Evidencia: `npm run test:python` y luego `npm run test:go` fallaban buscando `contracts/capabilities/v1` bajo `kernels/ai/runtime` o `kernels/ai`.
 
@@ -69,7 +69,7 @@ Fix: tests apuntan a `contracts/ai/capabilities/v1`.
 
 ### MED-01 — Workflows de publish permiten continuar si fallan tests
 
-Estado: **corregido en working tree**.
+Estado: **corregido en PR #8**.
 
 Evidencia: `.github/workflows/publish-ts-package.yml` y `.github/workflows/publish-python-package.yml` tienen `continue-on-error: true` en el paso de test.
 
@@ -79,7 +79,7 @@ Fix: ambos workflows quedaron fail-fast. En TS, el test del modulo taggeado corr
 
 ### MED-02 — Docs operativas siguen en estado legacy `core/modules`
 
-Estado: **corregido en working tree**.
+Estado: **corregido en PR #8**.
 
 Evidencia: `AGENTS.md`, `CONTRIBUTING.md`, `GOVERNANCE.md` y `docs/core`/`docs/modules` todavia describen reglas como si el repo fuera `core` + `modules`; `CONTRIBUTING.md` referencia `docs/RELEASE_FLOW.md`, que no existe en esa ubicacion.
 
@@ -89,7 +89,7 @@ Fix: `AGENTS.md`, `CONTRIBUTING.md` y `GOVERNANCE.md` ahora describen `platform`
 
 ### MED-03 — Validacion TS interna estaba atada a `modules-*`
 
-Estado: **corregido en working tree**.
+Estado: **corregido en PR #8**.
 
 Evidencia: `tooling/scripts/validate-internal-ts-deps.py` usaba `INTERNAL_SCOPE = "@devpablocristo/modules-"` y raiz `tooling/`.
 
@@ -99,7 +99,7 @@ Fix: scope y raiz corregidos; se validan `file:` locales y rangos semver publica
 
 ### MED-04 — Crates Rust no podian correr por lib targets/deps invalidos
 
-Estado: **corregido en working tree**.
+Estado: **corregido en PR #8**.
 
 Evidencia: `npm run test:rust` fallaba con `library target names cannot contain hyphens` y luego con path dependency `resilience` no encontrada.
 
@@ -109,7 +109,7 @@ Fix: `[lib] name` usa underscores o alias corto valido; path deps declaran el `p
 
 ### LOW-01 — Test TS de scheduling dependia de timing ajustado
 
-Estado: **corregido en working tree**.
+Estado: **corregido en PR #8**.
 
 Evidencia: `features/scheduling/ts/src/PublicSchedulingFlow.test.tsx` podia no encontrar el boton de slot mientras React Query seguia mostrando loading.
 
@@ -125,7 +125,7 @@ Axis y Medmory ya consumen varios paquetes Go de `platform`. En esta pasada no h
 
 ### HIGH-2P-01 — `platform-chat-ui` publicado y consumido no entraba al workspace ni al publish workflow
 
-Estado: **corregido en working tree**.
+Estado: **corregido en PR #9**.
 
 Evidencia: Axis y Medmory consumen `@devpablocristo/platform-chat-ui@^0.1.2`; el paquete vive en `features/chat/ui/ts`, pero `pnpm-workspace.yaml` no lo incluia y `.github/workflows/publish-ts-package.yml` no escuchaba tags `features/chat/ui/ts/v*`.
 
@@ -135,7 +135,7 @@ Fix: agregar `features/chat/ui/ts` al workspace pnpm y al workflow de publish TS
 
 ### MED-2P-02 — `check-remote-tags` exigia tags Rust aunque Rust no esta publicado
 
-Estado: **corregido en working tree**.
+Estado: **corregido en PR #10**.
 
 Evidencia: despues de taggear los paquetes TS publicados, `bash tooling/scripts/check-remote-tags.sh` seguia fallando por 14 tags Rust `v0.1.0` ausentes. La documentacion vigente indica que Rust todavia requiere decision explicita de registry/naming antes de publicarse.
 
@@ -145,7 +145,7 @@ Fix: `check-remote-tags.sh` valida por defecto Go/TypeScript/Python y expone `--
 
 ### MED-2P-03 — Codigo/docs publicables conservaban referencias legacy `core/modules`
 
-Estado: **corregido en working tree**.
+Estado: **corregido en PR #11**.
 
 Evidencia: `ui/page-shell/ts/src/styles.css` importaba `@devpablocristo/modules-shell-sidebar/styles.css`; `features/scheduling/ts/src/styles.css` importaba `@devpablocristo/modules-calendar-board/styles.css`; varios READMEs de paquetes Go/TS mostraban imports `github.com/devpablocristo/core/...` o `@devpablocristo/core-*`. `docker-compose.yml` y Dockerfiles CI locales apuntaban a paths `modules/...` y paquetes ya inexistentes.
 
