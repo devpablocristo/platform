@@ -183,3 +183,23 @@ Riesgo: consumidores como Axis podian quedar con shell stale tras mutaciones CRU
 Fix: `CrudPageConfig` ahora expone `onMutationSuccess({ action, row })` y lo invoca despues de mutaciones exitosas (`create`, `update`, `archive`, `trash`, `unarchive`, `restore`, `purge`) y del reload local. `@devpablocristo/platform-crud-ui` subio a `0.4.1`.
 
 Release: tag `features/crud/ui/ts/v0.4.1` creado y pusheado. Tras actualizar `NPM_TOKEN`, el rerun del workflow `publish-ts-package` publico `@devpablocristo/platform-crud-ui@0.4.1` correctamente; verificacion: `npm view @devpablocristo/platform-crud-ui@0.4.1 version --json` devuelve `"0.4.1"`. Axis lo consume en PR #67 y usa `onMutationSuccess` para refrescar IAM shell/listas tras mutaciones internas de `CrudPage`.
+
+### MED-2P-06 — `useTextFileUpload` forzaba a consumers a renderizar refs/props manualmente
+
+Estado: **corregido, pendiente de merge/tag/publicacion y consumo en Axis**.
+
+Evidencia: Axis quedo con los dos ultimos warnings de `react-hooks/refs` en `PromptScreens`: el consumer tenia que renderizar `<input ref={upload.inputRef} {...upload.inputProps} />` porque `platform-crud-ui` solo exponia piezas internas del input de archivo.
+
+Riesgo: consumers quedan acoplados a detalles de refs del hook, acumulan warnings React lint y duplican markup para un control que pertenece al helper reutilizable.
+
+Fix: `platform-crud-ui` agrega `TextFileUploadInput` y `TextFileUploadInputProps`, manteniendo `useTextFileUpload` compatible. El componente encapsula `inputRef/inputProps` y conserva extensibilidad de atributos como `aria-label`.
+
+Version: `@devpablocristo/platform-crud-ui` bump a `0.4.2`.
+
+Verificacion local:
+- `pnpm --filter @devpablocristo/platform-crud-ui run typecheck` OK.
+- `pnpm --filter @devpablocristo/platform-crud-ui run test` OK, 12 files / 41 tests.
+- `npm run validate:boundaries` OK.
+- `npm run validate:versions` OK.
+- `npm run validate:ts-deps` OK.
+- `npm run test:ts` OK.

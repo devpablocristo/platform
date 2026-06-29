@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, InputHTMLAttributes, ReactNode } from "react";
 import { useRef } from "react";
 
 export type ReadonlyMetadataItem = {
@@ -34,6 +34,13 @@ export type TextFileInputProps = {
   onChange: (event: { currentTarget: HTMLInputElement }) => void;
   style: CSSProperties;
   type: "file";
+};
+
+export type TextFileUploadInputProps<TContext = unknown> = Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  "accept" | "onChange" | "type"
+> & {
+  upload: UseTextFileUploadResult<TContext>;
 };
 
 export type ReadonlyContentViewerProps = {
@@ -110,6 +117,21 @@ export function useTextFileUpload<TContext = unknown>(
       inputRef.current?.click();
     },
   };
+}
+
+export function TextFileUploadInput<TContext = unknown>({
+  upload,
+  style,
+  ...props
+}: TextFileUploadInputProps<TContext>) {
+  return (
+    <input
+      {...props}
+      {...upload.inputProps}
+      ref={upload.inputRef}
+      style={{ ...style, ...upload.inputProps.style }}
+    />
+  );
 }
 
 export function ReadonlyContentViewer({
