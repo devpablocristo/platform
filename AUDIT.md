@@ -174,12 +174,12 @@ Conclusion: la segunda pasada de `platform` no deja HIGH/MED abiertos confirmado
 
 ### MED-2P-05 — `platform-crud-ui` no exponia callback post-mutacion para sincronizar shells consumidores
 
-Estado: **codigo corregido en PR #14; publicacion npm bloqueada**.
+Estado: **corregido, publicado y consumido por Axis**.
 
 Evidencia: Axis IAM necesitaba refrescar `session.tenants`/selectores globales despues de create/edit/lifecycle row actions dentro de `CrudPage`, pero el paquete solo exponia callbacks de toolbar/row custom y obligaba a hacks DOM o refresh parcial externo.
 
 Riesgo: consumidores como Axis podian quedar con shell stale tras mutaciones CRUD internas, o acoplarse a labels/markup privados para detectar acciones.
 
-Fix: `CrudPageConfig` ahora expone `onMutationSuccess({ action, row })` y lo invoca despues de mutaciones exitosas (`create`, `update`, `archive`, `trash`, `unarchive`, `restore`, `purge`) y del reload local. `@devpablocristo/platform-crud-ui` sube a `0.4.1`.
+Fix: `CrudPageConfig` ahora expone `onMutationSuccess({ action, row })` y lo invoca despues de mutaciones exitosas (`create`, `update`, `archive`, `trash`, `unarchive`, `restore`, `purge`) y del reload local. `@devpablocristo/platform-crud-ui` subio a `0.4.1`.
 
-Release: tag `features/crud/ui/ts/v0.4.1` creado y pusheado. El workflow `publish-ts-package` corrio tests y preparo el tarball, pero fallo en `npm publish` con `E404 PUT https://registry.npmjs.org/@devpablocristo%2fplatform-crud-ui`. Verificacion local: `npm view @devpablocristo/platform-crud-ui versions --json` muestra hasta `0.4.0`, y `npm view @devpablocristo/platform-crud-ui@0.4.1 version` devuelve 404. Falta corregir permisos/token del registry (`NPM_TOKEN` para el scope `@devpablocristo`) o publicar manualmente la version; recien entonces Axis puede consumir `^0.4.1` y usar el hook canonico.
+Release: tag `features/crud/ui/ts/v0.4.1` creado y pusheado. Tras actualizar `NPM_TOKEN`, el rerun del workflow `publish-ts-package` publico `@devpablocristo/platform-crud-ui@0.4.1` correctamente; verificacion: `npm view @devpablocristo/platform-crud-ui@0.4.1 version --json` devuelve `"0.4.1"`. Axis lo consume en PR #67 y usa `onMutationSuccess` para refrescar IAM shell/listas tras mutaciones internas de `CrudPage`.
