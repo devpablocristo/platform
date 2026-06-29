@@ -186,7 +186,7 @@ Release: tag `features/crud/ui/ts/v0.4.1` creado y pusheado. Tras actualizar `NP
 
 ### MED-2P-06 — `useTextFileUpload` forzaba a consumers a renderizar refs/props manualmente
 
-Estado: **corregido, pendiente de merge/tag/publicacion y consumo en Axis**.
+Estado: **corregido, publicado y consumido por Axis**.
 
 Evidencia: Axis quedo con los dos ultimos warnings de `react-hooks/refs` en `PromptScreens`: el consumer tenia que renderizar `<input ref={upload.inputRef} {...upload.inputProps} />` porque `platform-crud-ui` solo exponia piezas internas del input de archivo.
 
@@ -194,7 +194,7 @@ Riesgo: consumers quedan acoplados a detalles de refs del hook, acumulan warning
 
 Fix: `platform-crud-ui` agrega `TextFileUploadInput` y `TextFileUploadInputProps`, manteniendo `useTextFileUpload` compatible. El componente encapsula `inputRef/inputProps` y conserva extensibilidad de atributos como `aria-label`.
 
-Version: `@devpablocristo/platform-crud-ui` bump a `0.4.2`.
+Release: tag `features/crud/ui/ts/v0.4.2` creado y pusheado. El workflow `publish-ts-package` publico `@devpablocristo/platform-crud-ui@0.4.2` correctamente; verificacion: `npm view @devpablocristo/platform-crud-ui@0.4.2 version --json` devuelve `"0.4.2"`. Axis lo consume en PR #75 y reemplaza el render manual del input por `TextFileUploadInput`, dejando `npm run lint` de console en 0 warnings.
 
 Verificacion local:
 - `pnpm --filter @devpablocristo/platform-crud-ui run typecheck` OK.
