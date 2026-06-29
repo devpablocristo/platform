@@ -19,6 +19,7 @@ on:
       # Feature verticals
       - "features/admin-insights/ts/v*"
       - "features/calendar-board/ts/v*"
+      - "features/chat/ui/ts/v*"
       - "features/conversation-inbox/ts/v*"
       - "features/crud/ui/ts/v*"
       - "features/kanban-board/ts/v*"

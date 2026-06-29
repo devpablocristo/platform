@@ -120,3 +120,15 @@ Fix: timeout explicito de 5s para waits de disponibilidad publica.
 ## Relacion con Axis y Medmory
 
 Axis y Medmory ya consumen varios paquetes Go de `platform`. En esta pasada no hizo falta publicar un nuevo tag para consumidores porque los fixes fueron de tooling/tests/docs internos de `platform`, no de API publica. Si se mergean estos cambios, no requieren bump en Axis/Medmory.
+
+## Follow-up — 2026-06-28
+
+### HIGH-2P-01 — `platform-chat-ui` publicado y consumido no entraba al workspace ni al publish workflow
+
+Estado: **corregido en working tree**.
+
+Evidencia: Axis y Medmory consumen `@devpablocristo/platform-chat-ui@^0.1.2`; el paquete vive en `features/chat/ui/ts`, pero `pnpm-workspace.yaml` no lo incluia y `.github/workflows/publish-ts-package.yml` no escuchaba tags `features/chat/ui/ts/v*`.
+
+Riesgo: `npm run test:ts` no typecheckeaba/testeaba un paquete publicado y usado por apps; futuros tags del paquete no dispararian el workflow de publish.
+
+Fix: agregar `features/chat/ui/ts` al workspace pnpm y al workflow de publish TS.
