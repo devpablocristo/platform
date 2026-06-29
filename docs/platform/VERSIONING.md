@@ -59,6 +59,10 @@ bash tooling/scripts/check-remote-tags.sh
 ```
 
 `validate:versions` es el guardrail obligatorio antes de publicar.
+`check-remote-tags.sh` valida tags remotos de modulos publicables hoy
+(Go/TypeScript/Python). Rust queda excluido por defecto hasta definir registry
+y naming de crates; usar `--include-rust` solo cuando esa publicacion este
+habilitada explicitamente.
 
 ## Consumers
 
