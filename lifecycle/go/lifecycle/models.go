@@ -38,11 +38,15 @@ func ParticipatesInAutomation(state LifecycleState) bool {
 type Action string
 
 const (
-	ActionArchive   Action = "archive"
-	ActionUnarchive Action = "unarchive"
-	ActionTrash     Action = "trash"
-	ActionRestore   Action = "restore"
-	ActionPurge     Action = "purge"
+	ActionCreate        Action = "create"
+	ActionUpdate        Action = "update"
+	ActionStatusChanged Action = "status_changed"
+	ActionArchive       Action = "archive"
+	ActionUnarchive     Action = "unarchive"
+	ActionTrash         Action = "trash"
+	ActionRestore       Action = "restore"
+	ActionPurge         Action = "purge"
+	ActionHardDelete    Action = "hard_delete"
 )
 
 // ArchiveRequest captures the input to Archive and BulkArchive.
@@ -97,8 +101,11 @@ type PurgeRequest struct {
 	MustBeTrashed bool
 }
 
-// LifecycleAudit is the append-only audit record produced by every action.
-type LifecycleAudit struct {
+// AuditEvent is the append-only audit record produced by lifecycle operations
+// and by consumers that need the same generic audit shape for create/update or
+// status changes. The type is intentionally domain-agnostic: tenant, resource
+// type, actor and action are opaque strings.
+type AuditEvent struct {
 	ID               uuid.UUID
 	TenantID         string
 	ResourceType     string
@@ -112,6 +119,13 @@ type LifecycleAudit struct {
 	ToState          LifecycleState
 	RetentionExpires *time.Time
 }
+
+// LifecycleAudit is the historical name kept for source compatibility.
+type LifecycleAudit = AuditEvent
+
+// ArchiveAudit is a legacy compatibility alias from the first lifecycle
+// extraction. New consumers should use AuditEvent.
+type ArchiveAudit = AuditEvent
 
 // LifecycleQuery filters lifecycle listings.
 type LifecycleQuery struct {
@@ -137,9 +151,9 @@ type BulkTrashResult struct {
 	Err        error // nil on success
 }
 
-// AuditPort persists lifecycle audit records.
+// AuditPort persists generic lifecycle/audit events.
 type AuditPort interface {
-	Append(ctx context.Context, entry LifecycleAudit) error
+	Append(ctx context.Context, entry AuditEvent) error
 }
 
 // RepositoryPort persists lifecycle transitions on the resource's own table.

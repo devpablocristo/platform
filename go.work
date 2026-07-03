@@ -30,6 +30,7 @@ use (
 	./sdks/aws/lambda/go
 	./sdks/aws/s3/go
 	./sdks/aws/sqs/go
+	./sdks/clerk/go
 	./sdks/google-calendar/go
 	./security/go
 	./testing/go/tenancy
