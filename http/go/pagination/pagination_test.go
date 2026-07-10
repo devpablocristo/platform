@@ -1,6 +1,11 @@
 package pagination
 
-import "testing"
+import (
+	"encoding/base64"
+	"encoding/json"
+	"testing"
+	"time"
+)
 
 func TestNormalizeLimit(t *testing.T) {
 	t.Parallel()
@@ -56,4 +61,81 @@ func TestBuildResultClonesItems(t *testing.T) {
 	if result.NextCursor != "next-1" {
 		t.Fatalf("unexpected next cursor: %q", result.NextCursor)
 	}
+}
+
+func TestTimeIDCursorRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	createdAt := time.Date(2026, 7, 8, 20, 26, 31, 123, time.FixedZone("ART", -3*60*60))
+	encoded, err := EncodeTimeIDCursor(TimeIDCursor{
+		CreatedAt: createdAt,
+		ID:        "  123e4567-e89b-12d3-a456-426614174000  ",
+	})
+	if err != nil {
+		t.Fatalf("EncodeTimeIDCursor returned error: %v", err)
+	}
+
+	decoded, ok, err := DecodeTimeIDCursor(encoded)
+	if err != nil {
+		t.Fatalf("DecodeTimeIDCursor returned error: %v", err)
+	}
+	if !ok {
+		t.Fatal("expected cursor to be present")
+	}
+	if decoded.ID != "123e4567-e89b-12d3-a456-426614174000" {
+		t.Fatalf("unexpected cursor id: %q", decoded.ID)
+	}
+	if !decoded.CreatedAt.Equal(createdAt.UTC()) {
+		t.Fatalf("unexpected cursor created_at: %s", decoded.CreatedAt)
+	}
+}
+
+func TestDecodeTimeIDCursorEmpty(t *testing.T) {
+	t.Parallel()
+
+	decoded, ok, err := DecodeTimeIDCursor("  ")
+	if err != nil {
+		t.Fatalf("DecodeTimeIDCursor returned error: %v", err)
+	}
+	if ok {
+		t.Fatal("expected empty cursor to be absent")
+	}
+	if !decoded.CreatedAt.IsZero() || decoded.ID != "" {
+		t.Fatalf("expected zero cursor, got %#v", decoded)
+	}
+}
+
+func TestDecodeTimeIDCursorRejectsInvalidCursor(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]string{
+		"invalid base64": "not-base64!",
+		"invalid json":   base64.RawURLEncoding.EncodeToString([]byte("{")),
+		"missing id": mustEncodeCursorPayload(t, map[string]any{
+			"created_at": time.Date(2026, 7, 8, 20, 26, 31, 0, time.UTC),
+		}),
+		"missing created_at": mustEncodeCursorPayload(t, map[string]any{
+			"id": "123e4567-e89b-12d3-a456-426614174000",
+		}),
+	}
+
+	for name, raw := range cases {
+		name, raw := name, raw
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			if _, ok, err := DecodeTimeIDCursor(raw); err == nil || ok {
+				t.Fatalf("expected invalid cursor error and ok=false, got ok=%v err=%v", ok, err)
+			}
+		})
+	}
+}
+
+func mustEncodeCursorPayload(t *testing.T, payload map[string]any) string {
+	t.Helper()
+
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatalf("json.Marshal returned error: %v", err)
+	}
+	return base64.RawURLEncoding.EncodeToString(raw)
 }
