@@ -1,0 +1,26 @@
+version = 1
+
+[[bindings]]
+doc = "docs/ARCHITECTURE.md"
+target = "errors/go/domainerr/domainerr.go"
+sig = "57ec26ab30cd9fa1"
+
+[[bindings]]
+doc = "docs/ARCHITECTURE.md"
+target = "http/gin/go/respond.go#Respond"
+sig = "6e45814bf9738f3a"
+
+[[bindings]]
+doc = "docs/ARCHITECTURE.md"
+target = "kernels/saas/go/identity/adapters/firebase/verifier.go#NewVerifier"
+sig = "0ba67e66c23754de"
+
+[[bindings]]
+doc = "docs/ARCHITECTURE.md"
+target = "kernels/saas/go/identity/membership_resolver.go#MembershipResolver"
+sig = "878193cf86739d99"
+
+[[bindings]]
+doc = "docs/ARCHITECTURE.md"
+target = "security/go/tenant/tenant.go"
+sig = "97cf8acb0a465bf0"
