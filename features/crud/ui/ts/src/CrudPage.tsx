@@ -6,7 +6,7 @@
  *
  * Shell de layout: `platform/browser/ts`. Orquestación CRUD: `platform/features/crud/ui/ts`.
  */
-import { FormEvent, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, type CSSProperties, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CrudPageShell, parsePaginatedResponse } from "@devpablocristo/platform-browser/crud";
 import { CrudShellHeaderActionsColumn } from "./CrudShellHeaderActionsColumn";
 import { search as fuzzySearch, type SearchEntry } from "@devpablocristo/platform-browser/search";
@@ -47,6 +47,36 @@ function buttonClass(kind: "primary" | "secondary" | "danger" | "success" = "sec
 function normalizeError(error: unknown): string {
   if (error instanceof Error) return error.message;
   return String(error);
+}
+
+function toCSSLength(value: number | string | undefined): number | string | undefined {
+  return value;
+}
+
+function columnClassName<T>(column: CrudColumn<T>): string | undefined {
+  const classes = [
+    column.className,
+    column.sticky ? "crud-table__cell--sticky" : "",
+    column.sticky === "left" ? "crud-table__cell--sticky-left" : "",
+    column.sticky === "right" ? "crud-table__cell--sticky-right" : "",
+  ].filter(Boolean);
+  return classes.length > 0 ? classes.join(" ") : undefined;
+}
+
+function columnStyle<T>(column: CrudColumn<T>): CSSProperties | undefined {
+  const style: CSSProperties = {};
+
+  if (column.sticky === "left") {
+    style.left = toCSSLength(column.stickyOffset ?? 0);
+  } else if (column.sticky === "right") {
+    style.right = toCSSLength(column.stickyOffset ?? 0);
+  }
+
+  if (column.width !== undefined) style.width = toCSSLength(column.width);
+  if (column.minWidth !== undefined) style.minWidth = toCSSLength(column.minWidth);
+  if (column.maxWidth !== undefined) style.maxWidth = toCSSLength(column.maxWidth);
+
+  return Object.keys(style).length > 0 ? style : undefined;
 }
 
 export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): ReactElement {
@@ -676,7 +706,12 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
                   const ariaSort = !sortable ? undefined : active ? (sortDir === "asc" ? "ascending" : "descending") : "none";
                   const labelText = sentenceCase(formatFieldText(column.header));
                   return (
-                    <th key={column.key} className={column.className} aria-sort={ariaSort}>
+                    <th
+                      key={column.key}
+                      className={columnClassName(column)}
+                      style={columnStyle(column)}
+                      aria-sort={ariaSort}
+                    >
                       {sortable ? (
                         <button
                           type="button"
@@ -717,7 +752,7 @@ export function CrudPage<T extends { id: string }>(props: CrudPageProps<T>): Rea
                     onClick={rowClickHandler ? () => { rowClickHandler(row); } : undefined}
                   >
                     {visibleColumns.map((column) => (
-                      <td key={column.key} className={column.className}>
+                      <td key={column.key} className={columnClassName(column)} style={columnStyle(column)}>
                         {column.render ? column.render(row[column.key], row) : String(row[column.key] ?? "") || "---"}
                       </td>
                     ))}

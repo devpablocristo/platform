@@ -23,6 +23,16 @@ export type CrudColumn<T> = {
   render?: (value: unknown, row: T) => ReactNode;
   className?: string;
   /**
+   * Fija la columna dentro del scroll horizontal. La app debe aportar el CSS visual
+   * para `.crud-table__cell--sticky-*` si necesita sombras o z-index específicos.
+   */
+  sticky?: "left" | "right";
+  /** Offset del sticky. Número = px. Por defecto 0. */
+  stickyOffset?: number | string;
+  width?: number | string;
+  minWidth?: number | string;
+  maxWidth?: number | string;
+  /**
    * Si es false, la columna no muestra ordenación en cabecera. Por defecto true.
    */
   sortable?: boolean;

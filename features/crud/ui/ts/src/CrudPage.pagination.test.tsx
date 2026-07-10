@@ -78,4 +78,27 @@ describe("CrudPage pagination", () => {
 
     await waitFor(() => expect(json).toHaveBeenLastCalledWith("/v1/widgets?limit=100&after=abc"));
   });
+
+  it("applies sticky column metadata to headers and cells", async () => {
+    const json = vi.fn().mockResolvedValueOnce([{ id: "1", name: "One" }]);
+
+    render(
+      <CrudPage<Row>
+        {...baseProps}
+        columns={[{ key: "name", header: "Name", sticky: "left", stickyOffset: 48, minWidth: 220 }]}
+        httpClient={{ json }}
+      />,
+    );
+
+    const header = await screen.findByRole("columnheader", { name: /name/i });
+    const cell = await screen.findByText("One");
+
+    expect(header.className).toContain("crud-table__cell--sticky");
+    expect(header.className).toContain("crud-table__cell--sticky-left");
+    expect(header.style.left).toBe("48px");
+    expect(header.style.minWidth).toBe("220px");
+    expect(cell.className).toContain("crud-table__cell--sticky-left");
+    expect(cell.style.left).toBe("48px");
+    expect(cell.style.minWidth).toBe("220px");
+  });
 });
