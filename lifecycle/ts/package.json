@@ -1,6 +1,6 @@
 {
   "name": "@devpablocristo/platform-lifecycle",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Domain-agnostic lifecycle (archive/trash/restore/purge/bulk/audit/policies) for React frontends in the platform ecosystem.",
   "type": "module",
   "exports": {
