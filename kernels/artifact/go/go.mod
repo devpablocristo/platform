@@ -1,6 +1,6 @@
 module github.com/devpablocristo/platform/kernels/artifact/go
 
-go 1.26.1
+go 1.26.5
 
 require github.com/xuri/excelize/v2 v2.10.1
 

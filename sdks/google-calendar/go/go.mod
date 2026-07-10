@@ -1,3 +1,3 @@
 module github.com/devpablocristo/platform/sdks/google-calendar/go
 
-go 1.26.1
+go 1.26.5
