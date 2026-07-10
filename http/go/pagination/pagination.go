@@ -1,10 +1,13 @@
 package pagination
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -29,6 +32,13 @@ type Result[T any] struct {
 	Items      []T    `json:"items"`
 	HasMore    bool   `json:"has_more"`
 	NextCursor string `json:"next_cursor,omitempty"`
+}
+
+// TimeIDCursor represents the common stable cursor shape for SQL lists ordered
+// by created_at plus an immutable identifier.
+type TimeIDCursor struct {
+	CreatedAt time.Time `json:"created_at"`
+	ID        string    `json:"id"`
 }
 
 // DefaultConfig devuelve una configuración razonable para APIs públicas.
@@ -87,6 +97,41 @@ func BuildResult[T any](items []T, hasMore bool, nextCursor string) Result[T] {
 		HasMore:    hasMore,
 		NextCursor: strings.TrimSpace(nextCursor),
 	}
+}
+
+// EncodeTimeIDCursor encodes a created_at + id cursor using base64 raw URL JSON.
+func EncodeTimeIDCursor(cursor TimeIDCursor) (string, error) {
+	payload := TimeIDCursor{
+		CreatedAt: cursor.CreatedAt.UTC(),
+		ID:        strings.TrimSpace(cursor.ID),
+	}
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(raw), nil
+}
+
+// DecodeTimeIDCursor decodes a cursor encoded by EncodeTimeIDCursor.
+func DecodeTimeIDCursor(raw string) (TimeIDCursor, bool, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return TimeIDCursor{}, false, nil
+	}
+	decoded, err := base64.RawURLEncoding.DecodeString(raw)
+	if err != nil {
+		return TimeIDCursor{}, false, errors.New("invalid cursor")
+	}
+	var cursor TimeIDCursor
+	if err := json.Unmarshal(decoded, &cursor); err != nil {
+		return TimeIDCursor{}, false, errors.New("invalid cursor")
+	}
+	cursor.ID = strings.TrimSpace(cursor.ID)
+	cursor.CreatedAt = cursor.CreatedAt.UTC()
+	if cursor.ID == "" || cursor.CreatedAt.IsZero() {
+		return TimeIDCursor{}, false, errors.New("invalid cursor")
+	}
+	return cursor, true, nil
 }
 
 func parsePositiveInt(raw string, defaultValue int) (int, error) {
