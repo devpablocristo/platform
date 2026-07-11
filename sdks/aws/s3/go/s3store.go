@@ -178,6 +178,44 @@ func (c *Client) Get(ctx context.Context, key string) ([]byte, error) {
 	return body, nil
 }
 
+// GetPrefix descarga los primeros nBytes del objeto vía Range request. Útil
+// para inspeccionar magic bytes sin bajar el archivo entero (validación de
+// content-type server-side tras un upload). Si nBytes <= 0 baja el objeto
+// completo (equivalente a Get). El objeto puede tener menos de nBytes: S3
+// devuelve lo disponible.
+func (c *Client) GetPrefix(ctx context.Context, key string, nBytes int64) ([]byte, error) {
+	if c == nil || c.api == nil {
+		return nil, fmt.Errorf("s3 client is nil")
+	}
+	if strings.TrimSpace(c.bucket) == "" {
+		return nil, fmt.Errorf("s3 bucket is required")
+	}
+	key = strings.TrimSpace(key)
+	if key == "" {
+		return nil, fmt.Errorf("s3 key is required")
+	}
+	if nBytes <= 0 {
+		return c.Get(ctx, key)
+	}
+
+	input := &s3.GetObjectInput{
+		Bucket: awssdk.String(c.bucket),
+		Key:    awssdk.String(key),
+		Range:  awssdk.String(fmt.Sprintf("bytes=0-%d", nBytes-1)),
+	}
+	output, err := c.api.GetObject(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("get s3 object range: %w", err)
+	}
+	defer output.Body.Close()
+
+	body, err := io.ReadAll(output.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read s3 object range body: %w", err)
+	}
+	return body, nil
+}
+
 // PresignGet genera una URL firmada de descarga.
 func (c *Client) PresignGet(ctx context.Context, key string, ttl time.Duration, filename string) (string, error) {
 	if c == nil || c.presign == nil {
