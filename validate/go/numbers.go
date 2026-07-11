@@ -27,3 +27,13 @@ func ValidateNonNegative(field string, n int64) error {
 	}
 	return nil
 }
+
+// ValidatePositiveID validates that an integer ID is strictly positive (> 0), the common guard for
+// auto-increment/sequential primary keys. Returns a plain error (field: msg); consumers that need a
+// domain-typed error (e.g. HTTP 400) wrap it at the call site.
+func ValidatePositiveID(field string, id int64) error {
+	if id <= 0 {
+		return Err(field, fmt.Sprintf("invalid id: %d", id))
+	}
+	return nil
+}
