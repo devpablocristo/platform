@@ -34,6 +34,8 @@ use (
 	./sdks/google-calendar/go
 	./security/go
 	./testing/go/tenancy
+	./utils/civil/go
+	./utils/mime/go
 	./validate/go
 	./webhook/go
 )
