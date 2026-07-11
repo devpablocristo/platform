@@ -187,8 +187,10 @@ func applyNonTransactionalMigration(ctx context.Context, db migrationDB, scope s
 		return nil
 	}
 
-	if _, err := db.Exec(ctx, item.sql); err != nil {
-		return fmt.Errorf("execute migration: %w", err)
+	for _, statement := range splitSQLStatements(item.sql) {
+		if _, err := db.Exec(ctx, statement); err != nil {
+			return fmt.Errorf("execute migration: %w", err)
+		}
 	}
 	if _, err := db.Exec(ctx, `
 		INSERT INTO schema_migrations (scope, version, applied_at)
@@ -224,4 +226,17 @@ func parseMigrationSQL(raw string) (string, bool) {
 		return sql, true
 	}
 	return strings.TrimSpace(strings.Join(lines[1:], "\n")), false
+}
+
+func splitSQLStatements(sql string) []string {
+	parts := strings.Split(sql, ";")
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		statement := strings.TrimSpace(part)
+		if statement == "" {
+			continue
+		}
+		out = append(out, statement+";")
+	}
+	return out
 }

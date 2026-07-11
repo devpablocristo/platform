@@ -102,6 +102,8 @@ func TestMigrateUpRunsNonTransactionalMigrationOnce(t *testing.T) {
 	migrations := fstest.MapFS{
 		"migrations/0001_index.sql": {Data: []byte(`
 			-- platform:migrate:non-transactional
+			SET lock_timeout = '5s';
+			SET statement_timeout = '30s';
 			CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_example ON example (id);
 		`)},
 	}
@@ -117,7 +119,7 @@ func TestMigrateUpRunsNonTransactionalMigrationOnce(t *testing.T) {
 	if db.beginCalls != 0 {
 		t.Fatalf("expected non-transactional migration to avoid Begin, got %d calls", db.beginCalls)
 	}
-	if got := strings.Join(db.appliedSQL, "|"); got != "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_example ON example (id);" {
+	if got := strings.Join(db.appliedSQL, "|"); got != "SET lock_timeout = '5s';|SET statement_timeout = '30s';|CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_example ON example (id);" {
 		t.Fatalf("unexpected applied sql: %s", got)
 	}
 }
