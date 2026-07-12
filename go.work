@@ -35,6 +35,7 @@ use (
 	./security/go
 	./testing/go/tenancy
 	./utils/civil/go
+	./utils/idempotency/go
 	./utils/mime/go
 	./validate/go
 	./webhook/go
