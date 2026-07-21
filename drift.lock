@@ -54,3 +54,28 @@ sig = "a8a046cf4743cba9"
 doc = "money/README.md"
 target = "money/go/money.go"
 sig = "157e5e3c62db1589"
+
+[[bindings]]
+doc = "outbox/README.md"
+target = "outbox/go/backoff.go"
+sig = "0e507d5a62f11b3d"
+
+[[bindings]]
+doc = "outbox/README.md"
+target = "outbox/go/dispatcher.go"
+sig = "d5e9d683f79d1a40"
+
+[[bindings]]
+doc = "outbox/README.md"
+target = "outbox/go/schema.go"
+sig = "3514993d61f68574"
+
+[[bindings]]
+doc = "outbox/README.md"
+target = "outbox/go/schema.sql"
+sig = "75bf4dd5d066778c"
+
+[[bindings]]
+doc = "outbox/README.md"
+target = "outbox/go/store.go"
+sig = "e82b016d9c3e5f58"
