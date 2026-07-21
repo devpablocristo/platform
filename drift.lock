@@ -24,3 +24,13 @@ sig = "878193cf86739d99"
 doc = "docs/ARCHITECTURE.md"
 target = "security/go/tenant/tenant.go"
 sig = "97cf8acb0a465bf0"
+
+[[bindings]]
+doc = "money/README.md"
+target = "money/go/decimal.go"
+sig = "95cac7427fa0bf9a"
+
+[[bindings]]
+doc = "money/README.md"
+target = "money/go/money.go"
+sig = "ac3fc1d8f75cad6e"
