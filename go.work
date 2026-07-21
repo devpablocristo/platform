@@ -28,6 +28,7 @@ use (
 	./money/go
 	./notifications/go
 	./observability/go
+	./outbox/go
 	./persistence/gorm/go
 	./sdks/aws/lambda/go
 	./sdks/aws/s3/go
