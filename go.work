@@ -16,6 +16,7 @@ use (
 	./features/scheduling/go
 	./http/gin/go
 	./http/go
+	./idempotency/go
 	./ingestion/go
 	./jobs/go
 	./kernels/activity/go
