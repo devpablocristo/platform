@@ -1,6 +1,11 @@
 version = 1
 
 [[bindings]]
+doc = "databases/postgres/go/README.md"
+target = "databases/postgres/go/uow.go"
+sig = "42cb916e58af089c"
+
+[[bindings]]
 doc = "docs/ARCHITECTURE.md"
 target = "errors/go/domainerr/domainerr.go"
 sig = "57ec26ab30cd9fa1"

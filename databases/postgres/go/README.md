@@ -9,6 +9,7 @@ ecosistema. Estable (v0.1.x).
 - `gorm.go` — bootstrap de `*gorm.DB` con logging integrado a slog
 - `gorm_errors.go` — traducción de errores gorm/pg a `platform/errors/go`
 - `migrate.go` / `gorm_migrate.go` — runner de migraciones embed-friendly compatible con `golang-migrate`
+- `uow.go` — Unit of Work genérico con commit, rollback y callbacks transaccionales
 
 ```go
 import postgres "github.com/devpablocristo/platform/databases/postgres/go"
