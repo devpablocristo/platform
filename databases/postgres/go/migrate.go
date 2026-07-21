@@ -33,6 +33,20 @@ type migrationFile struct {
 	transactional bool
 }
 
+// MigrationProfile describes one independently versioned migration source.
+// Profiles are applied in declaration order and share the schema_migrations
+// table while keeping their versions isolated by Scope.
+type MigrationProfile struct {
+	Scope      string
+	Migrations fs.FS
+	Dir        string
+}
+
+type preparedMigrationProfile struct {
+	scope string
+	items []migrationFile
+}
+
 const nonTransactionalMigrationDirective = "-- platform:migrate:non-transactional"
 
 // Exec ejecuta SQL arbitrario sobre el pool.
@@ -73,14 +87,29 @@ func (db *DB) Begin(ctx context.Context) (migrationTx, error) {
 
 // MigrateUp aplica migraciones `.sql` en orden lexicográfico dentro de un scope.
 func MigrateUp(ctx context.Context, db migrationDB, scope string, migrations fs.FS, dir string) error {
-	scope = strings.TrimSpace(scope)
-	if scope == "" {
-		return fmt.Errorf("migration scope required")
-	}
+	return MigrateProfiles(ctx, db, MigrationProfile{
+		Scope:      scope,
+		Migrations: migrations,
+		Dir:        dir,
+	})
+}
 
-	items, err := loadMigrationFiles(migrations, dir)
+// MigrateProfiles validates and applies independent migration sources in the
+// order provided. All profile metadata and files are prepared before the first
+// database write, so packaging errors cannot leave an earlier profile applied.
+// Execution is resumable at successfully registered migration boundaries, not
+// globally atomic: if later SQL fails, committed earlier migrations stay
+// applied. Non-transactional migrations must make their own SQL retry-safe.
+func MigrateProfiles(ctx context.Context, db migrationDB, profiles ...MigrationProfile) error {
+	prepared, err := prepareMigrationProfiles(profiles)
 	if err != nil {
 		return err
+	}
+	if len(prepared) == 0 {
+		return nil
+	}
+	if db == nil {
+		return fmt.Errorf("migration database required")
 	}
 
 	if _, err := db.Exec(ctx, `
@@ -94,12 +123,59 @@ func MigrateUp(ctx context.Context, db migrationDB, scope string, migrations fs.
 		return fmt.Errorf("ensure schema_migrations: %w", err)
 	}
 
-	for _, item := range items {
-		if err := applyMigration(ctx, db, scope, item); err != nil {
-			return fmt.Errorf("apply migration %s/%s: %w", scope, item.version, err)
+	for _, profile := range prepared {
+		for _, item := range profile.items {
+			if err := applyMigration(ctx, db, profile.scope, item); err != nil {
+				return fmt.Errorf("apply migration %s/%s: %w", profile.scope, item.version, err)
+			}
 		}
 	}
 	return nil
+}
+
+func prepareMigrationProfiles(profiles []MigrationProfile) ([]preparedMigrationProfile, error) {
+	if len(profiles) == 0 {
+		return nil, nil
+	}
+
+	normalized := make([]MigrationProfile, len(profiles))
+	seenScopes := make(map[string]struct{}, len(profiles))
+	for index, profile := range profiles {
+		scope := strings.TrimSpace(profile.Scope)
+		if scope == "" {
+			return nil, fmt.Errorf("migration profile %d: scope required", index)
+		}
+		if profile.Migrations == nil {
+			return nil, fmt.Errorf("migration profile %q: migrations required", scope)
+		}
+		if _, exists := seenScopes[scope]; exists {
+			return nil, fmt.Errorf("migration profile %q: duplicate scope", scope)
+		}
+		seenScopes[scope] = struct{}{}
+
+		dir := strings.TrimSpace(profile.Dir)
+		if dir == "" {
+			dir = "."
+		}
+		normalized[index] = MigrationProfile{
+			Scope:      scope,
+			Migrations: profile.Migrations,
+			Dir:        dir,
+		}
+	}
+
+	prepared := make([]preparedMigrationProfile, len(normalized))
+	for index, profile := range normalized {
+		items, err := loadMigrationFiles(profile.Migrations, profile.Dir)
+		if err != nil {
+			return nil, fmt.Errorf("prepare migration profile %q: %w", profile.Scope, err)
+		}
+		prepared[index] = preparedMigrationProfile{
+			scope: profile.Scope,
+			items: items,
+		}
+	}
+	return prepared, nil
 }
 
 func loadMigrationFiles(migrations fs.FS, dir string) ([]migrationFile, error) {
