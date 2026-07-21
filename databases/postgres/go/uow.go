@@ -9,9 +9,20 @@ import (
 )
 
 var (
-	ErrNilUnitOfWork = errors.New("postgres: unit of work is nil")
-	ErrNilBeginTx    = errors.New("postgres: begin transaction function is nil")
+	ErrNilUnitOfWork           = errors.New("postgres: unit of work is nil")
+	ErrNilBeginTx              = errors.New("postgres: begin transaction function is nil")
+	ErrNilTransactionFunc      = errors.New("postgres: unit of work function is nil")
+	ErrNoActiveTransaction     = errors.New("postgres: no active transaction in context")
+	ErrTransactionTypeMismatch = errors.New("postgres: active transaction has unexpected type")
+	ErrNilTransactionCallback  = errors.New("postgres: transaction callback is nil")
 )
+
+type transactionContextKey struct{}
+
+type activeTransaction struct {
+	tx          any
+	afterCommit func(TxCallback)
+}
 
 // TxBeginFunc starts a transaction of type T.
 type TxBeginFunc[T any] func(context.Context) (T, error)
@@ -69,13 +80,69 @@ func (ctx *TxContext[T]) AfterRollback(callback TxCallback) {
 	}
 }
 
+// WithinTx runs fn inside a transaction and exposes it through the callback context.
+func (uow *UnitOfWork[T]) WithinTx(ctx context.Context, fn func(context.Context) error) error {
+	if uow == nil {
+		return ErrNilUnitOfWork
+	}
+	if fn == nil {
+		return ErrNilTransactionFunc
+	}
+
+	return uow.Do(ctx, func(ctx context.Context, txCtx *TxContext[T]) error {
+		ctx = context.WithValue(ctx, transactionContextKey{}, &activeTransaction{
+			tx:          txCtx.Tx(),
+			afterCommit: txCtx.AfterCommit,
+		})
+		return fn(ctx)
+	})
+}
+
+// Tx returns the active transaction carried by ctx.
+func Tx[T any](ctx context.Context) (T, error) {
+	var zero T
+	active, err := activeTransactionFromContext(ctx)
+	if err != nil {
+		return zero, err
+	}
+	tx, ok := active.tx.(T)
+	if !ok {
+		return zero, ErrTransactionTypeMismatch
+	}
+	return tx, nil
+}
+
+// AfterCommit registers a callback on the active transaction carried by ctx.
+func AfterCommit(ctx context.Context, callback TxCallback) error {
+	if callback == nil {
+		return ErrNilTransactionCallback
+	}
+	active, err := activeTransactionFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	active.afterCommit(callback)
+	return nil
+}
+
+func activeTransactionFromContext(ctx context.Context) (*activeTransaction, error) {
+	if ctx == nil {
+		return nil, ErrNoActiveTransaction
+	}
+	active, ok := ctx.Value(transactionContextKey{}).(*activeTransaction)
+	if !ok || active == nil {
+		return nil, ErrNoActiveTransaction
+	}
+	return active, nil
+}
+
 // Do runs fn inside a transaction.
 func (uow *UnitOfWork[T]) Do(ctx context.Context, fn func(context.Context, *TxContext[T]) error) (err error) {
 	if uow == nil {
 		return ErrNilUnitOfWork
 	}
 	if fn == nil {
-		return errors.New("postgres: unit of work function is nil")
+		return ErrNilTransactionFunc
 	}
 
 	tx, err := uow.begin(ctx)
@@ -124,7 +191,11 @@ func NewPgxUnitOfWork(beginner PgxBeginner) (*UnitOfWork[pgx.Tx], error) {
 			return tx.Commit(ctx)
 		},
 		func(ctx context.Context, tx pgx.Tx) error {
-			return tx.Rollback(ctx)
+			err := tx.Rollback(ctx)
+			if errors.Is(err, pgx.ErrTxClosed) {
+				return nil
+			}
+			return err
 		},
 	)
 }

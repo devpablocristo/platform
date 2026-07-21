@@ -8,7 +8,7 @@ sig = "aed24de51bd4a686"
 [[bindings]]
 doc = "databases/postgres/go/README.md"
 target = "databases/postgres/go/uow.go"
-sig = "42cb916e58af089c"
+sig = "a24da0a6df8ba44b"
 
 [[bindings]]
 doc = "docs/ARCHITECTURE.md"
