@@ -24,6 +24,7 @@ use (
 	./kernels/governance/go
 	./kernels/saas/go
 	./lifecycle/go
+	./money/go
 	./notifications/go
 	./observability/go
 	./persistence/gorm/go
