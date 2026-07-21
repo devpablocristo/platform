@@ -10,10 +10,20 @@ func TestCurrencyValidation(t *testing.T) {
 	if _, err := ParseCurrency("ARS"); err != nil {
 		t.Fatal(err)
 	}
-	for _, code := range []string{"ars", "US", "USDT", "12A"} {
+	for _, code := range []string{"ZZZ", "ars", "US", "USDT", "12A"} {
 		if _, err := ParseCurrency(code); !errors.Is(err, ErrInvalidCurrency) {
 			t.Fatalf("ParseCurrency(%q) error = %v", code, err)
 		}
+	}
+}
+
+func TestMoneyRoundRejectsInvalidMode(t *testing.T) {
+	value, err := New(MustParseDecimal("10.01"), "ARS")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := value.Round(2, RoundMode(99)); !errors.Is(err, ErrInvalidRoundMode) {
+		t.Fatalf("Round() error = %v", err)
 	}
 }
 
