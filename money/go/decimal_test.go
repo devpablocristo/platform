@@ -82,6 +82,28 @@ func TestDecimalRounding(t *testing.T) {
 	}
 }
 
+func TestDecimalRoundingRejectsInvalidModeOnEveryPath(t *testing.T) {
+	invalid := RoundMode(99)
+	tests := []struct {
+		name  string
+		input string
+		scale int32
+	}{
+		{name: "no-op", input: "1.23", scale: 2},
+		{name: "scale increase", input: "1.23", scale: 3},
+		{name: "non-tie", input: "1.236", scale: 2},
+		{name: "tie", input: "1.235", scale: 2},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if _, err := MustParseDecimal(tt.input).Round(tt.scale, invalid); !errors.Is(err, ErrInvalidRoundMode) {
+				t.Fatalf("Round(%d, %d) error = %v", tt.scale, invalid, err)
+			}
+		})
+	}
+}
+
 func TestDecimalSQLInterfaces(t *testing.T) {
 	value := MustParseDecimal("42.90")
 	driverValue, err := value.Value()
@@ -104,5 +126,15 @@ func TestDecimalSQLInterfaces(t *testing.T) {
 	}
 	if err := scanned.Scan(42.9); !errors.Is(err, ErrUnsupportedScan) {
 		t.Fatalf("expected unsupported scan, got %v", err)
+	}
+}
+
+func TestDecimalScanRejectsSQLNull(t *testing.T) {
+	scanned := MustParseDecimal("42.9")
+	if err := scanned.Scan(nil); !errors.Is(err, ErrNullDecimal) {
+		t.Fatalf("Scan(nil) error = %v", err)
+	}
+	if got := scanned.String(); got != "42.9" {
+		t.Fatalf("Scan(nil) mutated receiver to %s", got)
 	}
 }

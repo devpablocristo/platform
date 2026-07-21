@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"golang.org/x/text/currency"
 )
 
 var (
@@ -16,13 +18,9 @@ type Currency string
 
 // ParseCurrency validates and returns an ISO 4217 alpha currency code.
 func ParseCurrency(code string) (Currency, error) {
-	if len(code) != 3 {
-		return "", ErrInvalidCurrency
-	}
-	for _, r := range code {
-		if r < 'A' || r > 'Z' {
-			return "", ErrInvalidCurrency
-		}
+	unit, err := currency.ParseISO(code)
+	if err != nil || unit.String() != code {
+		return "", fmt.Errorf("%w: %q", ErrInvalidCurrency, code)
 	}
 	return Currency(code), nil
 }

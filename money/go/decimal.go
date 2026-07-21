@@ -1,6 +1,7 @@
 package money
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
@@ -10,9 +11,11 @@ import (
 )
 
 var (
-	ErrInvalidDecimal  = errors.New("money: invalid decimal")
-	ErrInvalidScale    = errors.New("money: invalid scale")
-	ErrUnsupportedScan = errors.New("money: unsupported scan value")
+	ErrInvalidDecimal   = errors.New("money: invalid decimal")
+	ErrInvalidRoundMode = errors.New("money: invalid round mode")
+	ErrInvalidScale     = errors.New("money: invalid scale")
+	ErrNullDecimal      = errors.New("money: cannot scan SQL NULL into Decimal")
+	ErrUnsupportedScan  = errors.New("money: unsupported scan value")
 )
 
 // RoundMode defines how Decimal.Round resolves discarded fractional digits.
@@ -29,6 +32,11 @@ type Decimal struct {
 	coeff big.Int
 	scale int32
 }
+
+var (
+	_ driver.Valuer = Decimal{}
+	_ sql.Scanner   = (*Decimal)(nil)
+)
 
 // Zero returns 0.
 func Zero() Decimal {
@@ -176,8 +184,7 @@ func (d *Decimal) Scan(value any) error {
 	case []byte:
 		return d.scanString(string(v))
 	case nil:
-		*d = Zero()
-		return nil
+		return ErrNullDecimal
 	default:
 		return fmt.Errorf("%w: %T", ErrUnsupportedScan, value)
 	}
@@ -220,6 +227,9 @@ func (d Decimal) Mul(other Decimal) Decimal {
 
 // Round returns d rounded to scale with mode.
 func (d Decimal) Round(scale int32, mode RoundMode) (Decimal, error) {
+	if !mode.valid() {
+		return Decimal{}, fmt.Errorf("%w: %d", ErrInvalidRoundMode, mode)
+	}
 	if scale < 0 {
 		return Decimal{}, ErrInvalidScale
 	}
@@ -248,8 +258,6 @@ func (d Decimal) Round(scale int32, mode RoundMode) (Decimal, error) {
 			round = true
 		case RoundHalfEven:
 			round = new(big.Int).Abs(quotient).Bit(0) == 1
-		default:
-			return Decimal{}, fmt.Errorf("money: unsupported round mode %d", mode)
 		}
 	}
 	if round {
@@ -260,6 +268,15 @@ func (d Decimal) Round(scale int32, mode RoundMode) (Decimal, error) {
 		}
 	}
 	return normalize(Decimal{coeff: *quotient, scale: scale}), nil
+}
+
+func (m RoundMode) valid() bool {
+	switch m {
+	case RoundHalfUp, RoundHalfEven, RoundDown:
+		return true
+	default:
+		return false
+	}
 }
 
 func normalize(d Decimal) Decimal {
