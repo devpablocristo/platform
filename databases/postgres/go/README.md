@@ -1,7 +1,7 @@
 # databases/postgres/go
 
 Wrappers sobre `database/sql` + `gorm.io/gorm` para servicios Postgres del
-ecosistema. Estable (v0.1.x).
+ecosistema. Estable (v0.2.x).
 
 ## Qué provee
 
