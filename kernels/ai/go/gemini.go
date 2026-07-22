@@ -3,6 +3,7 @@ package ai
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -219,10 +220,26 @@ func buildGeminiContents(systemPrompt string, msgs []Message) []map[string]any {
 		if m.Role == "assistant" || m.Role == "model" {
 			role = "model"
 		}
-		contents = append(contents, map[string]any{
-			"role":  role,
-			"parts": []map[string]any{{"text": m.Content}},
-		})
+		parts := make([]map[string]any, 0, 1+len(m.Attachments))
+		if m.Content != "" {
+			parts = append(parts, map[string]any{"text": m.Content})
+		}
+		// Inline binary media (Gemini/Vertex accept images, PDF and audio inline).
+		for _, att := range m.Attachments {
+			if att.MIMEType == "" || len(att.Data) == 0 {
+				continue
+			}
+			parts = append(parts, map[string]any{
+				"inlineData": map[string]any{
+					"mimeType": att.MIMEType,
+					"data":     base64.StdEncoding.EncodeToString(att.Data),
+				},
+			})
+		}
+		if len(parts) == 0 {
+			parts = append(parts, map[string]any{"text": ""})
+		}
+		contents = append(contents, map[string]any{"role": role, "parts": parts})
 	}
 
 	return contents

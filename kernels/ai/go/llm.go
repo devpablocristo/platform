@@ -38,10 +38,20 @@ type ChatRequest struct {
 
 // Message mensaje en el hilo del LLM.
 type Message struct {
-	Role       string     `json:"role"` // user, assistant, tool
-	Content    string     `json:"content,omitempty"`
-	ToolCalls  []ToolCall `json:"tool_calls,omitempty"`
-	ToolCallID string     `json:"tool_call_id,omitempty"`
+	Role        string       `json:"role"` // user, assistant, tool
+	Content     string       `json:"content,omitempty"`
+	ToolCalls   []ToolCall   `json:"tool_calls,omitempty"`
+	ToolCallID  string       `json:"tool_call_id,omitempty"`
+	Attachments []Attachment `json:"attachments,omitempty"`
+}
+
+// Attachment is inline binary media (image, PDF, audio, …) sent alongside a
+// message. Data holds the raw bytes; each adapter encodes it as its API needs
+// (Gemini/Vertex: inlineData base64). Providers without media support ignore
+// attachments and fall back to text only.
+type Attachment struct {
+	MIMEType string `json:"mime_type"`
+	Data     []byte `json:"data,omitempty"`
 }
 
 // ToolCall invocación de tool por el LLM.
