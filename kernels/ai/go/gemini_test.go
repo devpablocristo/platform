@@ -2,6 +2,7 @@ package ai
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -142,6 +143,59 @@ func TestBuildGeminiContents(t *testing.T) {
 	parts := first["parts"].([]map[string]any)
 	if !strings.Contains(parts[0]["text"].(string), "[System]") {
 		t.Error("first message should contain [System] prefix")
+	}
+}
+
+func TestBuildGeminiContentsWithContentParts(t *testing.T) {
+	t.Parallel()
+
+	contents := buildGeminiContents("", []Message{{
+		Role:    "user",
+		Content: "review",
+		Parts: []ContentPart{
+			{Kind: ContentPartText, Text: "page one"},
+			{Kind: ContentPartInlineData, MIMEType: "image/png", Data: []byte{1, 2, 3}},
+			{Kind: ContentPartFileData, MIMEType: "application/pdf", URI: "gs://bucket/report.pdf"},
+		},
+	}})
+	if len(contents) != 1 {
+		t.Fatalf("expected one content, got %d", len(contents))
+	}
+	parts := contents[0]["parts"].([]map[string]any)
+	if len(parts) != 4 {
+		t.Fatalf("expected content plus three parts, got %d", len(parts))
+	}
+	inline := parts[2]["inlineData"].(map[string]any)
+	if inline["data"] != base64.StdEncoding.EncodeToString([]byte{1, 2, 3}) {
+		t.Fatalf("unexpected inline data: %v", inline["data"])
+	}
+	file := parts[3]["fileData"].(map[string]any)
+	if file["fileUri"] != "gs://bucket/report.pdf" {
+		t.Fatalf("unexpected file URI: %v", file["fileUri"])
+	}
+}
+
+func TestBuildGeminiContentsKeepsAttachmentCompatibility(t *testing.T) {
+	t.Parallel()
+	contents := buildGeminiContents("", []Message{{
+		Role: "user", Attachments: []Attachment{{MIMEType: "application/pdf", Data: []byte("pdf")}},
+	}})
+	parts := contents[0]["parts"].([]map[string]any)
+	if len(parts) != 1 || parts[0]["inlineData"] == nil {
+		t.Fatalf("expected compatibility attachment, got %#v", parts)
+	}
+}
+
+func TestGeminiPartRejectsIncompleteOrUnknownParts(t *testing.T) {
+	t.Parallel()
+	for _, part := range []ContentPart{
+		{Kind: ContentPartInlineData, MIMEType: "image/png"},
+		{Kind: ContentPartFileData, URI: "gs://bucket/file"},
+		{Kind: ContentPartKind("unknown"), Text: "ignored"},
+	} {
+		if _, ok := geminiPart(part); ok {
+			t.Fatalf("expected part to be rejected: %#v", part)
+		}
 	}
 }
 

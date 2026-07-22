@@ -205,3 +205,26 @@ func TestBuildAnthropicMessagesToolResult(t *testing.T) {
 		t.Errorf("tool result role should be user, got %v", msgs[2]["role"])
 	}
 }
+
+func TestContentPartJSONRoundTrip(t *testing.T) {
+	t.Parallel()
+	want := Message{
+		Role: "user",
+		Parts: []ContentPart{{
+			Kind: ContentPartFileData, MIMEType: "application/pdf",
+			URI: "gs://bucket/file.pdf", Name: "document", SHA256: "abc",
+			Locator: &ContentLocator{Page: 2, BBox: []float64{1, 2, 3, 4}},
+		}},
+	}
+	raw, err := json.Marshal(want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got Message
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Parts) != 1 || got.Parts[0].URI != want.Parts[0].URI || got.Parts[0].Locator.Page != 2 {
+		t.Fatalf("unexpected round trip: %#v", got)
+	}
+}

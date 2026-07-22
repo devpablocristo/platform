@@ -220,21 +220,22 @@ func buildGeminiContents(systemPrompt string, msgs []Message) []map[string]any {
 		if m.Role == "assistant" || m.Role == "model" {
 			role = "model"
 		}
-		parts := make([]map[string]any, 0, 1+len(m.Attachments))
+		parts := make([]map[string]any, 0, 1+len(m.Parts)+len(m.Attachments))
 		if m.Content != "" {
 			parts = append(parts, map[string]any{"text": m.Content})
 		}
+		for _, part := range m.Parts {
+			if encoded, ok := geminiPart(part); ok {
+				parts = append(parts, encoded)
+			}
+		}
 		// Inline binary media (Gemini/Vertex accept images, PDF and audio inline).
 		for _, att := range m.Attachments {
-			if att.MIMEType == "" || len(att.Data) == 0 {
-				continue
+			if encoded, ok := geminiPart(ContentPart{
+				Kind: ContentPartInlineData, MIMEType: att.MIMEType, Data: att.Data,
+			}); ok {
+				parts = append(parts, encoded)
 			}
-			parts = append(parts, map[string]any{
-				"inlineData": map[string]any{
-					"mimeType": att.MIMEType,
-					"data":     base64.StdEncoding.EncodeToString(att.Data),
-				},
-			})
 		}
 		if len(parts) == 0 {
 			parts = append(parts, map[string]any{"text": ""})
@@ -243,6 +244,49 @@ func buildGeminiContents(systemPrompt string, msgs []Message) []map[string]any {
 	}
 
 	return contents
+}
+
+func geminiPart(part ContentPart) (map[string]any, bool) {
+	kind := part.Kind
+	if kind == "" {
+		switch {
+		case part.Text != "":
+			kind = ContentPartText
+		case len(part.Data) > 0:
+			kind = ContentPartInlineData
+		case part.URI != "":
+			kind = ContentPartFileData
+		}
+	}
+	switch kind {
+	case ContentPartText:
+		if part.Text == "" {
+			return nil, false
+		}
+		return map[string]any{"text": part.Text}, true
+	case ContentPartInlineData:
+		if part.MIMEType == "" || len(part.Data) == 0 {
+			return nil, false
+		}
+		return map[string]any{
+			"inlineData": map[string]any{
+				"mimeType": part.MIMEType,
+				"data":     base64.StdEncoding.EncodeToString(part.Data),
+			},
+		}, true
+	case ContentPartFileData:
+		if part.MIMEType == "" || part.URI == "" {
+			return nil, false
+		}
+		return map[string]any{
+			"fileData": map[string]any{
+				"mimeType": part.MIMEType,
+				"fileUri":  part.URI,
+			},
+		}, true
+	default:
+		return nil, false
+	}
 }
 
 func parseGeminiResponse(data []byte) (ChatResponse, error) {

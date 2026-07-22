@@ -38,17 +38,56 @@ type ChatRequest struct {
 
 // Message mensaje en el hilo del LLM.
 type Message struct {
-	Role        string       `json:"role"` // user, assistant, tool
-	Content     string       `json:"content,omitempty"`
-	ToolCalls   []ToolCall   `json:"tool_calls,omitempty"`
-	ToolCallID  string       `json:"tool_call_id,omitempty"`
+	Role       string        `json:"role"` // user, assistant, tool
+	Content    string        `json:"content,omitempty"`
+	ToolCalls  []ToolCall    `json:"tool_calls,omitempty"`
+	ToolCallID string        `json:"tool_call_id,omitempty"`
+	Parts      []ContentPart `json:"parts,omitempty"`
+	// Attachments is the v0.2-compatible inline media shape. New callers should
+	// use Parts so they can also send text and provider-hosted file URIs.
 	Attachments []Attachment `json:"attachments,omitempty"`
 }
 
-// Attachment is inline binary media (image, PDF, audio, …) sent alongside a
-// message. Data holds the raw bytes; each adapter encodes it as its API needs
-// (Gemini/Vertex: inlineData base64). Providers without media support ignore
-// attachments and fall back to text only.
+// ContentPartKind identifies the transport shape of one message part.
+type ContentPartKind string
+
+const (
+	ContentPartText       ContentPartKind = "text"
+	ContentPartInlineData ContentPartKind = "inline_data"
+	ContentPartFileData   ContentPartKind = "file_data"
+)
+
+// ContentLocator preserves provenance without coupling the kernel to a
+// product-specific artifact model. Adapters may use the fields that apply to
+// their media type (page/slide/sheet, bounding box, time range, or frame).
+type ContentLocator struct {
+	Page    int       `json:"page,omitempty"`
+	Slide   int       `json:"slide,omitempty"`
+	Sheet   string    `json:"sheet,omitempty"`
+	BBox    []float64 `json:"bbox,omitempty"`
+	StartMS int64     `json:"start_ms,omitempty"`
+	EndMS   int64     `json:"end_ms,omitempty"`
+	Frame   int       `json:"frame,omitempty"`
+}
+
+// ContentPart is a provider-neutral text or media part. Exactly one of Text,
+// Data, or URI is expected according to Kind. Name, SHA256, and Locator are
+// provenance metadata and are not sent to providers unless their adapter has
+// an explicit representation for them.
+type ContentPart struct {
+	Kind     ContentPartKind `json:"kind"`
+	Text     string          `json:"text,omitempty"`
+	MIMEType string          `json:"mime_type,omitempty"`
+	Data     []byte          `json:"data,omitempty"`
+	URI      string          `json:"uri,omitempty"`
+	Name     string          `json:"name,omitempty"`
+	SHA256   string          `json:"sha256,omitempty"`
+	Locator  *ContentLocator `json:"locator,omitempty"`
+}
+
+// Attachment is the compatibility shape for inline binary media. Data holds
+// raw bytes; each provider adapter encodes it as required. New code should use
+// ContentPart{Kind: ContentPartInlineData}.
 type Attachment struct {
 	MIMEType string `json:"mime_type"`
 	Data     []byte `json:"data,omitempty"`
