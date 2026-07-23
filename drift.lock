@@ -114,3 +114,8 @@ sig = "75bf4dd5d066778c"
 doc = "outbox/README.md"
 target = "outbox/go/store.go"
 sig = "e82b016d9c3e5f58"
+
+[[bindings]]
+doc = "sdks/clerk/README.md"
+target = "sdks/clerk/go/session_verifier.go"
+sig = "fdf6e8054f78e0e4"

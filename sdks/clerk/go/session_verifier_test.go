@@ -340,6 +340,148 @@ func TestSessionVerifierFetchesAndCachesJWKS(t *testing.T) {
 	}
 }
 
+func TestSessionVerifierExposesTransientJWKSHTTPFailures(t *testing.T) {
+	now := time.Date(2026, time.July, 23, 12, 0, 0, 0, time.UTC)
+	privateKey := mustRSAKey(t)
+	token := mustSessionToken(t, privateKey, "key_1", validSessionClaims(now))
+
+	for _, statusCode := range []int{
+		http.StatusTooManyRequests,
+		http.StatusInternalServerError,
+		http.StatusServiceUnavailable,
+	} {
+		t.Run(http.StatusText(statusCode), func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				http.Error(w, http.StatusText(statusCode), statusCode)
+			}))
+			defer server.Close()
+
+			verifier := mustSessionVerifier(t, SessionVerifierConfig{
+				SecretKey:         "sk_test",
+				BaseURL:           server.URL,
+				Issuer:            "https://example.clerk.accounts.dev",
+				Audience:          "pymes-v2-api",
+				AuthorizedParties: []string{"http://localhost:15173"},
+				Clock:             fixedClock{now: now},
+			})
+			_, err := verifier.VerifySession(context.Background(), token)
+			assertProviderUnavailable(t, err)
+		})
+	}
+}
+
+func TestSessionVerifierExposesJWKSTransportOutage(t *testing.T) {
+	now := time.Date(2026, time.July, 23, 12, 0, 0, 0, time.UTC)
+	privateKey := mustRSAKey(t)
+	token := mustSessionToken(t, privateKey, "key_1", validSessionClaims(now))
+
+	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	baseURL := server.URL
+	server.Close()
+
+	verifier := mustSessionVerifier(t, SessionVerifierConfig{
+		SecretKey:         "sk_test",
+		BaseURL:           baseURL,
+		Client:            &http.Client{Timeout: time.Second},
+		Issuer:            "https://example.clerk.accounts.dev",
+		Audience:          "pymes-v2-api",
+		AuthorizedParties: []string{"http://localhost:15173"},
+		Clock:             fixedClock{now: now},
+	})
+	_, err := verifier.VerifySession(context.Background(), token)
+	assertProviderUnavailable(t, err)
+}
+
+func TestSessionVerifierPreservesJWKSTimeout(t *testing.T) {
+	now := time.Date(2026, time.July, 23, 12, 0, 0, 0, time.UTC)
+	privateKey := mustRSAKey(t)
+	token := mustSessionToken(t, privateKey, "key_1", validSessionClaims(now))
+
+	server := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, request *http.Request) {
+		<-request.Context().Done()
+	}))
+	defer server.Close()
+
+	verifier := mustSessionVerifier(t, SessionVerifierConfig{
+		SecretKey:         "sk_test",
+		BaseURL:           server.URL,
+		Client:            &http.Client{Timeout: 20 * time.Millisecond},
+		Issuer:            "https://example.clerk.accounts.dev",
+		Audience:          "pymes-v2-api",
+		AuthorizedParties: []string{"http://localhost:15173"},
+		Clock:             fixedClock{now: now},
+	})
+	_, err := verifier.VerifySession(context.Background(), token)
+	assertProviderUnavailable(t, err)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("VerifySession() error = %v, want context.DeadlineExceeded preserved", err)
+	}
+}
+
+func TestSessionVerifierKeepsAuthoritativeTokenFailuresInvalid(t *testing.T) {
+	now := time.Date(2026, time.July, 23, 12, 0, 0, 0, time.UTC)
+	privateKey := mustRSAKey(t)
+
+	t.Run("malformed token", func(t *testing.T) {
+		hits := 0
+		server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+			hits++
+		}))
+		defer server.Close()
+
+		verifier := mustSessionVerifier(t, SessionVerifierConfig{
+			SecretKey:         "sk_test",
+			BaseURL:           server.URL,
+			Issuer:            "https://example.clerk.accounts.dev",
+			Audience:          "pymes-v2-api",
+			AuthorizedParties: []string{"http://localhost:15173"},
+			Clock:             fixedClock{now: now},
+		})
+		_, err := verifier.VerifySession(context.Background(), "not-a-jwt")
+		assertInvalidSessionToken(t, err)
+		if hits != 0 {
+			t.Fatalf("malformed token triggered %d JWKS requests", hits)
+		}
+	})
+
+	t.Run("unknown kid in valid JWKS", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			_, _ = fmt.Fprintf(
+				w,
+				`{"keys":[{"kty":"RSA","kid":"another_key","use":"sig","alg":"RS256","n":%q,"e":"AQAB"}]}`,
+				base64.RawURLEncoding.EncodeToString(privateKey.PublicKey.N.Bytes()),
+			)
+		}))
+		defer server.Close()
+
+		verifier := mustSessionVerifier(t, SessionVerifierConfig{
+			SecretKey:         "sk_test",
+			BaseURL:           server.URL,
+			Issuer:            "https://example.clerk.accounts.dev",
+			Audience:          "pymes-v2-api",
+			AuthorizedParties: []string{"http://localhost:15173"},
+			Clock:             fixedClock{now: now},
+		})
+		token := mustSessionToken(t, privateKey, "missing_key", validSessionClaims(now))
+		_, err := verifier.VerifySession(context.Background(), token)
+		assertInvalidSessionToken(t, err)
+	})
+
+	t.Run("invalid signature", func(t *testing.T) {
+		otherKey := mustRSAKey(t)
+		token := mustSessionToken(t, otherKey, "key_1", validSessionClaims(now))
+		verifier := mustSessionVerifier(t, SessionVerifierConfig{
+			PublicKeyPEM:      publicKeyPEM(t, &privateKey.PublicKey),
+			Issuer:            "https://example.clerk.accounts.dev",
+			Audience:          "pymes-v2-api",
+			AuthorizedParties: []string{"http://localhost:15173"},
+			Clock:             fixedClock{now: now},
+		})
+		_, err := verifier.VerifySession(context.Background(), token)
+		assertInvalidSessionToken(t, err)
+	})
+}
+
 func TestNewSessionVerifierRequiresStrictConfiguration(t *testing.T) {
 	valid := SessionVerifierConfig{
 		PublicKeyPEM:      publicKeyPEM(t, &mustRSAKey(t).PublicKey),
@@ -365,6 +507,41 @@ func TestNewSessionVerifierRequiresStrictConfiguration(t *testing.T) {
 				t.Fatal("expected configuration error")
 			}
 		})
+	}
+}
+
+func validSessionClaims(now time.Time) map[string]any {
+	return map[string]any{
+		"iss":      "https://example.clerk.accounts.dev",
+		"aud":      []string{"pymes-v2-api"},
+		"azp":      "http://localhost:15173",
+		"sub":      "user_123",
+		"sid":      "sess_123",
+		"org_id":   "org_123",
+		"org_role": "org:member",
+		"iat":      now.Add(-time.Minute).Unix(),
+		"nbf":      now.Add(-time.Minute).Unix(),
+		"exp":      now.Add(time.Minute).Unix(),
+	}
+}
+
+func assertProviderUnavailable(t *testing.T, err error) {
+	t.Helper()
+	if !errors.Is(err, ErrProviderUnavailable) {
+		t.Fatalf("VerifySession() error = %v, want ErrProviderUnavailable", err)
+	}
+	if errors.Is(err, ErrInvalidSessionToken) {
+		t.Fatalf("provider outage was misclassified as ErrInvalidSessionToken: %v", err)
+	}
+}
+
+func assertInvalidSessionToken(t *testing.T, err error) {
+	t.Helper()
+	if !errors.Is(err, ErrInvalidSessionToken) {
+		t.Fatalf("VerifySession() error = %v, want ErrInvalidSessionToken", err)
+	}
+	if errors.Is(err, ErrProviderUnavailable) {
+		t.Fatalf("invalid token was misclassified as ErrProviderUnavailable: %v", err)
 	}
 }
 

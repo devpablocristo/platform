@@ -29,6 +29,11 @@ verified Clerk organization and user into their own local membership model.
 For identity-scoped operations before organization selection,
 `VerifyIdentity` applies the same token and session checks while allowing the
 organization claims to be absent; partial organization claims remain invalid.
+When remote JWKS retrieval fails because of a transport error, timeout, HTTP
+`429` or HTTP `5xx`, verification returns `ErrProviderUnavailable`. Consumers
+can distinguish that retryable provider failure with `errors.Is`; malformed
+tokens, invalid signatures or claims, and a `kid` absent from a valid JWKS
+remain `ErrInvalidSessionToken`.
 
 The Backend API client also provides provider-scoped organization invitation,
 membership and session operations:
