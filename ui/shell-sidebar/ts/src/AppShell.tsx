@@ -1,4 +1,5 @@
 import {
+  default as React,
   useEffect,
   useMemo,
   useRef,
