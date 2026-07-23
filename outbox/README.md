@@ -15,16 +15,17 @@ Outbox transaccional agnostico para PostgreSQL.
   (`MessageID`/`IdempotencyKey`);
 - reloj, jitter, IDs y tokens de lease inyectables para tests deterministas.
 
-`SchemaSQL` devuelve DDL idempotente para la tabla por defecto o para un
-`pgx.Identifier` calificado por schema. El archivo `go/schema.sql` puede
-componerse directamente en perfiles de migracion que usen la tabla por defecto.
+`MigrationProfile()` devuelve el perfil PostgreSQL componible para la tabla por
+defecto. `SchemaSQL` conserva el DDL idempotente para consumers que necesiten un
+`pgx.Identifier` calificado por schema.
 
 ```go
-ddl, _ := outbox.SchemaSQL(pgx.Identifier{"app", "outbox_messages"})
-_, _ = pool.Exec(ctx, ddl)
+database, _ := postgres.Open(ctx, databaseURL)
+defer database.Close()
 
-store, _ := outbox.NewStore(pool, outbox.StoreConfig{
-    Table:              pgx.Identifier{"app", "outbox_messages"},
+err := postgres.MigrateProfiles(ctx, database, outbox.MigrationProfile())
+
+store, _ := outbox.NewStore(database.Pool(), outbox.StoreConfig{
     DefaultMaxAttempts: 5,
 })
 
@@ -38,6 +39,10 @@ if err == nil {
     err = tx.Commit(ctx)
 }
 ```
+
+Para una tabla custom, el consumer puede aplicar
+`SchemaSQL(pgx.Identifier{"app", "outbox_messages"})` y pasar el mismo
+identificador a `StoreConfig.Table`.
 
 El payload es opaco (`BYTEA`) y los headers son `JSONB`; el modulo no conoce
 tenants, productos, rutas ni reglas de negocio. Las politicas RLS y el contexto

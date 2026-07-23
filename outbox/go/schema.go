@@ -1,16 +1,40 @@
 package outbox
 
 import (
-	_ "embed"
+	"embed"
 	"strings"
 
+	postgres "github.com/devpablocristo/platform/databases/postgres/go"
 	"github.com/jackc/pgx/v5"
 )
 
-const DefaultTableName = "platform_outbox_messages"
+const (
+	// DefaultTableName is the table installed by MigrationProfile.
+	DefaultTableName = "platform_outbox_messages"
+	// MigrationScope isolates this module's migration versions.
+	MigrationScope = "outbox/core"
+	// MigrationsDir is the root of the embedded migration filesystem.
+	MigrationsDir = "."
+)
 
 //go:embed schema.sql
 var defaultSchemaSQL string
+
+// Migrations contains the default PostgreSQL outbox schema.
+//
+//go:embed schema.sql
+var Migrations embed.FS
+
+// MigrationProfile returns this module's composable PostgreSQL migrations.
+//
+// Consumers that need a custom table name can continue to use SchemaSQL.
+func MigrationProfile() postgres.MigrationProfile {
+	return postgres.MigrationProfile{
+		Scope:      MigrationScope,
+		Migrations: Migrations,
+		Dir:        MigrationsDir,
+	}
+}
 
 // SchemaSQL returns idempotent DDL for table. An empty identifier selects
 // DefaultTableName. A schema-qualified identifier is supported.
