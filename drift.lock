@@ -36,6 +36,11 @@ target = "security/go/tenant/tenant.go"
 sig = "97cf8acb0a465bf0"
 
 [[bindings]]
+doc = "http/ts/README.md"
+target = "http/ts/src/fetch.ts"
+sig = "a433f251357ae6ec"
+
+[[bindings]]
 doc = "idempotency/README.md"
 target = "idempotency/go/middleware.go"
 sig = "895a7f281edee43d"
