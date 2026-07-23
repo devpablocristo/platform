@@ -26,3 +26,14 @@ The verifier requires an exact issuer, audience and authorized-party match,
 valid time claims, a subject, session ID and active organization. Pending
 sessions are rejected. Applications remain responsible for resolving the
 verified Clerk organization and user into their own local membership model.
+
+The Backend API client also provides provider-scoped organization invitation,
+membership and session operations:
+
+- `ListOrgInvitations`, `GetOrgInvitation`, `RevokeOrgInvitation`
+- `ListOrganizationMemberships`, `GetOrgMembership`,
+  `RevokeOrgMembership`
+- `ListSessions`, `GetSession`, `RevokeSession`
+
+Revocation methods are idempotent when Clerk returns `404`. Rate-limited
+responses can be inspected with `IsRateLimited` and `RetryAfter`.

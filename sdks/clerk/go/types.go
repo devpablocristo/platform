@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"strings"
+	"time"
 )
 
 type User struct {
@@ -23,11 +24,44 @@ type OrganizationMembership struct {
 	OrganizationID string
 	Organization   Organization
 	User           User
+	Permissions    []string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 type Invitation struct {
-	ID     string
-	Status string
+	ID             string
+	OrganizationID string
+	Email          string
+	Role           string
+	Status         string
+	ExpiresAt      *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+type SessionActivity struct {
+	DeviceType     string
+	IsMobile       bool
+	BrowserName    string
+	BrowserVersion string
+	IPAddress      string
+	City           string
+	Country        string
+}
+
+type Session struct {
+	ID                       string
+	UserID                   string
+	ClientID                 string
+	Status                   string
+	LastActiveOrganizationID string
+	LatestActivity           *SessionActivity
+	CreatedAt                time.Time
+	UpdatedAt                time.Time
+	LastActiveAt             time.Time
+	ExpiresAt                time.Time
+	AbandonAt                time.Time
 }
 
 type CreateUserInput struct {
@@ -56,6 +90,21 @@ type OrgInvitationInput struct {
 	Role                  string
 	InviterProviderUserID string
 	RedirectURL           string
+	ExpiresInDays         int
+}
+
+type OrgInvitationListInput struct {
+	ListInput
+	Statuses []string
+	Email    string
+	OrderBy  string
+}
+
+type SessionListInput struct {
+	ListInput
+	ProviderUserID string
+	ClientID       string
+	Status         string
 }
 
 type userListResponse struct {
@@ -97,6 +146,40 @@ type orgMembershipListResponse struct {
 	TotalCount int                  `json:"total_count"`
 }
 
+type invitationListResponse struct {
+	Data       []clerkInvitation `json:"data"`
+	TotalCount int               `json:"total_count"`
+}
+
+func (r *invitationListResponse) UnmarshalJSON(raw []byte) error {
+	raw = bytes.TrimSpace(raw)
+	if len(raw) == 0 {
+		return nil
+	}
+	if raw[0] == '[' {
+		return json.Unmarshal(raw, &r.Data)
+	}
+	type response invitationListResponse
+	return json.Unmarshal(raw, (*response)(r))
+}
+
+type sessionListResponse struct {
+	Data       []clerkSession `json:"data"`
+	TotalCount int            `json:"total_count"`
+}
+
+func (r *sessionListResponse) UnmarshalJSON(raw []byte) error {
+	raw = bytes.TrimSpace(raw)
+	if len(raw) == 0 {
+		return nil
+	}
+	if raw[0] == '[' {
+		return json.Unmarshal(raw, &r.Data)
+	}
+	type response sessionListResponse
+	return json.Unmarshal(raw, (*response)(r))
+}
+
 func (r *orgMembershipListResponse) UnmarshalJSON(raw []byte) error {
 	raw = bytes.TrimSpace(raw)
 	if len(raw) == 0 {
@@ -133,6 +216,9 @@ type clerkOrgMembership struct {
 	OrganizationID string            `json:"organization_id"`
 	Organization   clerkOrganization `json:"organization"`
 	PublicUserData clerkPublicUser   `json:"public_user_data"`
+	Permissions    []string          `json:"permissions"`
+	CreatedAt      int64             `json:"created_at"`
+	UpdatedAt      int64             `json:"updated_at"`
 }
 
 type clerkPublicUser struct {
@@ -141,8 +227,38 @@ type clerkPublicUser struct {
 }
 
 type clerkInvitation struct {
-	ID     string `json:"id"`
-	Status string `json:"status"`
+	ID             string `json:"id"`
+	OrganizationID string `json:"organization_id"`
+	EmailAddress   string `json:"email_address"`
+	Role           string `json:"role"`
+	Status         string `json:"status"`
+	ExpiresAt      *int64 `json:"expires_at"`
+	CreatedAt      int64  `json:"created_at"`
+	UpdatedAt      int64  `json:"updated_at"`
+}
+
+type clerkSessionActivity struct {
+	DeviceType     *string `json:"device_type"`
+	IsMobile       bool    `json:"is_mobile"`
+	BrowserName    *string `json:"browser_name"`
+	BrowserVersion *string `json:"browser_version"`
+	IPAddress      *string `json:"ip_address"`
+	City           *string `json:"city"`
+	Country        *string `json:"country"`
+}
+
+type clerkSession struct {
+	ID                       string                `json:"id"`
+	UserID                   string                `json:"user_id"`
+	ClientID                 string                `json:"client_id"`
+	Status                   string                `json:"status"`
+	LastActiveOrganizationID string                `json:"last_active_organization_id"`
+	LatestActivity           *clerkSessionActivity `json:"latest_activity"`
+	CreatedAt                int64                 `json:"created_at"`
+	UpdatedAt                int64                 `json:"updated_at"`
+	LastActiveAt             int64                 `json:"last_active_at"`
+	ExpireAt                 int64                 `json:"expire_at"`
+	AbandonAt                int64                 `json:"abandon_at"`
 }
 
 func userFromPayload(user clerkUser) User {
@@ -193,5 +309,70 @@ func orgMembershipFromPayload(item clerkOrgMembership) OrganizationMembership {
 			ID:    strings.TrimSpace(item.PublicUserData.UserID),
 			Email: strings.TrimSpace(strings.ToLower(item.PublicUserData.Identifier)),
 		},
+		Permissions: append([]string(nil), item.Permissions...),
+		CreatedAt:   millisToTime(item.CreatedAt),
+		UpdatedAt:   millisToTime(item.UpdatedAt),
 	}
+}
+
+func invitationFromPayload(item clerkInvitation) Invitation {
+	return Invitation{
+		ID:             strings.TrimSpace(item.ID),
+		OrganizationID: strings.TrimSpace(item.OrganizationID),
+		Email:          strings.TrimSpace(strings.ToLower(item.EmailAddress)),
+		Role:           strings.TrimSpace(item.Role),
+		Status:         strings.TrimSpace(item.Status),
+		ExpiresAt:      millisToTimePtr(item.ExpiresAt),
+		CreatedAt:      millisToTime(item.CreatedAt),
+		UpdatedAt:      millisToTime(item.UpdatedAt),
+	}
+}
+
+func sessionFromPayload(item clerkSession) Session {
+	session := Session{
+		ID:                       strings.TrimSpace(item.ID),
+		UserID:                   strings.TrimSpace(item.UserID),
+		ClientID:                 strings.TrimSpace(item.ClientID),
+		Status:                   strings.TrimSpace(item.Status),
+		LastActiveOrganizationID: strings.TrimSpace(item.LastActiveOrganizationID),
+		CreatedAt:                millisToTime(item.CreatedAt),
+		UpdatedAt:                millisToTime(item.UpdatedAt),
+		LastActiveAt:             millisToTime(item.LastActiveAt),
+		ExpiresAt:                millisToTime(item.ExpireAt),
+		AbandonAt:                millisToTime(item.AbandonAt),
+	}
+	if item.LatestActivity != nil {
+		session.LatestActivity = &SessionActivity{
+			DeviceType:     stringValue(item.LatestActivity.DeviceType),
+			IsMobile:       item.LatestActivity.IsMobile,
+			BrowserName:    stringValue(item.LatestActivity.BrowserName),
+			BrowserVersion: stringValue(item.LatestActivity.BrowserVersion),
+			IPAddress:      stringValue(item.LatestActivity.IPAddress),
+			City:           stringValue(item.LatestActivity.City),
+			Country:        stringValue(item.LatestActivity.Country),
+		}
+	}
+	return session
+}
+
+func millisToTime(value int64) time.Time {
+	if value <= 0 {
+		return time.Time{}
+	}
+	return time.UnixMilli(value).UTC()
+}
+
+func millisToTimePtr(value *int64) *time.Time {
+	if value == nil || *value <= 0 {
+		return nil
+	}
+	result := time.UnixMilli(*value).UTC()
+	return &result
+}
+
+func stringValue(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return strings.TrimSpace(*value)
 }
