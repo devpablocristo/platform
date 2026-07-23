@@ -1,5 +1,12 @@
 /* eslint-disable react-refresh/only-export-components -- provider + hook en mismo archivo */
-import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type PropsWithChildren,
+} from 'react';
 import { createBrowserStorageNamespace } from '../storage';
 import { formatMessage } from './formatMessage';
 import { localeTagForLanguage } from './localeTag';
