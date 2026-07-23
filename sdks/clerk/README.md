@@ -1,7 +1,28 @@
 # platform/sdks/clerk
 
-Reusable Clerk Backend API clients.
+Reusable Clerk Backend API clients and verification adapters.
 
 The Go module under `go/` is intentionally provider-specific but product-agnostic.
 It knows Clerk resources such as users, organizations, memberships and
 invitations; it does not know consumer-specific tenancy rules.
+
+## Go
+
+`New` creates the Backend API client. `NewSessionVerifier` creates a
+fail-closed session-token verifier based on Clerk's official Go SDK:
+
+```go
+verifier, err := clerk.NewSessionVerifier(clerk.SessionVerifierConfig{
+    SecretKey:        os.Getenv("CLERK_SECRET_KEY"),
+    Issuer:           "https://example.clerk.accounts.dev",
+    Audience:         "my-api",
+    AuthorizedParties: []string{"https://app.example.com"},
+    ClockSkew:        30 * time.Second,
+})
+claims, err := verifier.VerifySession(ctx, token)
+```
+
+The verifier requires an exact issuer, audience and authorized-party match,
+valid time claims, a subject, session ID and active organization. Pending
+sessions are rejected. Applications remain responsible for resolving the
+verified Clerk organization and user into their own local membership model.
