@@ -19,12 +19,13 @@ type User struct {
 }
 
 type Organization struct {
-	ID        string
-	Name      string
-	Slug      string
-	ImageURL  string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID              string
+	Name            string
+	Slug            string
+	ImageURL        string
+	PrivateMetadata Metadata
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 type OrganizationMembership struct {
@@ -39,14 +40,17 @@ type OrganizationMembership struct {
 }
 
 type Invitation struct {
-	ID             string
-	OrganizationID string
-	Email          string
-	Role           string
-	Status         string
-	ExpiresAt      *time.Time
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID              string
+	OrganizationID  string
+	Email           string
+	Role            string
+	Status          string
+	URL             string
+	PrivateMetadata Metadata
+	PublicMetadata  Metadata
+	ExpiresAt       *time.Time
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 type SessionActivity struct {
@@ -78,8 +82,9 @@ type CreateUserInput struct {
 }
 
 type OrganizationInput struct {
-	Name string
-	Slug string
+	Name            string
+	Slug            string
+	PrivateMetadata Metadata
 }
 
 type ListInput struct {
@@ -100,6 +105,8 @@ type OrgInvitationInput struct {
 	InviterProviderUserID string
 	RedirectURL           string
 	ExpiresInDays         int
+	PrivateMetadata       Metadata
+	PublicMetadata        Metadata
 }
 
 type OrgInvitationListInput struct {
@@ -222,12 +229,13 @@ type clerkEmailAddress struct {
 }
 
 type clerkOrganization struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Slug      string `json:"slug"`
-	ImageURL  string `json:"image_url"`
-	CreatedAt int64  `json:"created_at"`
-	UpdatedAt int64  `json:"updated_at"`
+	ID              string   `json:"id"`
+	Name            string   `json:"name"`
+	Slug            string   `json:"slug"`
+	ImageURL        string   `json:"image_url"`
+	PrivateMetadata Metadata `json:"private_metadata"`
+	CreatedAt       int64    `json:"created_at"`
+	UpdatedAt       int64    `json:"updated_at"`
 }
 
 type clerkOrgMembership struct {
@@ -247,14 +255,17 @@ type clerkPublicUser struct {
 }
 
 type clerkInvitation struct {
-	ID             string `json:"id"`
-	OrganizationID string `json:"organization_id"`
-	EmailAddress   string `json:"email_address"`
-	Role           string `json:"role"`
-	Status         string `json:"status"`
-	ExpiresAt      *int64 `json:"expires_at"`
-	CreatedAt      int64  `json:"created_at"`
-	UpdatedAt      int64  `json:"updated_at"`
+	ID              string   `json:"id"`
+	OrganizationID  string   `json:"organization_id"`
+	EmailAddress    string   `json:"email_address"`
+	Role            string   `json:"role"`
+	Status          string   `json:"status"`
+	URL             string   `json:"url"`
+	PrivateMetadata Metadata `json:"private_metadata"`
+	PublicMetadata  Metadata `json:"public_metadata"`
+	ExpiresAt       *int64   `json:"expires_at"`
+	CreatedAt       int64    `json:"created_at"`
+	UpdatedAt       int64    `json:"updated_at"`
 }
 
 type clerkSessionActivity struct {
@@ -316,12 +327,13 @@ func (u clerkUser) primaryEmail() (string, bool) {
 
 func organizationFromPayload(org clerkOrganization) Organization {
 	return Organization{
-		ID:        strings.TrimSpace(org.ID),
-		Name:      strings.TrimSpace(org.Name),
-		Slug:      strings.TrimSpace(org.Slug),
-		ImageURL:  strings.TrimSpace(org.ImageURL),
-		CreatedAt: millisToTime(org.CreatedAt),
-		UpdatedAt: millisToTime(org.UpdatedAt),
+		ID:              strings.TrimSpace(org.ID),
+		Name:            strings.TrimSpace(org.Name),
+		Slug:            strings.TrimSpace(org.Slug),
+		ImageURL:        strings.TrimSpace(org.ImageURL),
+		PrivateMetadata: org.PrivateMetadata,
+		CreatedAt:       millisToTime(org.CreatedAt),
+		UpdatedAt:       millisToTime(org.UpdatedAt),
 	}
 }
 
@@ -351,14 +363,17 @@ func orgMembershipFromPayload(item clerkOrgMembership) OrganizationMembership {
 
 func invitationFromPayload(item clerkInvitation) Invitation {
 	return Invitation{
-		ID:             strings.TrimSpace(item.ID),
-		OrganizationID: strings.TrimSpace(item.OrganizationID),
-		Email:          strings.TrimSpace(strings.ToLower(item.EmailAddress)),
-		Role:           strings.TrimSpace(item.Role),
-		Status:         strings.TrimSpace(item.Status),
-		ExpiresAt:      millisToTimePtr(item.ExpiresAt),
-		CreatedAt:      millisToTime(item.CreatedAt),
-		UpdatedAt:      millisToTime(item.UpdatedAt),
+		ID:              strings.TrimSpace(item.ID),
+		OrganizationID:  strings.TrimSpace(item.OrganizationID),
+		Email:           strings.TrimSpace(strings.ToLower(item.EmailAddress)),
+		Role:            strings.TrimSpace(item.Role),
+		Status:          strings.TrimSpace(item.Status),
+		URL:             strings.TrimSpace(item.URL),
+		PrivateMetadata: item.PrivateMetadata,
+		PublicMetadata:  item.PublicMetadata,
+		ExpiresAt:       millisToTimePtr(item.ExpiresAt),
+		CreatedAt:       millisToTime(item.CreatedAt),
+		UpdatedAt:       millisToTime(item.UpdatedAt),
 	}
 }
 

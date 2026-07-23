@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -18,24 +19,44 @@ func TestCreateOrganization(t *testing.T) {
 		if got := r.Header.Get("Authorization"); got != "Bearer sk_test" {
 			t.Fatalf("unexpected auth header %q", got)
 		}
-		var body map[string]any
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		var body struct {
+			Name            string   `json:"name"`
+			Slug            string   `json:"slug"`
+			PrivateMetadata Metadata `json:"private_metadata"`
+		}
+		decoder := json.NewDecoder(r.Body)
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(&body); err != nil {
 			t.Fatalf("decode request: %v", err)
 		}
-		if body["name"] != "Cristo Tech" || body["slug"] != "cristo-tech" {
+		if body.Name != "Cristo Tech" || body.Slug != "cristo-tech" ||
+			body.PrivateMetadata["operation_id"] != "op_123" {
 			t.Fatalf("unexpected body %+v", body)
 		}
-		_, _ = w.Write([]byte(`{"id":"org_FAKE","name":"Cristo Tech","slug":"cristo-tech"}`))
+		_, _ = w.Write([]byte(`{
+			"id":"org_FAKE",
+			"name":"Cristo Tech",
+			"slug":"cristo-tech",
+			"private_metadata":{"operation_id":"op_123","attempt":7}
+		}`))
 	}))
 	defer server.Close()
 
 	client := New(Config{SecretKey: "sk_test", BaseURL: server.URL})
-	got, err := client.CreateOrganization(context.Background(), OrganizationInput{Name: "Cristo Tech", Slug: "cristo-tech"})
+	got, err := client.CreateOrganization(context.Background(), OrganizationInput{
+		Name:            "Cristo Tech",
+		Slug:            "cristo-tech",
+		PrivateMetadata: Metadata{"operation_id": "op_123"},
+	})
 	if err != nil {
 		t.Fatalf("CreateOrganization: %v", err)
 	}
 	if got.ID != "org_FAKE" || got.Name != "Cristo Tech" || got.Slug != "cristo-tech" {
 		t.Fatalf("unexpected org %+v", got)
+	}
+	if got.PrivateMetadata["operation_id"] != "op_123" ||
+		got.PrivateMetadata["attempt"] != json.Number("7") {
+		t.Fatalf("unexpected organization metadata %#v", got.PrivateMetadata)
 	}
 }
 
@@ -46,20 +67,140 @@ func TestUpdateOrganizationUsesProviderOrgID(t *testing.T) {
 		if r.Method != http.MethodPatch {
 			t.Fatalf("unexpected method %s", r.Method)
 		}
-		_, _ = w.Write([]byte(`{"id":"org_PROVIDER","name":"New Name","slug":"new-name"}`))
+		var body struct {
+			Name            string   `json:"name"`
+			PrivateMetadata Metadata `json:"private_metadata"`
+		}
+		decoder := json.NewDecoder(r.Body)
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(&body); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+		if body.Name != "New Name" || body.PrivateMetadata["sync_id"] != "sync_123" {
+			t.Fatalf("unexpected update body %+v", body)
+		}
+		_, _ = w.Write([]byte(`{
+			"id":"org_PROVIDER",
+			"name":"New Name",
+			"slug":"new-name",
+			"private_metadata":{"sync_id":"sync_123"}
+		}`))
 	}))
 	defer server.Close()
 
 	client := New(Config{SecretKey: "sk_test", BaseURL: server.URL})
-	got, err := client.UpdateOrganization(context.Background(), "org_PROVIDER", OrganizationInput{Name: "New Name"})
+	got, err := client.UpdateOrganization(context.Background(), "org_PROVIDER", OrganizationInput{
+		Name:            "New Name",
+		PrivateMetadata: Metadata{"sync_id": "sync_123"},
+	})
 	if err != nil {
 		t.Fatalf("UpdateOrganization: %v", err)
 	}
 	if path != "/organizations/org_PROVIDER" {
 		t.Fatalf("expected provider org path, got %q", path)
 	}
-	if got.ID != "org_PROVIDER" || got.Name != "New Name" {
+	if got.ID != "org_PROVIDER" || got.Name != "New Name" ||
+		got.PrivateMetadata["sync_id"] != "sync_123" {
 		t.Fatalf("unexpected org %+v", got)
+	}
+}
+
+func TestCreateOrgInvitationSendsMetadataAndRedirect(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/organizations/org_PROVIDER/invitations" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		var body struct {
+			EmailAddress    string   `json:"email_address"`
+			Role            string   `json:"role"`
+			InviterUserID   string   `json:"inviter_user_id"`
+			RedirectURL     string   `json:"redirect_url"`
+			ExpiresInDays   int      `json:"expires_in_days"`
+			PrivateMetadata Metadata `json:"private_metadata"`
+			PublicMetadata  Metadata `json:"public_metadata"`
+		}
+		decoder := json.NewDecoder(r.Body)
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(&body); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+		if body.EmailAddress != "owner@example.com" || body.Role != "org:admin" ||
+			body.InviterUserID != "user_INVITER" || body.RedirectURL != "/accept-invitation" ||
+			body.ExpiresInDays != 14 ||
+			body.PrivateMetadata["operation_id"] != "op_123" ||
+			body.PublicMetadata["source"] != "admin" {
+			t.Fatalf("unexpected invitation body %+v", body)
+		}
+		_, _ = w.Write([]byte(`{
+			"id":"orginv_123",
+			"organization_id":"org_PROVIDER",
+			"email_address":"OWNER@example.com",
+			"role":"org:admin",
+			"status":"pending",
+			"url":"https://accounts.example/invitations/orginv_123",
+			"private_metadata":{"operation_id":"op_123"},
+			"public_metadata":{"source":"admin"}
+		}`))
+	}))
+	defer server.Close()
+
+	client := New(Config{SecretKey: "sk_test", BaseURL: server.URL})
+	got, err := client.CreateOrgInvitation(context.Background(), OrgInvitationInput{
+		ProviderOrgID:         " org_PROVIDER ",
+		Email:                 " OWNER@example.com ",
+		Role:                  "org:admin",
+		InviterProviderUserID: "user_INVITER",
+		RedirectURL:           " /accept-invitation ",
+		ExpiresInDays:         14,
+		PrivateMetadata:       Metadata{"operation_id": "op_123"},
+		PublicMetadata:        Metadata{"source": "admin"},
+	})
+	if err != nil {
+		t.Fatalf("CreateOrgInvitation: %v", err)
+	}
+	if got.ID != "orginv_123" || got.OrganizationID != "org_PROVIDER" ||
+		got.Email != "owner@example.com" ||
+		got.URL != "https://accounts.example/invitations/orginv_123" ||
+		got.PrivateMetadata["operation_id"] != "op_123" ||
+		got.PublicMetadata["source"] != "admin" {
+		t.Fatalf("unexpected invitation %+v", got)
+	}
+}
+
+func TestMetadataValidationFailsBeforeProviderRequest(t *testing.T) {
+	hits := 0
+	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		hits++
+	}))
+	defer server.Close()
+
+	client := New(Config{SecretKey: "sk_test", BaseURL: server.URL})
+	_, err := client.CreateOrganization(context.Background(), OrganizationInput{
+		Name:            "Invalid",
+		PrivateMetadata: Metadata{"not_json": math.NaN()},
+	})
+	if !errors.Is(err, ErrInvalidMetadata) {
+		t.Fatalf("expected ErrInvalidMetadata, got %v", err)
+	}
+	if hits != 0 {
+		t.Fatalf("invalid metadata must not reach provider, got %d requests", hits)
+	}
+}
+
+func TestResponseMetadataMustBeJSONObject(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{
+			"id":"org_123",
+			"name":"Invalid",
+			"private_metadata":["not","an","object"]
+		}`))
+	}))
+	defer server.Close()
+
+	client := New(Config{SecretKey: "sk_test", BaseURL: server.URL})
+	_, err := client.GetOrganization(context.Background(), "org_123")
+	if !errors.Is(err, ErrInvalidMetadata) {
+		t.Fatalf("expected invalid provider metadata to fail closed, got %v", err)
 	}
 }
 

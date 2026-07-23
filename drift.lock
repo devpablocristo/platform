@@ -117,5 +117,35 @@ sig = "e82b016d9c3e5f58"
 
 [[bindings]]
 doc = "sdks/clerk/README.md"
+target = "sdks/clerk/go/client.go#CreateOrgInvitation"
+sig = "305ee80a315538f7"
+
+[[bindings]]
+doc = "sdks/clerk/README.md"
+target = "sdks/clerk/go/client.go#CreateOrganization"
+sig = "e21b33ccfb967f64"
+
+[[bindings]]
+doc = "sdks/clerk/README.md"
+target = "sdks/clerk/go/metadata.go#ErrInvalidMetadata"
+sig = "165f65f954269a3a"
+
+[[bindings]]
+doc = "sdks/clerk/README.md"
+target = "sdks/clerk/go/metadata.go#Metadata"
+sig = "866fd814415e1efb"
+
+[[bindings]]
+doc = "sdks/clerk/README.md"
 target = "sdks/clerk/go/session_verifier.go"
 sig = "fdf6e8054f78e0e4"
+
+[[bindings]]
+doc = "sdks/clerk/README.md"
+target = "sdks/clerk/go/types.go#Invitation"
+sig = "ce2bd7df8b06d3bc"
+
+[[bindings]]
+doc = "sdks/clerk/README.md"
+target = "sdks/clerk/go/types.go#OrganizationInput"
+sig = "8aa1175fe287325e"

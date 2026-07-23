@@ -1,0 +1,18 @@
+{
+  "data": {
+    "id": "org_123",
+    "object": "organization",
+    "name": "Example",
+    "slug": "example",
+    "private_metadata": {
+      "operation_id": "op_123",
+      "attempt": 9007199254740993
+    },
+    "created_at": 1784818800000,
+    "updated_at": 1784818860000
+  },
+  "object": "event",
+  "type": "organization.created",
+  "timestamp": 1784818860000,
+  "instance_id": "ins_123"
+}
