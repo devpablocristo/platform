@@ -41,6 +41,26 @@ target = "http/ts/src/fetch.ts"
 sig = "a433f251357ae6ec"
 
 [[bindings]]
+doc = "iam/go/README.md"
+target = "iam/go/migrations/0001_iam_core.sql"
+sig = "d0ae627f67de6a2d"
+
+[[bindings]]
+doc = "iam/go/README.md"
+target = "iam/go/schema.go"
+sig = "38561b9645eb24ac"
+
+[[bindings]]
+doc = "iam/go/README.md"
+target = "iam/go/store.go"
+sig = "98f0c3568e2e742b"
+
+[[bindings]]
+doc = "iam/go/README.md"
+target = "iam/go/types.go"
+sig = "799ae531df305b84"
+
+[[bindings]]
 doc = "idempotency/README.md"
 target = "idempotency/go/middleware.go"
 sig = "895a7f281edee43d"
