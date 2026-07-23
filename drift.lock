@@ -103,7 +103,7 @@ sig = "d5e9d683f79d1a40"
 [[bindings]]
 doc = "outbox/README.md"
 target = "outbox/go/schema.go"
-sig = "3514993d61f68574"
+sig = "4bf3c21aa84f8e67"
 
 [[bindings]]
 doc = "outbox/README.md"

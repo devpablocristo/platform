@@ -2,11 +2,42 @@ package outbox
 
 import (
 	"errors"
+	"io/fs"
 	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
 )
+
+func TestMigrationProfileUsesDefaultSchema(t *testing.T) {
+	t.Parallel()
+
+	profile := MigrationProfile()
+	if profile.Scope != MigrationScope || profile.Dir != MigrationsDir {
+		t.Fatalf("unexpected migration profile: %#v", profile)
+	}
+	body, err := fs.ReadFile(profile.Migrations, "schema.sql")
+	if err != nil {
+		t.Fatalf("read embedded migration: %v", err)
+	}
+
+	sql := string(body)
+	for _, required := range []string{
+		`CREATE TABLE IF NOT EXISTS "platform_outbox_messages"`,
+		"idempotency_key TEXT NOT NULL UNIQUE",
+		"lease_token TEXT",
+		"lease_expires_at TIMESTAMPTZ",
+	} {
+		if !strings.Contains(sql, required) {
+			t.Errorf("migration does not contain %q", required)
+		}
+	}
+	for _, forbidden := range []string{"pymes", "clerk", "iam.", "organization"} {
+		if strings.Contains(strings.ToLower(sql), forbidden) {
+			t.Errorf("migration contains product/provider concept %q", forbidden)
+		}
+	}
+}
 
 func TestSchemaSQLDefaultAndQualifiedTable(t *testing.T) {
 	t.Parallel()
