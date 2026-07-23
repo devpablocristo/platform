@@ -40,3 +40,10 @@ membership and session operations:
 
 Revocation methods are idempotent when Clerk returns `404`. Rate-limited
 responses can be inspected with `IsRateLimited` and `RetryAfter`.
+
+`NewWebhookVerifier` verifies Clerk/Svix signatures over the original request
+body and returns a typed `WebhookEvent`. User, organization, membership,
+invitation and session event families decode to the corresponding resource
+types. Unknown event families remain available as verified `RawWebhookData`.
+The SDK does not register routes, persist events or decide how a product
+reconciles provider state.

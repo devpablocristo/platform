@@ -1,0 +1,10 @@
+{
+  "data": {
+    "id": "future_123",
+    "value": "preserved"
+  },
+  "object": "event",
+  "type": "futureResource.created",
+  "timestamp": 1784818860000,
+  "instance_id": "ins_123"
+}

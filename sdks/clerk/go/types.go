@@ -8,14 +8,23 @@ import (
 )
 
 type User struct {
-	ID    string
-	Email string
+	ID            string
+	Email         string
+	EmailVerified bool
+	FirstName     string
+	LastName      string
+	ImageURL      string
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
 type Organization struct {
-	ID   string
-	Name string
-	Slug string
+	ID        string
+	Name      string
+	Slug      string
+	ImageURL  string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type OrganizationMembership struct {
@@ -197,17 +206,28 @@ type clerkUser struct {
 	EmailAddress          string              `json:"email_address"`
 	PrimaryEmailAddressID string              `json:"primary_email_address_id"`
 	EmailAddresses        []clerkEmailAddress `json:"email_addresses"`
+	FirstName             string              `json:"first_name"`
+	LastName              string              `json:"last_name"`
+	ImageURL              string              `json:"image_url"`
+	CreatedAt             int64               `json:"created_at"`
+	UpdatedAt             int64               `json:"updated_at"`
 }
 
 type clerkEmailAddress struct {
 	ID           string `json:"id"`
 	EmailAddress string `json:"email_address"`
+	Verification *struct {
+		Status string `json:"status"`
+	} `json:"verification"`
 }
 
 type clerkOrganization struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Slug string `json:"slug"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Slug      string `json:"slug"`
+	ImageURL  string `json:"image_url"`
+	CreatedAt int64  `json:"created_at"`
+	UpdatedAt int64  `json:"updated_at"`
 }
 
 type clerkOrgMembership struct {
@@ -262,37 +282,51 @@ type clerkSession struct {
 }
 
 func userFromPayload(user clerkUser) User {
+	email, verified := user.primaryEmail()
 	return User{
-		ID:    strings.TrimSpace(user.ID),
-		Email: user.primaryEmail(),
+		ID:            strings.TrimSpace(user.ID),
+		Email:         email,
+		EmailVerified: verified,
+		FirstName:     strings.TrimSpace(user.FirstName),
+		LastName:      strings.TrimSpace(user.LastName),
+		ImageURL:      strings.TrimSpace(user.ImageURL),
+		CreatedAt:     millisToTime(user.CreatedAt),
+		UpdatedAt:     millisToTime(user.UpdatedAt),
 	}
 }
 
-func (u clerkUser) primaryEmail() string {
+func (u clerkUser) primaryEmail() (string, bool) {
 	if email := strings.TrimSpace(strings.ToLower(u.EmailAddress)); email != "" {
-		return email
+		return email, false
 	}
 	if u.PrimaryEmailAddressID != "" {
 		for _, item := range u.EmailAddresses {
 			if strings.TrimSpace(item.ID) == strings.TrimSpace(u.PrimaryEmailAddressID) {
-				return strings.TrimSpace(strings.ToLower(item.EmailAddress))
+				return strings.TrimSpace(strings.ToLower(item.EmailAddress)), emailAddressVerified(item)
 			}
 		}
 	}
 	for _, item := range u.EmailAddresses {
 		if email := strings.TrimSpace(strings.ToLower(item.EmailAddress)); email != "" {
-			return email
+			return email, emailAddressVerified(item)
 		}
 	}
-	return strings.TrimSpace(strings.ToLower(u.ID))
+	return strings.TrimSpace(strings.ToLower(u.ID)), false
 }
 
 func organizationFromPayload(org clerkOrganization) Organization {
 	return Organization{
-		ID:   strings.TrimSpace(org.ID),
-		Name: strings.TrimSpace(org.Name),
-		Slug: strings.TrimSpace(org.Slug),
+		ID:        strings.TrimSpace(org.ID),
+		Name:      strings.TrimSpace(org.Name),
+		Slug:      strings.TrimSpace(org.Slug),
+		ImageURL:  strings.TrimSpace(org.ImageURL),
+		CreatedAt: millisToTime(org.CreatedAt),
+		UpdatedAt: millisToTime(org.UpdatedAt),
 	}
+}
+
+func emailAddressVerified(email clerkEmailAddress) bool {
+	return email.Verification != nil && strings.EqualFold(strings.TrimSpace(email.Verification.Status), "verified")
 }
 
 func orgMembershipFromPayload(item clerkOrgMembership) OrganizationMembership {
