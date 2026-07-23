@@ -47,8 +47,18 @@ sig = "d0ae627f67de6a2d"
 
 [[bindings]]
 doc = "iam/go/README.md"
+target = "iam/go/resolver.go"
+sig = "a0c0b2895c6424ea"
+
+[[bindings]]
+doc = "iam/go/README.md"
 target = "iam/go/schema.go"
 sig = "38561b9645eb24ac"
+
+[[bindings]]
+doc = "iam/go/README.md"
+target = "iam/go/session.go"
+sig = "fbd7d6a504465bc6"
 
 [[bindings]]
 doc = "iam/go/README.md"
