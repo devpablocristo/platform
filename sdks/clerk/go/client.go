@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -30,6 +31,8 @@ type Client struct {
 type APIError struct {
 	StatusCode int
 	Body       string
+	Headers    http.Header
+	receivedAt time.Time
 }
 
 func (e *APIError) Error() string {
@@ -63,6 +66,49 @@ func StatusCode(err error) int {
 
 func IsNotFound(err error) bool {
 	return StatusCode(err) == http.StatusNotFound
+}
+
+func IsRateLimited(err error) bool {
+	return StatusCode(err) == http.StatusTooManyRequests
+}
+
+// RetryAfter returns Clerk's requested retry delay for a rate-limited
+// response. Both delta-seconds and HTTP-date values are supported.
+func RetryAfter(err error) (time.Duration, bool) {
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		return 0, false
+	}
+	return apiErr.RetryAfter()
+}
+
+func (e *APIError) RetryAfter() (time.Duration, bool) {
+	if e == nil {
+		return 0, false
+	}
+	raw := strings.TrimSpace(e.Headers.Get("Retry-After"))
+	if raw == "" {
+		return 0, false
+	}
+	if seconds, err := strconv.ParseInt(raw, 10, 64); err == nil {
+		if seconds < 0 {
+			return 0, false
+		}
+		return time.Duration(seconds) * time.Second, true
+	}
+	at, err := http.ParseTime(raw)
+	if err != nil {
+		return 0, false
+	}
+	receivedAt := e.receivedAt
+	if receivedAt.IsZero() {
+		receivedAt = time.Now().UTC()
+	}
+	delay := at.Sub(receivedAt)
+	if delay < 0 {
+		delay = 0
+	}
+	return delay, true
 }
 
 func New(config Config) *Client {
@@ -287,12 +333,19 @@ func (c *Client) CreateOrgInvitation(ctx context.Context, input OrgInvitationInp
 	if redirectURL := strings.TrimSpace(input.RedirectURL); redirectURL != "" {
 		body["redirect_url"] = redirectURL
 	}
+	if input.ExpiresInDays > 0 {
+		body["expires_in_days"] = input.ExpiresInDays
+	}
 	var payload clerkInvitation
 	path := "/organizations/" + url.PathEscape(strings.TrimSpace(input.ProviderOrgID)) + "/invitations"
 	if err := c.json(ctx, http.MethodPost, path, body, &payload); err != nil {
 		return Invitation{}, err
 	}
-	return Invitation{ID: payload.ID, Status: payload.Status}, nil
+	invitation := invitationFromPayload(payload)
+	if invitation.OrganizationID == "" {
+		invitation.OrganizationID = strings.TrimSpace(input.ProviderOrgID)
+	}
+	return invitation, nil
 }
 
 func (c *Client) json(ctx context.Context, method string, path string, body any, out any) error {
@@ -326,7 +379,12 @@ func (c *Client) json(ctx context.Context, method string, path string, body any,
 		return err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return &APIError{StatusCode: resp.StatusCode, Body: string(raw)}
+		return &APIError{
+			StatusCode: resp.StatusCode,
+			Body:       string(raw),
+			Headers:    resp.Header.Clone(),
+			receivedAt: time.Now().UTC(),
+		}
 	}
 	if out == nil || len(bytes.TrimSpace(raw)) == 0 {
 		return nil

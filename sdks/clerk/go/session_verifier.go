@@ -159,7 +159,24 @@ func NewSessionVerifier(config SessionVerifierConfig) (*SessionVerifier, error) 
 	return verifier, nil
 }
 
+// VerifyIdentity validates a Clerk session token without requiring an active
+// organization. It is intended for identity-scoped operations such as listing
+// the caller's available organizations or sessions.
+func (v *SessionVerifier) VerifyIdentity(ctx context.Context, token string) (SessionClaims, error) {
+	return v.verify(ctx, token, false)
+}
+
+// VerifySession validates a Clerk session token and requires a complete active
+// organization projection.
 func (v *SessionVerifier) VerifySession(ctx context.Context, token string) (SessionClaims, error) {
+	return v.verify(ctx, token, true)
+}
+
+func (v *SessionVerifier) verify(
+	ctx context.Context,
+	token string,
+	requireOrganization bool,
+) (SessionClaims, error) {
 	token = strings.TrimSpace(token)
 	if token == "" {
 		return SessionClaims{}, fmt.Errorf("%w: token is empty", ErrInvalidSessionToken)
@@ -207,10 +224,21 @@ func (v *SessionVerifier) VerifySession(ctx context.Context, token string) (Sess
 	if claims.IssuedAt == nil || claims.NotBefore == nil || claims.Expiry == nil {
 		return SessionClaims{}, fmt.Errorf("%w: required time claims are missing", ErrInvalidSessionToken)
 	}
-	if strings.TrimSpace(claims.ActiveOrganizationID) == "" {
+	organizationID := strings.TrimSpace(claims.ActiveOrganizationID)
+	organizationRole := strings.TrimSpace(claims.ActiveOrganizationRole)
+	if organizationID == "" && requireOrganization {
 		return SessionClaims{}, ErrOrganizationRequired
 	}
-	if strings.TrimSpace(claims.ActiveOrganizationRole) == "" {
+	if organizationID == "" &&
+		(organizationRole != "" ||
+			strings.TrimSpace(claims.ActiveOrganizationSlug) != "" ||
+			len(claims.ActiveOrganizationPermissions) > 0) {
+		return SessionClaims{}, fmt.Errorf(
+			"%w: organization claims are incomplete",
+			ErrInvalidSessionToken,
+		)
+	}
+	if organizationID != "" && organizationRole == "" {
 		return SessionClaims{}, fmt.Errorf("%w: organization role is missing", ErrInvalidSessionToken)
 	}
 
@@ -233,9 +261,9 @@ func (v *SessionVerifier) VerifySession(ctx context.Context, token string) (Sess
 	return SessionClaims{
 		Subject:                 strings.TrimSpace(claims.Subject),
 		SessionID:               strings.TrimSpace(claims.SessionID),
-		OrganizationID:          strings.TrimSpace(claims.ActiveOrganizationID),
+		OrganizationID:          organizationID,
 		OrganizationSlug:        strings.TrimSpace(claims.ActiveOrganizationSlug),
-		OrganizationRole:        strings.TrimSpace(claims.ActiveOrganizationRole),
+		OrganizationRole:        organizationRole,
 		OrganizationPermissions: append([]string(nil), claims.ActiveOrganizationPermissions...),
 		Status:                  status,
 		Issuer:                  claims.Issuer,
