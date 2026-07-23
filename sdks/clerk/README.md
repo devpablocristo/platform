@@ -26,6 +26,9 @@ The verifier requires an exact issuer, audience and authorized-party match,
 valid time claims, a subject, session ID and active organization. Pending
 sessions are rejected. Applications remain responsible for resolving the
 verified Clerk organization and user into their own local membership model.
+For identity-scoped operations before organization selection,
+`VerifyIdentity` applies the same token and session checks while allowing the
+organization claims to be absent; partial organization claims remain invalid.
 
 The Backend API client also provides provider-scoped organization invitation,
 membership and session operations:

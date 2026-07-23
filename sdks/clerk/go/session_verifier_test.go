@@ -192,6 +192,77 @@ func TestSessionVerifierFailsClosed(t *testing.T) {
 	}
 }
 
+func TestSessionVerifierSupportsIdentityScopeWithoutOrganization(t *testing.T) {
+	now := time.Date(2026, time.July, 23, 12, 0, 0, 0, time.UTC)
+	privateKey := mustRSAKey(t)
+	claims := map[string]any{
+		"iss": "https://example.clerk.accounts.dev",
+		"aud": []string{"pymes-v2-api"},
+		"azp": "http://localhost:15173",
+		"sub": "user_123",
+		"sid": "sess_123",
+		"iat": now.Add(-time.Minute).Unix(),
+		"nbf": now.Add(-time.Minute).Unix(),
+		"exp": now.Add(time.Minute).Unix(),
+	}
+	token := mustSessionToken(t, privateKey, "key_1", claims)
+	verifier := mustSessionVerifier(t, SessionVerifierConfig{
+		PublicKeyPEM:      publicKeyPEM(t, &privateKey.PublicKey),
+		Issuer:            "https://example.clerk.accounts.dev",
+		Audience:          "pymes-v2-api",
+		AuthorizedParties: []string{"http://localhost:15173"},
+		Clock:             fixedClock{now: now},
+	})
+
+	identity, err := verifier.VerifyIdentity(context.Background(), token)
+	if err != nil {
+		t.Fatalf("VerifyIdentity() error = %v", err)
+	}
+	if identity.Subject != "user_123" || identity.SessionID != "sess_123" {
+		t.Fatalf("identity claims = %+v", identity)
+	}
+	if identity.OrganizationID != "" || identity.OrganizationRole != "" {
+		t.Fatalf("identity unexpectedly has organization: %+v", identity)
+	}
+
+	if _, err := verifier.VerifySession(context.Background(), token); !errors.Is(
+		err,
+		ErrOrganizationRequired,
+	) {
+		t.Fatalf("VerifySession() error = %v, want ErrOrganizationRequired", err)
+	}
+}
+
+func TestIdentityVerificationRejectsPartialOrganizationClaims(t *testing.T) {
+	now := time.Date(2026, time.July, 23, 12, 0, 0, 0, time.UTC)
+	privateKey := mustRSAKey(t)
+	token := mustSessionToken(t, privateKey, "key_1", map[string]any{
+		"iss":      "https://example.clerk.accounts.dev",
+		"aud":      []string{"pymes-v2-api"},
+		"azp":      "http://localhost:15173",
+		"sub":      "user_123",
+		"sid":      "sess_123",
+		"org_role": "org:member",
+		"iat":      now.Add(-time.Minute).Unix(),
+		"nbf":      now.Add(-time.Minute).Unix(),
+		"exp":      now.Add(time.Minute).Unix(),
+	})
+	verifier := mustSessionVerifier(t, SessionVerifierConfig{
+		PublicKeyPEM:      publicKeyPEM(t, &privateKey.PublicKey),
+		Issuer:            "https://example.clerk.accounts.dev",
+		Audience:          "pymes-v2-api",
+		AuthorizedParties: []string{"http://localhost:15173"},
+		Clock:             fixedClock{now: now},
+	})
+
+	if _, err := verifier.VerifyIdentity(context.Background(), token); !errors.Is(
+		err,
+		ErrInvalidSessionToken,
+	) {
+		t.Fatalf("VerifyIdentity() error = %v, want ErrInvalidSessionToken", err)
+	}
+}
+
 func TestSessionVerifierHonorsClockSkew(t *testing.T) {
 	now := time.Date(2026, time.July, 23, 12, 0, 0, 0, time.UTC)
 	privateKey := mustRSAKey(t)
