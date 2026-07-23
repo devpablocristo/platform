@@ -1,5 +1,13 @@
 /* eslint-disable react-refresh/only-export-components -- hooks acoplados al Context del mismo archivo */
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type PropsWithChildren } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type PropsWithChildren,
+} from 'react';
 
 type PageSearchContextValue = {
   query: string;

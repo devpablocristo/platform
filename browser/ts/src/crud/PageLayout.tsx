@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 import { CrudPageShell } from './CrudPageShell';
 import { usePageSearchShellControl } from '../search/PageSearchProvider';
 

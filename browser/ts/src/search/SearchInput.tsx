@@ -1,4 +1,4 @@
-import type { ChangeEventHandler } from "react";
+import React, { type ChangeEventHandler } from "react";
 
 export type SearchInputProps = {
   value: string;
