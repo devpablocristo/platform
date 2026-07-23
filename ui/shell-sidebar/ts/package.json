@@ -1,6 +1,6 @@
 {
   "name": "@devpablocristo/platform-shell-sidebar",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "type": "module",
   "exports": {
@@ -8,7 +8,7 @@
     "./styles.css": "./src/styles.css"
   },
   "dependencies": {
-    "@devpablocristo/platform-browser": "^0.1.0"
+    "@devpablocristo/platform-browser": "^0.2.0"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
