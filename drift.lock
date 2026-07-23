@@ -38,7 +38,7 @@ sig = "97cf8acb0a465bf0"
 [[bindings]]
 doc = "http/ts/README.md"
 target = "http/ts/src/fetch.ts"
-sig = "a433f251357ae6ec"
+sig = "4d59b8b08e25253f"
 
 [[bindings]]
 doc = "idempotency/README.md"
