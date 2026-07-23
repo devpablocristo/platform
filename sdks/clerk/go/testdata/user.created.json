@@ -1,0 +1,30 @@
+{
+  "data": {
+    "id": "user_123",
+    "object": "user",
+    "first_name": "Ada",
+    "last_name": "Lovelace",
+    "image_url": "https://img.example/user_123",
+    "primary_email_address_id": "idn_123",
+    "email_addresses": [
+      {
+        "id": "idn_123",
+        "email_address": "USER@example.com",
+        "verification": {
+          "status": "verified"
+        }
+      }
+    ],
+    "created_at": 1784818800000,
+    "updated_at": 1784818860000
+  },
+  "object": "event",
+  "type": "user.created",
+  "timestamp": 1784818860000,
+  "instance_id": "ins_123",
+  "event_attributes": {
+    "http_request": {
+      "client_ip": "203.0.113.10"
+    }
+  }
+}
