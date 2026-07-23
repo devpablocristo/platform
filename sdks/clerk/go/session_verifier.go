@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 	"strings"
 	"sync"
@@ -21,6 +22,10 @@ var (
 	ErrInvalidSessionToken  = errors.New("clerk: invalid session token")
 	ErrOrganizationRequired = errors.New("clerk: active organization required")
 	ErrPendingSession       = errors.New("clerk: session is pending")
+	// ErrProviderUnavailable reports a transient identity-provider failure
+	// while retrieving verification material. Callers may retry or map this
+	// separately from an authoritatively invalid session token.
+	ErrProviderUnavailable = errors.New("identity provider unavailable")
 )
 
 type SessionStatus string
@@ -89,6 +94,37 @@ type sessionStatusClaims struct {
 	Status string `json:"sts"`
 }
 
+type jwksAvailabilityTransport struct {
+	base http.RoundTripper
+}
+
+type jwksProviderHTTPError struct {
+	statusCode int
+}
+
+func (err jwksProviderHTTPError) Error() string {
+	return fmt.Sprintf("JWKS endpoint returned HTTP %d", err.statusCode)
+}
+
+func (jwksProviderHTTPError) Unwrap() error {
+	return ErrProviderUnavailable
+}
+
+func (transport jwksAvailabilityTransport) RoundTrip(request *http.Request) (*http.Response, error) {
+	response, err := transport.base.RoundTrip(request)
+	if err != nil {
+		return response, err
+	}
+	if response.StatusCode != http.StatusTooManyRequests && response.StatusCode < 500 {
+		return response, nil
+	}
+
+	if response.Body != nil {
+		_ = response.Body.Close()
+	}
+	return nil, jwksProviderHTTPError{statusCode: response.StatusCode}
+}
+
 func NewSessionVerifier(config SessionVerifierConfig) (*SessionVerifier, error) {
 	issuer := strings.TrimSpace(config.Issuer)
 	if issuer == "" {
@@ -149,6 +185,7 @@ func NewSessionVerifier(config SessionVerifierConfig) (*SessionVerifier, error) 
 	if httpClient == nil {
 		httpClient = &http.Client{Timeout: 10 * time.Second}
 	}
+	httpClient = cloneJWKSHTTPClient(httpClient)
 	verifier.jwksClient = jwks.NewClient(&clerksdk.ClientConfig{
 		BackendConfig: clerksdk.BackendConfig{
 			HTTPClient: httpClient,
@@ -184,6 +221,9 @@ func (v *SessionVerifier) verify(
 
 	key, err := v.keyForToken(ctx, token)
 	if err != nil {
+		if errors.Is(err, ErrProviderUnavailable) || errors.Is(err, context.Canceled) {
+			return SessionClaims{}, fmt.Errorf("clerk: retrieve session verification key: %w", err)
+		}
 		return SessionClaims{}, fmt.Errorf("%w: %v", ErrInvalidSessionToken, err)
 	}
 
@@ -307,6 +347,9 @@ func (v *SessionVerifier) keyForToken(ctx context.Context, token string) (*clerk
 		JWKSClient: v.jwksClient,
 	})
 	if err != nil {
+		if isProviderUnavailable(err) {
+			return nil, fmt.Errorf("%w: retrieve JWKS: %w", ErrProviderUnavailable, err)
+		}
 		return nil, err
 	}
 	if key == nil || key.Algorithm != "RS256" || (key.Use != "" && key.Use != "sig") {
@@ -314,4 +357,26 @@ func (v *SessionVerifier) keyForToken(ctx context.Context, token string) (*clerk
 	}
 	v.cache[keyID] = cachedJWK{key: key, expiresAt: now.Add(defaultJWKCacheTTL)}
 	return key, nil
+}
+
+func cloneJWKSHTTPClient(client *http.Client) *http.Client {
+	cloned := *client
+	base := cloned.Transport
+	if base == nil {
+		base = http.DefaultTransport
+	}
+	cloned.Transport = jwksAvailabilityTransport{base: base}
+	return &cloned
+}
+
+func isProviderUnavailable(err error) bool {
+	if errors.Is(err, ErrProviderUnavailable) || errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+	if errors.Is(err, context.Canceled) {
+		return false
+	}
+
+	var requestError *url.Error
+	return errors.As(err, &requestError)
 }
