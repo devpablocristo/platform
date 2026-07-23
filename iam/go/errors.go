@@ -15,6 +15,12 @@ var (
 	ErrNotFound = errors.New("iam: record not found")
 	// ErrConflict reports a persistence uniqueness or consistency conflict.
 	ErrConflict = errors.New("iam: conflict")
+	// ErrInvalidVerifiedSession reports a missing, inconsistent or expired
+	// identity-provider session projection.
+	ErrInvalidVerifiedSession = errors.New("iam: invalid verified session")
+	// ErrActiveMembershipRequired intentionally hides whether identity,
+	// organization or membership state caused fail-closed resolution.
+	ErrActiveMembershipRequired = errors.New("iam: active membership required")
 )
 
 func storeError(operation string, err error) error {

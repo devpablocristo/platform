@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -30,8 +31,20 @@ func iamIntegrationPool(t *testing.T) *pgxpool.Pool {
 		t.Fatalf("connect PostgreSQL: %v", err)
 	}
 	t.Cleanup(pool.Close)
-	if err := pool.Ping(ctx); err != nil {
-		t.Fatalf("ping PostgreSQL: %v", err)
+	var pingErr error
+	for deadline := time.Now().Add(10 * time.Second); ; {
+		pingErr = pool.Ping(ctx)
+		if pingErr == nil {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("ping PostgreSQL: %v", pingErr)
+		}
+		select {
+		case <-ctx.Done():
+			t.Fatalf("ping PostgreSQL: %v", ctx.Err())
+		case <-time.After(100 * time.Millisecond):
+		}
 	}
 	migration, err := fs.ReadFile(Migrations, MigrationsDir+"/0001_iam_core.sql")
 	if err != nil {
@@ -125,6 +138,69 @@ func TestPostgresStoresRoundTripAndDeduplicate(t *testing.T) {
 		accesses[0].Organization.ID != organization.ID {
 		t.Fatalf("unexpected accesses: %#v", accesses)
 	}
+	connection, err := pool.Acquire(t.Context())
+	if err != nil {
+		t.Fatalf("acquire dedicated connection: %v", err)
+	}
+	defer connection.Release()
+	sessionNow := time.Now().UTC()
+	transactor, err := NewSessionTransactor(
+		connection,
+		NewPostgresMembershipResolver(),
+		SessionTransactorConfig{Now: func() time.Time { return sessionNow }},
+	)
+	if err != nil {
+		t.Fatalf("new session transactor: %v", err)
+	}
+	verified := VerifiedSession{
+		Provider:               provider,
+		Subject:                user.ExternalID,
+		SessionID:              "integration-session",
+		ExternalOrganizationID: organization.ExternalID,
+		IssuedAt:               sessionNow.Add(-time.Minute),
+		ExpiresAt:              sessionNow.Add(time.Minute),
+	}
+	err = transactor.WithinSessionTx(t.Context(), verified, func(
+		ctx context.Context,
+		tx pgx.Tx,
+		active ActiveMembership,
+	) error {
+		if active.MembershipID != membership.ID ||
+			active.OrganizationID != organization.ID ||
+			active.UserID != user.ID {
+			return fmt.Errorf("unexpected active membership: %#v", active)
+		}
+		var scopedUser, scopedOrganization string
+		if err := tx.QueryRow(ctx, `
+			SELECT
+				current_setting('app.user_id', true),
+				current_setting('app.org_id', true)
+		`).Scan(&scopedUser, &scopedOrganization); err != nil {
+			return err
+		}
+		if scopedUser != user.ID || scopedOrganization != organization.ID {
+			return fmt.Errorf(
+				"transaction context user=%q organization=%q",
+				scopedUser,
+				scopedOrganization,
+			)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("within session transaction: %v", err)
+	}
+	var leakedUser, leakedOrganization string
+	if err := connection.QueryRow(t.Context(), `
+		SELECT
+			COALESCE(current_setting('app.user_id', true), ''),
+			COALESCE(current_setting('app.org_id', true), '')
+	`).Scan(&leakedUser, &leakedOrganization); err != nil {
+		t.Fatalf("inspect transaction context leakage: %v", err)
+	}
+	if leakedUser != "" || leakedOrganization != "" {
+		t.Fatalf("transaction context leaked user=%q organization=%q", leakedUser, leakedOrganization)
+	}
 
 	invitation, err := store.CreateInvitation(t.Context(), Invitation{
 		OrganizationID: organization.ID,
@@ -177,6 +253,23 @@ func TestPostgresStoresRoundTripAndDeduplicate(t *testing.T) {
 	if err != nil || processed.Status != WebhookEventProcessed ||
 		processed.Attempts != 2 || processed.ProcessedAt == nil {
 		t.Fatalf("mark webhook processed: event=%#v err=%v", processed, err)
+	}
+
+	removedAt := time.Now().UTC()
+	membership.Status = MembershipRemoved
+	membership.RemovedAt = &removedAt
+	if _, err := store.UpsertMembership(t.Context(), membership); err != nil {
+		t.Fatalf("remove membership: %v", err)
+	}
+	err = transactor.WithinSessionTx(t.Context(), verified, func(
+		context.Context,
+		pgx.Tx,
+		ActiveMembership,
+	) error {
+		return errors.New("callback must not run")
+	})
+	if !errors.Is(err, ErrActiveMembershipRequired) {
+		t.Fatalf("removed membership admission error = %v", err)
 	}
 
 	if _, err := store.GetOrganization(
