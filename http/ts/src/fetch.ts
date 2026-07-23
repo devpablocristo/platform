@@ -98,6 +98,7 @@ type RequestTransport = {
   baseURLs: string[];
   fetch: FetchImplementation;
   resolveHeaders?: ResolveHeaders;
+  preserveLegacyHeaders?: boolean;
 };
 
 async function buildHeaders(
@@ -105,7 +106,22 @@ async function buildHeaders(
   url: string,
   options: RequestOptions,
   resolveHeaders?: ResolveHeaders,
-): Promise<Headers> {
+  preserveLegacyHeaders = false,
+): Promise<HeadersInit> {
+  if (preserveLegacyHeaders && !resolveHeaders) {
+    const headers: Record<string, string> = {
+      ...(options.headers ?? {}),
+    };
+    if (
+      !options.skipJSONContentType &&
+      !("Content-Type" in headers) &&
+      !(typeof FormData !== "undefined" && options.rawBody instanceof FormData)
+    ) {
+      headers["Content-Type"] = "application/json";
+    }
+    return headers;
+  }
+
   const method = options.method ?? "GET";
   const headers = new Headers(
     await resolveHeaders?.({
@@ -144,7 +160,13 @@ async function requestResponseWithTransport(
   for (const baseURL of transport.baseURLs) {
     const url = joinURL(baseURL, path);
     try {
-      const headers = await buildHeaders(path, url, options, transport.resolveHeaders);
+      const headers = await buildHeaders(
+        path,
+        url,
+        options,
+        transport.resolveHeaders,
+        transport.preserveLegacyHeaders,
+      );
       const response = await transport.fetch(url, {
         method: options.method ?? "GET",
         headers,
@@ -221,6 +243,7 @@ export async function requestResponse(
   return requestResponseWithTransport(path, options, {
     baseURLs: normalizeBaseURLs(options),
     fetch: defaultFetch,
+    preserveLegacyHeaders: true,
   });
 }
 
@@ -231,5 +254,6 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   return requestWithTransport<T>(path, options, {
     baseURLs: normalizeBaseURLs(options),
     fetch: defaultFetch,
+    preserveLegacyHeaders: true,
   });
 }
