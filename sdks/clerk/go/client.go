@@ -227,6 +227,31 @@ func (c *Client) ListUserOrgMemberships(ctx context.Context, providerUserID stri
 	}
 }
 
+func (c *Client) ListOrganizationMemberships(ctx context.Context, providerOrgID string) ([]OrganizationMembership, error) {
+	providerOrgID = strings.TrimSpace(providerOrgID)
+	if providerOrgID == "" {
+		return nil, nil
+	}
+	const limit = 100
+	out := make([]OrganizationMembership, 0)
+	for offset := 0; ; offset += limit {
+		values := url.Values{}
+		values.Set("organization_id", providerOrgID)
+		values.Set("limit", fmt.Sprintf("%d", limit))
+		values.Set("offset", fmt.Sprintf("%d", offset))
+		var payload orgMembershipListResponse
+		if err := c.json(ctx, http.MethodGet, "/organization_memberships?"+values.Encode(), nil, &payload); err != nil {
+			return nil, err
+		}
+		for _, item := range payload.Data {
+			out = append(out, orgMembershipFromPayload(item))
+		}
+		if len(payload.Data) < limit || payload.TotalCount <= offset+len(payload.Data) {
+			return out, nil
+		}
+	}
+}
+
 func (c *Client) CreateOrgMembership(ctx context.Context, input OrgMembershipInput) error {
 	body := map[string]any{
 		"user_id": strings.TrimSpace(input.ProviderUserID),

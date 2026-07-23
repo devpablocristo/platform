@@ -22,6 +22,7 @@ type OrganizationMembership struct {
 	Role           string
 	OrganizationID string
 	Organization   Organization
+	User           User
 }
 
 type Invitation struct {
@@ -131,6 +132,12 @@ type clerkOrgMembership struct {
 	Role           string            `json:"role"`
 	OrganizationID string            `json:"organization_id"`
 	Organization   clerkOrganization `json:"organization"`
+	PublicUserData clerkPublicUser   `json:"public_user_data"`
+}
+
+type clerkPublicUser struct {
+	UserID     string `json:"user_id"`
+	Identifier string `json:"identifier"`
 }
 
 type clerkInvitation struct {
@@ -182,5 +189,9 @@ func orgMembershipFromPayload(item clerkOrgMembership) OrganizationMembership {
 		Role:           strings.TrimSpace(item.Role),
 		OrganizationID: firstNonEmpty(org.ID, item.OrganizationID),
 		Organization:   org,
+		User: User{
+			ID:    strings.TrimSpace(item.PublicUserData.UserID),
+			Email: strings.TrimSpace(strings.ToLower(item.PublicUserData.Identifier)),
+		},
 	}
 }

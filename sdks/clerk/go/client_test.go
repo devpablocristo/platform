@@ -127,6 +127,54 @@ func TestCreateOrgMembershipUsesProviderOrgID(t *testing.T) {
 	}
 }
 
+func TestListOrganizationMembershipsFiltersAndMapsPublicUser(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/organization_memberships" {
+			t.Fatalf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+		if got := r.URL.Query().Get("organization_id"); got != "org_PROVIDER" {
+			t.Fatalf("expected organization filter, got %q", got)
+		}
+		if got := r.URL.Query().Get("limit"); got != "100" {
+			t.Fatalf("expected bounded page size, got %q", got)
+		}
+		_, _ = w.Write([]byte(`{
+			"data":[{
+				"id":"orgmem_1",
+				"role":"org:admin",
+				"organization":{"id":"org_PROVIDER","name":"Cristo Tech","slug":"cristo-tech"},
+				"public_user_data":{"user_id":"user_123","identifier":"USER@example.com"}
+			}],
+			"total_count":1
+		}`))
+	}))
+	defer server.Close()
+
+	client := New(Config{SecretKey: "sk_test", BaseURL: server.URL})
+	got, err := client.ListOrganizationMemberships(context.Background(), " org_PROVIDER ")
+	if err != nil {
+		t.Fatalf("ListOrganizationMemberships: %v", err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("expected one membership, got %+v", got)
+	}
+	item := got[0]
+	if item.OrganizationID != "org_PROVIDER" || item.Organization.Name != "Cristo Tech" {
+		t.Fatalf("unexpected organization mapping %+v", item)
+	}
+	if item.User.ID != "user_123" || item.User.Email != "user@example.com" || item.Role != "org:admin" {
+		t.Fatalf("unexpected user membership mapping %+v", item)
+	}
+}
+
+func TestListOrganizationMembershipsSkipsEmptyOrganization(t *testing.T) {
+	client := New(Config{SecretKey: "sk_test", BaseURL: "http://unused.invalid"})
+	got, err := client.ListOrganizationMemberships(context.Background(), " ")
+	if err != nil || len(got) != 0 {
+		t.Fatalf("expected empty result without request, got %+v err=%v", got, err)
+	}
+}
+
 func TestAPIErrorCarriesStatusAndMessage(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
