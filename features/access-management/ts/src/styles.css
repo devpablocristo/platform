@@ -1,0 +1,195 @@
+.platform-access {
+  color: #172033;
+  font-family: inherit;
+}
+
+.platform-access__bar,
+.platform-access__heading,
+.platform-access__dialog-actions {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.platform-access__bar {
+  border-bottom: 1px solid #dfe5ec;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.platform-access__tabs {
+  display: flex;
+}
+
+.platform-access button,
+.platform-access input,
+.platform-access select {
+  font: inherit;
+}
+
+.platform-access__tab {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: #60708b;
+  cursor: pointer;
+  padding: 0.75rem 1rem;
+}
+
+.platform-access__tab.is-active {
+  border-color: var(--platform-access-accent, #315b76);
+  color: #16263a;
+}
+
+.platform-access__search {
+  align-items: center;
+  display: flex;
+  gap: 0.45rem;
+  margin-bottom: 0.45rem;
+}
+
+.platform-access__search input,
+.platform-access__dialog input,
+.platform-access__dialog select {
+  border: 1px solid #d7dee8;
+  border-radius: 0.55rem;
+  padding: 0.55rem 0.7rem;
+}
+
+.platform-access__search input {
+  min-width: 16rem;
+}
+
+.platform-access__heading {
+  margin-bottom: 0.7rem;
+}
+
+.platform-access__heading h2,
+.platform-access__dialog h2 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.platform-access__primary {
+  background: var(--platform-access-accent, #315b76);
+  border: 0;
+  border-radius: 0.55rem;
+  color: white;
+  cursor: pointer;
+  padding: 0.6rem 0.9rem;
+}
+
+.platform-access table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.platform-access th,
+.platform-access td {
+  border-bottom: 1px solid #e5e9ef;
+  padding: 0.7rem 0.9rem;
+  text-align: left;
+}
+
+.platform-access th {
+  color: #62718a;
+  font-size: 0.85rem;
+}
+
+.platform-access__actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.platform-access__actions button,
+.platform-access td button,
+.platform-access__feedback button {
+  background: none;
+  border: 0;
+  color: var(--platform-access-accent, #315b76);
+  cursor: pointer;
+}
+
+.platform-access__empty,
+.platform-access__loading,
+.platform-access--empty {
+  color: #6d788a;
+  padding: 2rem;
+  text-align: center;
+}
+
+.platform-access__feedback,
+.platform-access__form-error {
+  background: #fff0f0;
+  border: 1px solid #ffcccc;
+  border-radius: 0.6rem;
+  color: #a42121;
+  margin-bottom: 1rem;
+  padding: 0.8rem;
+}
+
+.platform-access__backdrop {
+  align-items: stretch;
+  background: rgb(15 23 42 / 35%);
+  display: flex;
+  inset: 0;
+  justify-content: flex-end;
+  position: fixed;
+  z-index: 1000;
+}
+
+.platform-access__dialog {
+  background: white;
+  box-shadow: -12px 0 35px rgb(15 23 42 / 15%);
+  max-width: 30rem;
+  overflow: auto;
+  padding: 1.5rem;
+  width: min(92vw, 30rem);
+}
+
+.platform-access__dialog form,
+.platform-access__dialog label {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.platform-access__dialog form {
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.platform-access__password {
+  display: flex;
+  position: relative;
+}
+
+.platform-access__password input {
+  padding-right: 3rem;
+  width: 100%;
+}
+
+.platform-access__password button {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  position: absolute;
+  right: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+@media (max-width: 700px) {
+  .platform-access__bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .platform-access__search input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .platform-access__panel {
+    overflow-x: auto;
+  }
+}
