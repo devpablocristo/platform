@@ -18,7 +18,7 @@ platform/
 │   ├── saas/, governance/, activity/, artifact/, ai/
 ├── features/                         # verticales reutilizables (L2)
 │   ├── scheduling/, crud/, kanban-board/, calendar-board/, search/,
-│   ├── admin-insights/, conversation-inbox/, notification-feed/
+│   ├── access-management/, admin-insights/, conversation-inbox/, notification-feed/
 ├── ui/                               # primitivas del design system
 │   ├── modal/, data-display/, section-hub/, page-shell/, shell-sidebar/
 ├── sdks/                             # clientes a servicios externos

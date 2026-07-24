@@ -36,6 +36,16 @@ target = "security/go/tenant/tenant.go"
 sig = "97cf8acb0a465bf0"
 
 [[bindings]]
+doc = "features/access-management/ts/README.md"
+target = "features/access-management/ts/src/AccessManagement.tsx"
+sig = "3ed785494644cec5"
+
+[[bindings]]
+doc = "features/access-management/ts/README.md"
+target = "features/access-management/ts/src/types.ts"
+sig = "f9e039e85cbd2642"
+
+[[bindings]]
 doc = "http/ts/README.md"
 target = "http/ts/src/fetch.ts"
 sig = "4d59b8b08e25253f"

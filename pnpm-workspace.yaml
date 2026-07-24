@@ -12,6 +12,7 @@ packages:
   - "lifecycle/ts"
 
   # L2 features (verticals)
+  - "features/access-management/ts"
   - "features/admin-insights/ts"
   - "features/calendar-board/ts"
   - "features/chat/ui/ts"
