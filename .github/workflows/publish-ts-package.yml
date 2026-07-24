@@ -17,6 +17,7 @@ on:
       # Lifecycle (added in Ola B)
       - "lifecycle/ts/v*"
       # Feature verticals
+      - "features/access-management/ts/v*"
       - "features/admin-insights/ts/v*"
       - "features/calendar-board/ts/v*"
       - "features/chat/ui/ts/v*"
