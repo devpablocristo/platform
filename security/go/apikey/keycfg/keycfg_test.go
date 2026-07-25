@@ -113,7 +113,6 @@ func TestParseScopeList_Deduplicates(t *testing.T) {
 }
 
 func TestRegister_DefaultScopesFor_RoundTrip(t *testing.T) {
-	t.Parallel()
 	keycfg.ResetProfiles()
 	keycfg.Register(keycfg.Profile{
 		Name:   "admin",
@@ -129,7 +128,6 @@ func TestRegister_DefaultScopesFor_RoundTrip(t *testing.T) {
 }
 
 func TestRegister_LastWriteWins(t *testing.T) {
-	t.Parallel()
 	keycfg.ResetProfiles()
 	keycfg.Register(keycfg.Profile{Name: "k", Scopes: []string{"a"}})
 	keycfg.Register(keycfg.Profile{Name: "k", Scopes: []string{"b", "c"}})
@@ -140,7 +138,6 @@ func TestRegister_LastWriteWins(t *testing.T) {
 }
 
 func TestRegister_ReturnedSliceIsCopy(t *testing.T) {
-	t.Parallel()
 	keycfg.ResetProfiles()
 	keycfg.Register(keycfg.Profile{Name: "x", Scopes: []string{"a"}})
 	out1 := keycfg.DefaultScopesFor("x")

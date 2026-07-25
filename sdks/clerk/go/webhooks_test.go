@@ -1,6 +1,7 @@
 package clerk
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -50,6 +51,41 @@ func TestWebhookVerifierDecodesMembershipFixture(t *testing.T) {
 	if membership.ID != "orgmem_123" || membership.OrganizationID != "org_123" ||
 		membership.User.ID != "user_123" || membership.Role != "org:admin" {
 		t.Fatalf("unexpected membership %+v", membership)
+	}
+}
+
+func TestWebhookVerifierDecodesOrganizationMetadataFixture(t *testing.T) {
+	payload := webhookFixture(t, "organization.created.json")
+	event, err := mustWebhookVerifier(t).VerifyAndDecode(payload, signedWebhookHeaders(t, payload, time.Now().UTC()))
+	if err != nil {
+		t.Fatalf("VerifyAndDecode: %v", err)
+	}
+	organization, ok := event.Data.(*Organization)
+	if !ok {
+		t.Fatalf("expected *Organization, got %T", event.Data)
+	}
+	if organization.ID != "org_123" ||
+		organization.PrivateMetadata["operation_id"] != "op_123" ||
+		organization.PrivateMetadata["attempt"] != json.Number("9007199254740993") {
+		t.Fatalf("unexpected organization metadata %+v", organization)
+	}
+}
+
+func TestWebhookVerifierDecodesInvitationMetadataFixture(t *testing.T) {
+	payload := webhookFixture(t, "organizationInvitation.created.json")
+	event, err := mustWebhookVerifier(t).VerifyAndDecode(payload, signedWebhookHeaders(t, payload, time.Now().UTC()))
+	if err != nil {
+		t.Fatalf("VerifyAndDecode: %v", err)
+	}
+	invitation, ok := event.Data.(*Invitation)
+	if !ok {
+		t.Fatalf("expected *Invitation, got %T", event.Data)
+	}
+	if invitation.ID != "orginv_123" ||
+		invitation.URL != "https://accounts.example/invitations/orginv_123" ||
+		invitation.PrivateMetadata["operation_id"] != "op_123" ||
+		invitation.PublicMetadata["source"] != "admin" {
+		t.Fatalf("unexpected invitation metadata %+v", invitation)
 	}
 }
 

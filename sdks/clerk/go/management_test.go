@@ -23,6 +23,9 @@ func TestInvitationManagementMapsAndFilters(t *testing.T) {
 			"email_address":"USER@example.com",
 			"role":"org:member",
 			"status":"pending",
+			"url":"https://accounts.example/invitations/orginv_123",
+			"private_metadata":{"operation_id":"op_123"},
+			"public_metadata":{"source":"admin"},
 			"expires_at":1784822400000,
 			"created_at":1784818800000,
 			"updated_at":1784818800000
@@ -41,7 +44,10 @@ func TestInvitationManagementMapsAndFilters(t *testing.T) {
 	if len(got) != 1 || got[0].ID != "orginv_123" || got[0].Email != "user@example.com" {
 		t.Fatalf("unexpected invitations %+v", got)
 	}
-	if got[0].ExpiresAt == nil || got[0].Role != "org:member" {
+	if got[0].ExpiresAt == nil || got[0].Role != "org:member" ||
+		got[0].URL != "https://accounts.example/invitations/orginv_123" ||
+		got[0].PrivateMetadata["operation_id"] != "op_123" ||
+		got[0].PublicMetadata["source"] != "admin" {
 		t.Fatalf("unexpected invitation details %+v", got[0])
 	}
 }

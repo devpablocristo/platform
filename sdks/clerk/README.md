@@ -46,6 +46,14 @@ membership and session operations:
 Revocation methods are idempotent when Clerk returns `404`. Rate-limited
 responses can be inspected with `IsRateLimited` and `RetryAfter`.
 
+`OrganizationInput.PrivateMetadata` sends a provider-neutral JSON object on
+organization create/update, and `Organization.PrivateMetadata` exposes the
+object returned by Clerk. Organization invitation create requests support
+`PrivateMetadata`, `PublicMetadata` and `RedirectURL`; returned `Invitation`
+values expose both metadata objects and Clerk's acceptance `URL`. Metadata
+numbers decode as `json.Number`, and values that cannot be represented as a
+JSON object fail with `ErrInvalidMetadata` before any provider request.
+
 `NewWebhookVerifier` verifies Clerk/Svix signatures over the original request
 body and returns a typed `WebhookEvent`. User, organization, membership,
 invitation and session event families decode to the corresponding resource

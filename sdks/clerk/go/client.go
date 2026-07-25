@@ -187,6 +187,9 @@ func (c *Client) CreateOrganization(ctx context.Context, input OrganizationInput
 	if slug := strings.TrimSpace(input.Slug); slug != "" {
 		body["slug"] = slug
 	}
+	if err := addMetadata(body, "private_metadata", input.PrivateMetadata); err != nil {
+		return Organization{}, err
+	}
 	var payload clerkOrganization
 	if err := c.json(ctx, http.MethodPost, "/organizations", body, &payload); err != nil {
 		return Organization{}, err
@@ -209,6 +212,9 @@ func (c *Client) UpdateOrganization(ctx context.Context, providerOrgID string, i
 	}
 	if slug := strings.TrimSpace(input.Slug); slug != "" {
 		body["slug"] = slug
+	}
+	if err := addMetadata(body, "private_metadata", input.PrivateMetadata); err != nil {
+		return Organization{}, err
 	}
 	var payload clerkOrganization
 	if err := c.json(ctx, http.MethodPatch, "/organizations/"+url.PathEscape(strings.TrimSpace(providerOrgID)), body, &payload); err != nil {
@@ -335,6 +341,12 @@ func (c *Client) CreateOrgInvitation(ctx context.Context, input OrgInvitationInp
 	}
 	if input.ExpiresInDays > 0 {
 		body["expires_in_days"] = input.ExpiresInDays
+	}
+	if err := addMetadata(body, "private_metadata", input.PrivateMetadata); err != nil {
+		return Invitation{}, err
+	}
+	if err := addMetadata(body, "public_metadata", input.PublicMetadata); err != nil {
+		return Invitation{}, err
 	}
 	var payload clerkInvitation
 	path := "/organizations/" + url.PathEscape(strings.TrimSpace(input.ProviderOrgID)) + "/invitations"
