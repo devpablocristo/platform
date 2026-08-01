@@ -42,10 +42,34 @@ func DecodeJSON(r *http.Request, dst any) error {
 // --- JSON response writing ---
 
 // WriteJSON escribe una respuesta JSON.
+//
+// Serializa ANTES de escribir la cabecera. Al revés —WriteHeader y después Encode— un
+// payload que no serializa deja el status ya emitido y el cuerpo truncado: el cliente
+// recibe un 200 con JSON inválido y no hay forma de corregirlo, porque la cabecera no se
+// puede reescribir. Serializando primero, ese caso se convierte en el 500 que realmente es.
 func WriteJSON(w http.ResponseWriter, status int, payload any) {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		slog.Error("response payload could not be encoded", "error", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		// Literal y no otro Marshal: este cuerpo no puede fallar, y si el fallback
+		// dependiera de serializar algo volveríamos al mismo problema.
+		_, _ = w.Write([]byte("{\"error\":{\"code\":\"INTERNAL\",\"message\":\"internal error\"}}\n"))
+		return
+	}
+	// El salto final se conserva: es lo que agregaba `Encode`, y todo consumidor de
+	// platform ya recibe ese byte. Cambiarlo de paso convertiría un arreglo de status en
+	// una modificación del cuerpo de cada respuesta del ecosistema.
+	body = append(body, '\n')
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(payload)
+	if _, err := w.Write(body); err != nil {
+		// La cabecera ya salió, así que el status no se puede cambiar. Se loguea porque
+		// una respuesta truncada es información real y descartarla la haría invisible.
+		slog.Warn("response body could not be written", "error", err)
+	}
 }
 
 // WriteError escribe el envelope HTTP canónico `{error:{code,message}}`.
