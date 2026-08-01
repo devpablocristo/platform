@@ -47,6 +47,7 @@ const (
 	ScopeCalendarEvents         = "https://www.googleapis.com/auth/calendar.events"
 	ScopeCalendarEventsReadonly = "https://www.googleapis.com/auth/calendar.events.readonly"
 	ScopeCalendarCalendars      = "https://www.googleapis.com/auth/calendar.calendars"
+	ScopeCalendarListReadonly   = "https://www.googleapis.com/auth/calendar.calendarlist.readonly"
 	ScopeCalendarFreeBusy       = "https://www.googleapis.com/auth/calendar.freebusy"
 )
 

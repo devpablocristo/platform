@@ -61,6 +61,9 @@ func TestEventCRUDAndMeetPending(t *testing.T) {
 				input.ConferenceData.CreateRequest.RequestID != "meet-request-1" {
 				t.Errorf("unexpected conference request: %#v", input.ConferenceData)
 			}
+			if input.EventID != "0123456789abcdefghijklmnopqrstuv" {
+				t.Errorf("deterministic event id = %q", input.EventID)
+			}
 			w.Header().Set("ETag", `"event-v1"`)
 			_, _ = io.WriteString(w, `{
 				"id":"event-1",
@@ -119,6 +122,7 @@ func TestEventCRUDAndMeetPending(t *testing.T) {
 	})
 
 	input := EventInput{
+		EventID:        "0123456789abcdefghijklmnopqrstuv",
 		Summary:        "Planning",
 		Start:          EventDateTime{DateTime: "2026-08-01T10:00:00Z"},
 		End:            EventDateTime{DateTime: "2026-08-01T11:00:00Z"},
@@ -195,6 +199,53 @@ func TestEventCRUDAndMeetPending(t *testing.T) {
 	}
 }
 
+func TestCreateEventRejectsInvalidDeterministicID(t *testing.T) {
+	t.Parallel()
+	client := newTestClient(t, func(http.ResponseWriter, *http.Request) {
+		t.Fatal("invalid event id reached the transport")
+	})
+	tests := []struct {
+		name    string
+		input   EventInput
+		message string
+	}{
+		{
+			name:    "too short",
+			input:   EventInput{EventID: "abcd"},
+			message: "between 5 and 1024",
+		},
+		{
+			name:    "outside base32hex alphabet",
+			input:   EventInput{EventID: "event-w"},
+			message: "lowercase base32hex",
+		},
+		{
+			name:    "conflicts with ical uid",
+			input:   EventInput{EventID: "abcde", ICalUID: "external@example.com"},
+			message: "cannot be combined",
+		},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			_, err := client.CreateEvent(
+				context.Background(),
+				"primary",
+				test.input,
+				CreateEventOptions{},
+			)
+			var validationErr *ValidationError
+			if !errors.As(err, &validationErr) {
+				t.Fatalf("expected ValidationError, got %T: %v", err, err)
+			}
+			if !strings.Contains(validationErr.Message, test.message) {
+				t.Fatalf("message = %q, want substring %q", validationErr.Message, test.message)
+			}
+		})
+	}
+}
+
 func TestCreateEventReturnsTypedConflict(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
@@ -224,6 +275,47 @@ func TestCreateEventReturnsTypedConflict(t *testing.T) {
 		len(apiErr.Details) != 1 ||
 		apiErr.Details[0].Reason != "duplicate" {
 		t.Fatalf("unexpected APIError: %#v", apiErr)
+	}
+}
+
+func TestListCalendarEntriesSupportsReconciliation(t *testing.T) {
+	t.Parallel()
+	client := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet ||
+			r.URL.Path != "/users/me/calendarList" {
+			http.NotFound(w, r)
+			return
+		}
+		if r.URL.Query().Get("minAccessRole") != "owner" ||
+			r.URL.Query().Get("maxResults") != "50" ||
+			r.URL.Query().Get("pageToken") != "next-page" {
+			t.Errorf("unexpected query: %s", r.URL.RawQuery)
+		}
+		w.Header().Set("ETag", `"calendar-list-v1"`)
+		_, _ = io.WriteString(w, `{
+			"nextPageToken":"page-2",
+			"items":[{
+				"id":"calendar-id",
+				"summary":"Pymes",
+				"description":"pymes-connection:abc",
+				"accessRole":"owner"
+			}]
+		}`)
+	})
+	list, err := client.ListCalendarEntries(
+		context.Background(),
+		ListCalendarEntriesOptions{
+			MaxResults: 50, MinAccessRole: "owner", PageToken: "next-page",
+		},
+	)
+	if err != nil {
+		t.Fatalf("ListCalendarEntries: %v", err)
+	}
+	if list.ETag != `"calendar-list-v1"` ||
+		list.NextPageToken != "page-2" ||
+		len(list.Items) != 1 ||
+		list.Items[0].Description != "pymes-connection:abc" {
+		t.Fatalf("unexpected calendar list: %#v", list)
 	}
 }
 
