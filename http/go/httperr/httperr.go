@@ -5,6 +5,7 @@ package httperr
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/devpablocristo/platform/errors/go/domainerr"
@@ -95,8 +96,16 @@ func Write(w http.ResponseWriter, status int, code, message string) {
 }
 
 // WriteFrom normaliza un error y lo escribe como respuesta HTTP.
+//
+// Un error que NO es de dominio se loguea antes de salir. Sin eso, un fallo inesperado se
+// convierte en `{"code":"INTERNAL","message":"internal error"}` y no deja rastro de qué
+// pasó: un 500 que no se puede debuggear. Los errores clasificados no se loguean —son
+// respuestas esperadas del negocio, no incidentes— así que un 404 no ensucia el log.
 func WriteFrom(w http.ResponseWriter, err error) {
 	status, apiErr := Normalize(err)
+	if apiErr.Code == CodeInternal {
+		slog.Error("unhandled internal error", "error", err)
+	}
 	Write(w, status, apiErr.Code, apiErr.Message)
 }
 
