@@ -1,1 +1,0 @@
-DROP INDEX IF EXISTS idx_scheduling_bookings_org_phone_digits_start_desc;

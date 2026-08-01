@@ -72,7 +72,7 @@ vi.mock('@fullcalendar/daygrid', () => ({ default: {} }));
 vi.mock('@fullcalendar/timegrid', () => ({ default: {} }));
 vi.mock('@fullcalendar/interaction', () => ({ default: {} }));
 vi.mock('@fullcalendar/list', () => ({ default: {} }));
-vi.mock('@fullcalendar/luxon', () => ({ default: {} }));
+vi.mock('@fullcalendar/luxon3', () => ({ default: {} }));
 
 describe('CalendarSurface', () => {
   it('renders the loading fallback when the calendar is not ready', () => {

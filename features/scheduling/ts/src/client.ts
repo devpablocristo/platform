@@ -18,7 +18,6 @@ import type {
   PublicBusinessInfo,
   PublicBookPayload,
   PublicBooking,
-  PublicMyBookingsQuery,
   PublicQueuePosition,
   PublicQueueSummary,
   PublicQueueTicket,
@@ -123,6 +122,7 @@ export function createSchedulingClient(request: SchedulingTransport) {
           service_id: query.serviceId,
           resource_id: query.resourceId,
           date: query.date,
+          participants: query.participants,
         })}`,
       ).then((response) => response.items ?? []);
     },
@@ -280,16 +280,12 @@ export function createPublicSchedulingClient(request: SchedulingTransport) {
           resource_id: query.resourceId,
           date: query.date,
           duration: query.duration,
+          participants: query.participants,
         })}`,
       ).then((response) => response.slots ?? []);
     },
     book(orgId: string, payload: PublicBookPayload) {
       return request<PublicBooking>(`/v1/public/${orgId}/scheduling/book`, { method: 'POST', body: payload });
-    },
-    listMyBookings(orgId: string, query: PublicMyBookingsQuery) {
-      return request<{ items: PublicBooking[] }>(
-        `/v1/public/${orgId}/scheduling/my-bookings${queryString({ phone: query.phone, limit: query.limit ?? 20 })}`,
-      ).then((response) => response.items ?? []);
     },
     listQueues(orgId: string, branchId?: string | null) {
       return request<{ items: PublicQueueSummary[] }>(

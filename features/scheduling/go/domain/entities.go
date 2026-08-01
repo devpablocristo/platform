@@ -25,6 +25,16 @@ const (
 	ResourceKindGeneric      ResourceKind = "generic"
 )
 
+type ResourceAllocationMode string
+
+const (
+	// ResourceAllocationModeCapacity consumes a fixed number of capacity units.
+	ResourceAllocationModeCapacity ResourceAllocationMode = "capacity"
+	// ResourceAllocationModeExclusive consumes the resource's complete capacity
+	// for the booking occupation window.
+	ResourceAllocationModeExclusive ResourceAllocationMode = "exclusive"
+)
+
 type AvailabilityRuleKind string
 
 const (
@@ -127,7 +137,6 @@ const (
 
 type Branch struct {
 	ID        uuid.UUID      `json:"id"`
-	OrgID     uuid.UUID      `json:"org_id"`
 	Code      string         `json:"code"`
 	Name      string         `json:"name"`
 	Timezone  string         `json:"timezone"`
@@ -140,8 +149,7 @@ type Branch struct {
 
 type Service struct {
 	ID                     uuid.UUID       `json:"id"`
-	OrgID                  uuid.UUID       `json:"org_id"`
-	CommercialServiceID    *uuid.UUID      `json:"commercial_service_id,omitempty"`
+	CommercialServiceID    *string         `json:"commercial_service_id,omitempty"`
 	Code                   string          `json:"code"`
 	Name                   string          `json:"name"`
 	Description            string          `json:"description"`
@@ -162,7 +170,6 @@ type Service struct {
 
 type Resource struct {
 	ID        uuid.UUID      `json:"id"`
-	OrgID     uuid.UUID      `json:"org_id"`
 	BranchID  uuid.UUID      `json:"branch_id"`
 	Code      string         `json:"code"`
 	Name      string         `json:"name"`
@@ -177,7 +184,6 @@ type Resource struct {
 
 type AvailabilityRule struct {
 	ID                     uuid.UUID            `json:"id"`
-	OrgID                  uuid.UUID            `json:"org_id"`
 	BranchID               uuid.UUID            `json:"branch_id"`
 	ResourceID             *uuid.UUID           `json:"resource_id,omitempty"`
 	Kind                   AvailabilityRuleKind `json:"kind"`
@@ -204,9 +210,8 @@ const (
 	CalendarEventStatusCancelled CalendarEventStatus = "cancelled"
 )
 
-// CalendarEventVisibility decide quién puede ver el evento dentro de la org.
-// `team` = todos los usuarios internos de la org. `private` = sólo el creador.
-// La surface pública /v1/public/... NUNCA expone estos eventos.
+// CalendarEventVisibility controls whether an event is team-visible or private.
+// Public scheduling projections never expose calendar events.
 type CalendarEventVisibility string
 
 const (
@@ -220,7 +225,6 @@ const (
 // personal y no afecta la disponibilidad pública.
 type CalendarEvent struct {
 	ID          uuid.UUID               `json:"id"`
-	OrgID       uuid.UUID               `json:"org_id"`
 	BranchID    *uuid.UUID              `json:"branch_id,omitempty"`
 	ResourceID  *uuid.UUID              `json:"resource_id,omitempty"`
 	Title       string                  `json:"title"`
@@ -236,9 +240,7 @@ type CalendarEvent struct {
 	UpdatedAt   time.Time               `json:"updated_at"`
 }
 
-// ListCalendarEventsFilter restringe el listado por rango temporal o recurso.
-// Todos los campos son opcionales: si vienen vacíos, se devuelven los eventos
-// de la org sin filtrar.
+// ListCalendarEventsFilter restricts events by time range or resource.
 type ListCalendarEventsFilter struct {
 	BranchID   *uuid.UUID
 	ResourceID *uuid.UUID
@@ -249,7 +251,6 @@ type ListCalendarEventsFilter struct {
 
 type BlockedRange struct {
 	ID         uuid.UUID        `json:"id"`
-	OrgID      uuid.UUID        `json:"org_id"`
 	BranchID   uuid.UUID        `json:"branch_id"`
 	ResourceID *uuid.UUID       `json:"resource_id,omitempty"`
 	Kind       BlockedRangeKind `json:"kind"`
@@ -263,50 +264,70 @@ type BlockedRange struct {
 }
 
 type TimeSlot struct {
-	ResourceID     uuid.UUID `json:"resource_id"`
-	ResourceName   string    `json:"resource_name"`
-	StartAt        time.Time `json:"start_at"`
-	EndAt          time.Time `json:"end_at"`
-	OccupiesFrom   time.Time `json:"occupies_from"`
-	OccupiesUntil  time.Time `json:"occupies_until"`
-	Timezone       string    `json:"timezone"`
-	Remaining      int       `json:"remaining"`
-	ConflictCount  int       `json:"conflict_count"`
-	GranularityMin int       `json:"granularity_minutes"`
+	// ResourceID and ResourceName identify the primary resource for backwards
+	// compatible calendar rendering. Allocations is authoritative.
+	ResourceID    uuid.UUID            `json:"resource_id"`
+	ResourceName  string               `json:"resource_name"`
+	Allocations   []ResourceAllocation `json:"allocations"`
+	StartAt       time.Time            `json:"start_at"`
+	EndAt         time.Time            `json:"end_at"`
+	OccupiesFrom  time.Time            `json:"occupies_from"`
+	OccupiesUntil time.Time            `json:"occupies_until"`
+	Timezone      string               `json:"timezone"`
+	// Remaining is the number of additional reservations that fit all
+	// allocations (for a one-unit slot this equals free primary capacity).
+	Remaining int `json:"remaining"`
+	// ServiceRemaining is the number of concurrent bookings still allowed by
+	// the service policy for this range.
+	ServiceRemaining int `json:"service_remaining"`
+	AllocatedUnits   int `json:"allocated_units"`
+	GranularityMin   int `json:"granularity_minutes"`
+}
+
+// ResourceAllocation reserves Units from one resource for the complete
+// occupation window of a booking. A booking may atomically reserve a
+// professional, room, machine, vehicle, or any other combination.
+type ResourceAllocation struct {
+	ResourceID   uuid.UUID              `json:"resource_id"`
+	ResourceName string                 `json:"resource_name,omitempty"`
+	Mode         ResourceAllocationMode `json:"mode"`
+	Units        int                    `json:"units"`
 }
 
 type Booking struct {
-	ID             uuid.UUID      `json:"id"`
-	OrgID          uuid.UUID      `json:"org_id"`
-	BranchID       uuid.UUID      `json:"branch_id"`
-	ServiceID      uuid.UUID      `json:"service_id"`
-	ResourceID     uuid.UUID      `json:"resource_id"`
-	PartyID        *uuid.UUID     `json:"party_id,omitempty"`
-	Reference      string         `json:"reference"`
-	CustomerName   string         `json:"customer_name"`
-	CustomerPhone  string         `json:"customer_phone"`
-	CustomerEmail  string         `json:"customer_email,omitempty"`
-	Status         BookingStatus  `json:"status"`
-	Source         BookingSource  `json:"source"`
-	IdempotencyKey string         `json:"idempotency_key,omitempty"`
-	StartAt        time.Time      `json:"start_at"`
-	EndAt          time.Time      `json:"end_at"`
-	OccupiesFrom   time.Time      `json:"occupies_from"`
-	OccupiesUntil  time.Time      `json:"occupies_until"`
-	HoldExpiresAt  *time.Time     `json:"hold_expires_at,omitempty"`
-	Notes          string         `json:"notes"`
-	Metadata       map[string]any `json:"metadata,omitempty"`
-	CreatedBy      string         `json:"created_by,omitempty"`
-	ConfirmedAt    *time.Time     `json:"confirmed_at,omitempty"`
-	CancelledAt    *time.Time     `json:"cancelled_at,omitempty"`
-	ReminderSentAt *time.Time     `json:"reminder_sent_at,omitempty"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
+	ID        uuid.UUID `json:"id"`
+	BranchID  uuid.UUID `json:"branch_id"`
+	ServiceID uuid.UUID `json:"service_id"`
+	// ResourceID is the primary allocation used by legacy calendar clients.
+	// Allocations is authoritative for availability and persistence.
+	ResourceID     uuid.UUID            `json:"resource_id"`
+	Allocations    []ResourceAllocation `json:"allocations"`
+	Participants   int                  `json:"participants"`
+	PartyID        *string              `json:"party_id,omitempty"`
+	Reference      string               `json:"reference"`
+	CustomerName   string               `json:"customer_name"`
+	CustomerPhone  string               `json:"customer_phone"`
+	CustomerEmail  string               `json:"customer_email,omitempty"`
+	Status         BookingStatus        `json:"status"`
+	Source         BookingSource        `json:"source"`
+	IdempotencyKey string               `json:"idempotency_key,omitempty"`
+	StartAt        time.Time            `json:"start_at"`
+	EndAt          time.Time            `json:"end_at"`
+	OccupiesFrom   time.Time            `json:"occupies_from"`
+	OccupiesUntil  time.Time            `json:"occupies_until"`
+	HoldExpiresAt  *time.Time           `json:"hold_expires_at,omitempty"`
+	Notes          string               `json:"notes"`
+	Metadata       map[string]any       `json:"metadata,omitempty"`
+	CreatedBy      string               `json:"created_by,omitempty"`
+	ConfirmedAt    *time.Time           `json:"confirmed_at,omitempty"`
+	CancelledAt    *time.Time           `json:"cancelled_at,omitempty"`
+	ReminderSentAt *time.Time           `json:"reminder_sent_at,omitempty"`
+	CreatedAt      time.Time            `json:"created_at"`
+	UpdatedAt      time.Time            `json:"updated_at"`
 }
 
 type BookingActionToken struct {
 	ID        uuid.UUID         `json:"id"`
-	OrgID     uuid.UUID         `json:"org_id"`
 	BookingID uuid.UUID         `json:"booking_id"`
 	Action    BookingActionType `json:"action"`
 	Token     string            `json:"token,omitempty"`
@@ -320,7 +341,6 @@ type BookingActionToken struct {
 
 type Queue struct {
 	ID               uuid.UUID      `json:"id"`
-	OrgID            uuid.UUID      `json:"org_id"`
 	BranchID         uuid.UUID      `json:"branch_id"`
 	ServiceID        *uuid.UUID     `json:"service_id,omitempty"`
 	Code             string         `json:"code"`
@@ -338,11 +358,10 @@ type Queue struct {
 
 type QueueTicket struct {
 	ID                uuid.UUID         `json:"id"`
-	OrgID             uuid.UUID         `json:"org_id"`
 	QueueID           uuid.UUID         `json:"queue_id"`
 	BranchID          uuid.UUID         `json:"branch_id"`
 	ServiceID         *uuid.UUID        `json:"service_id,omitempty"`
-	PartyID           *uuid.UUID        `json:"party_id,omitempty"`
+	PartyID           *string           `json:"party_id,omitempty"`
 	CustomerName      string            `json:"customer_name"`
 	CustomerPhone     string            `json:"customer_phone"`
 	CustomerEmail     string            `json:"customer_email,omitempty"`
@@ -353,7 +372,7 @@ type QueueTicket struct {
 	Source            QueueTicketSource `json:"source"`
 	IdempotencyKey    string            `json:"idempotency_key,omitempty"`
 	ServingResourceID *uuid.UUID        `json:"serving_resource_id,omitempty"`
-	OperatorUserID    *uuid.UUID        `json:"operator_user_id,omitempty"`
+	OperatorUserID    *string           `json:"operator_user_id,omitempty"`
 	RequestedAt       time.Time         `json:"requested_at"`
 	CalledAt          *time.Time        `json:"called_at,omitempty"`
 	StartedAt         *time.Time        `json:"started_at,omitempty"`
@@ -367,11 +386,10 @@ type QueueTicket struct {
 
 type WaitlistEntry struct {
 	ID               uuid.UUID      `json:"id"`
-	OrgID            uuid.UUID      `json:"org_id"`
 	BranchID         uuid.UUID      `json:"branch_id"`
 	ServiceID        uuid.UUID      `json:"service_id"`
 	ResourceID       *uuid.UUID     `json:"resource_id,omitempty"`
-	PartyID          *uuid.UUID     `json:"party_id,omitempty"`
+	PartyID          *string        `json:"party_id,omitempty"`
 	BookingID        *uuid.UUID     `json:"booking_id,omitempty"`
 	CustomerName     string         `json:"customer_name"`
 	CustomerPhone    string         `json:"customer_phone"`
@@ -419,10 +437,15 @@ type DayAgendaItem struct {
 }
 
 type SlotQuery struct {
-	BranchID   uuid.UUID
-	ServiceID  uuid.UUID
-	Date       time.Time
+	BranchID  uuid.UUID
+	ServiceID uuid.UUID
+	Date      time.Time
+	// Participants defaults to one at the use-case boundary.
+	Participants int
+	// ResourceID is shorthand for one allocation with one unit.
 	ResourceID *uuid.UUID
+	// Resources requests a simultaneous slot across every allocation.
+	Resources []ResourceAllocation
 }
 
 type ListBookingsFilter struct {
@@ -441,10 +464,13 @@ type BookingRecurrence struct {
 }
 
 type CreateBookingInput struct {
-	BranchID      uuid.UUID
-	ServiceID     uuid.UUID
+	BranchID  uuid.UUID
+	ServiceID uuid.UUID
+	// ResourceID is shorthand for one allocation with one unit.
 	ResourceID    *uuid.UUID
-	PartyID       *uuid.UUID
+	Resources     []ResourceAllocation
+	Participants  int
+	PartyID       *string
 	CustomerName  string
 	CustomerPhone string
 	CustomerEmail string
@@ -465,6 +491,7 @@ type RescheduleBookingInput struct {
 	BookingID      uuid.UUID
 	BranchID       uuid.UUID
 	ResourceID     *uuid.UUID
+	Resources      []ResourceAllocation
 	StartAt        time.Time
 	EndAt          *time.Time
 	IdempotencyKey string
@@ -472,7 +499,7 @@ type RescheduleBookingInput struct {
 
 type CreateQueueTicketInput struct {
 	QueueID        uuid.UUID
-	PartyID        *uuid.UUID
+	PartyID        *string
 	CustomerName   string
 	CustomerPhone  string
 	CustomerEmail  string
@@ -487,7 +514,7 @@ type CreateWaitlistInput struct {
 	BranchID         uuid.UUID
 	ServiceID        uuid.UUID
 	ResourceID       *uuid.UUID
-	PartyID          *uuid.UUID
+	PartyID          *string
 	CustomerName     string
 	CustomerPhone    string
 	CustomerEmail    string

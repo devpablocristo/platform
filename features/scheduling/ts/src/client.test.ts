@@ -30,10 +30,26 @@ describe("scheduling client compatibility", () => {
       serviceId: "service-1",
       resourceId: "resource-1",
       date: "2026-04-03",
+      participants: 4,
     });
 
     expect(request).toHaveBeenCalledWith(
-      "/v1/scheduling/slots?branch_id=branch-1&service_id=service-1&resource_id=resource-1&date=2026-04-03",
+      "/v1/scheduling/slots?branch_id=branch-1&service_id=service-1&resource_id=resource-1&date=2026-04-03&participants=4",
+    );
+  });
+
+  it("passes participants through public availability queries", async () => {
+    const request = vi.fn().mockResolvedValue({ slots: [] });
+
+    const client = createPublicSchedulingClient(request);
+    await client.getAvailability("demo-org", {
+      serviceId: "service-1",
+      date: "2026-04-03",
+      participants: 3,
+    });
+
+    expect(request).toHaveBeenCalledWith(
+      "/v1/public/demo-org/scheduling/availability?service_id=service-1&date=2026-04-03&participants=3",
     );
   });
 
