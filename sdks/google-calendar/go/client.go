@@ -49,6 +49,13 @@ type CalendarsService interface {
 	DeleteCalendar(context.Context, string, WriteCalendarOptions) error
 }
 
+// CalendarListService reads the calendars visible in the authenticated
+// account. It is separate from CalendarsService because CalendarList is a
+// distinct Google API resource.
+type CalendarListService interface {
+	ListCalendarEntries(context.Context, ListCalendarEntriesOptions) (CalendarList, error)
+}
+
 // FreeBusyService queries availability across calendars and groups.
 type FreeBusyService interface {
 	QueryFreeBusy(context.Context, FreeBusyRequest) (FreeBusyResponse, error)
@@ -58,6 +65,7 @@ type FreeBusyService interface {
 type CalendarAPI interface {
 	EventsService
 	CalendarsService
+	CalendarListService
 	FreeBusyService
 }
 

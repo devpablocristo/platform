@@ -278,6 +278,47 @@ func TestCreateEventReturnsTypedConflict(t *testing.T) {
 	}
 }
 
+func TestListCalendarEntriesSupportsReconciliation(t *testing.T) {
+	t.Parallel()
+	client := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet ||
+			r.URL.Path != "/users/me/calendarList" {
+			http.NotFound(w, r)
+			return
+		}
+		if r.URL.Query().Get("minAccessRole") != "owner" ||
+			r.URL.Query().Get("maxResults") != "50" ||
+			r.URL.Query().Get("pageToken") != "next-page" {
+			t.Errorf("unexpected query: %s", r.URL.RawQuery)
+		}
+		w.Header().Set("ETag", `"calendar-list-v1"`)
+		_, _ = io.WriteString(w, `{
+			"nextPageToken":"page-2",
+			"items":[{
+				"id":"calendar-id",
+				"summary":"Pymes",
+				"description":"pymes-connection:abc",
+				"accessRole":"owner"
+			}]
+		}`)
+	})
+	list, err := client.ListCalendarEntries(
+		context.Background(),
+		ListCalendarEntriesOptions{
+			MaxResults: 50, MinAccessRole: "owner", PageToken: "next-page",
+		},
+	)
+	if err != nil {
+		t.Fatalf("ListCalendarEntries: %v", err)
+	}
+	if list.ETag != `"calendar-list-v1"` ||
+		list.NextPageToken != "page-2" ||
+		len(list.Items) != 1 ||
+		list.Items[0].Description != "pymes-connection:abc" {
+		t.Fatalf("unexpected calendar list: %#v", list)
+	}
+}
+
 func TestUpdateEventReturnsTypedPreconditionFailure(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {

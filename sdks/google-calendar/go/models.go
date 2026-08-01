@@ -192,6 +192,27 @@ type Calendar struct {
 	ID   string `json:"id,omitempty"`
 }
 
+type CalendarListEntry struct {
+	Kind        string `json:"kind,omitempty"`
+	ETag        string `json:"etag,omitempty"`
+	ID          string `json:"id,omitempty"`
+	Summary     string `json:"summary,omitempty"`
+	Description string `json:"description,omitempty"`
+	Location    string `json:"location,omitempty"`
+	TimeZone    string `json:"timeZone,omitempty"`
+	AccessRole  string `json:"accessRole,omitempty"`
+	Primary     bool   `json:"primary,omitempty"`
+	Deleted     bool   `json:"deleted,omitempty"`
+}
+
+type CalendarList struct {
+	Kind          string              `json:"kind,omitempty"`
+	ETag          string              `json:"etag,omitempty"`
+	NextPageToken string              `json:"nextPageToken,omitempty"`
+	NextSyncToken string              `json:"nextSyncToken,omitempty"`
+	Items         []CalendarListEntry `json:"items,omitempty"`
+}
+
 type FreeBusyItem struct {
 	ID string `json:"id"`
 }
