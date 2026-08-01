@@ -94,24 +94,55 @@ func (s *smtpSender) Send(_ context.Context, message EmailMessage) error {
 	return nil
 }
 
-type sesClient interface {
+// SESAPI es el recorte del cliente de SES que este sender usa.
+//
+// Se declara como interfaz —y el constructor la pide— para que el envío se pueda ejercitar
+// sin red. Con el tipo concreto, la única forma de verificar QUÉ se manda es mandarlo de
+// verdad, así que en la práctica no se verifica nunca. `*sesv2.Client` la satisface, o sea
+// que todo llamador existente sigue compilando sin tocar una línea.
+type SESAPI interface {
 	SendEmail(context.Context, *sesv2.SendEmailInput, ...func(*sesv2.Options)) (*sesv2.SendEmailOutput, error)
 }
 
 type sesSender struct {
-	client sesClient
+	client SESAPI
 	from   string
 }
 
-func NewSESSender(client *sesv2.Client, from string) EmailSender {
+func NewSESSender(client SESAPI, from string) EmailSender {
 	return &sesSender{client: client, from: strings.TrimSpace(from)}
 }
+
+// utf8Charset se declara en cada parte del mensaje.
+//
+// Sin `Charset`, SES interpreta el contenido como ASCII de 7 bits: cualquier acento, eñe o
+// símbolo fuera de ese rango llega corrompido. Un correo transaccional en español —o en
+// cualquier idioma que no sea inglés— sale ilegible sin que nada falle.
+const utf8Charset = "UTF-8"
 
 func (s *sesSender) Send(ctx context.Context, message EmailMessage) error {
 	to := strings.TrimSpace(message.To)
 	if to == "" {
 		return fmt.Errorf("email recipient is required")
 	}
+	text := strings.TrimSpace(message.TextBody)
+	html := strings.TrimSpace(message.HTMLBody)
+	if text == "" && html == "" {
+		return fmt.Errorf("email body is required")
+	}
+
+	// Cada parte se incluye SÓLO si tiene contenido. Mandar una parte HTML vacía produce un
+	// multipart cuya alternativa HTML está en blanco, y los clientes que prefieren HTML
+	// —casi todos— muestran un correo VACÍO. El envío sale bien, SES responde 200 y el
+	// destinatario recibe nada.
+	body := &sestypes.Body{}
+	if text != "" {
+		body.Text = &sestypes.Content{Data: &message.TextBody, Charset: charset()}
+	}
+	if html != "" {
+		body.Html = &sestypes.Content{Data: &message.HTMLBody, Charset: charset()}
+	}
+
 	subject := strings.TrimSpace(message.Subject)
 	if _, err := s.client.SendEmail(ctx, &sesv2.SendEmailInput{
 		FromEmailAddress: &s.from,
@@ -120,17 +151,19 @@ func (s *sesSender) Send(ctx context.Context, message EmailMessage) error {
 		},
 		Content: &sestypes.EmailContent{
 			Simple: &sestypes.Message{
-				Subject: &sestypes.Content{Data: &subject},
-				Body: &sestypes.Body{
-					Text: &sestypes.Content{Data: &message.TextBody},
-					Html: &sestypes.Content{Data: &message.HTMLBody},
-				},
+				Subject: &sestypes.Content{Data: &subject, Charset: charset()},
+				Body:    body,
 			},
 		},
 	}); err != nil {
 		return fmt.Errorf("ses send: %w", err)
 	}
 	return nil
+}
+
+func charset() *string {
+	value := utf8Charset
+	return &value
 }
 
 type EmailConfig struct {
