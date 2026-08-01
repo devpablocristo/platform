@@ -3,6 +3,7 @@ package google
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -19,6 +20,7 @@ func validConfig(server *httptest.Server) Config {
 		Scopes:       []string{ScopeCalendarReadonly},
 		AuthURL:      server.URL + "/auth",
 		TokenURL:     server.URL + "/token",
+		RevokeURL:    server.URL + "/revoke",
 		HTTPClient:   server.Client(),
 	}
 }
@@ -164,6 +166,13 @@ func TestExchangeCode_GoogleErrorResponse(t *testing.T) {
 	if !strings.Contains(err.Error(), "Bad Request") {
 		t.Errorf("error should include description, got: %v", err)
 	}
+	var oauthErr *OAuthError
+	if !errors.As(err, &oauthErr) {
+		t.Fatalf("expected OAuthError, got %T", err)
+	}
+	if oauthErr.StatusCode != http.StatusBadRequest || oauthErr.Code != "invalid_grant" {
+		t.Fatalf("unexpected OAuthError: %#v", oauthErr)
+	}
 }
 
 func TestExchangeCode_RejectsEmptyCode(t *testing.T) {
@@ -233,5 +242,66 @@ func TestRefresh_RejectsEmptyToken(t *testing.T) {
 	cfg := Config{ClientID: "c", ClientSecret: "s", RedirectURL: "u"}
 	if _, err := Refresh(context.Background(), cfg, ""); err == nil {
 		t.Fatal("expected error for empty refresh_token")
+	}
+}
+
+func TestRefresh_DoesNotRequireRedirectURL(t *testing.T) {
+	t.Parallel()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"access_token": "ya29.refreshed",
+			"token_type":   "Bearer",
+			"expires_in":   3600,
+		})
+	}))
+	defer server.Close()
+	cfg := Config{
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+		TokenURL:     server.URL,
+		HTTPClient:   server.Client(),
+	}
+	if _, err := Refresh(context.Background(), cfg, "1//refresh"); err != nil {
+		t.Fatalf("Refresh: %v", err)
+	}
+}
+
+func TestRevoke_Success(t *testing.T) {
+	t.Parallel()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/revoke" {
+			t.Errorf("path = %q", r.URL.Path)
+		}
+		if err := r.ParseForm(); err != nil {
+			t.Errorf("ParseForm: %v", err)
+		}
+		if got := r.PostForm.Get("token"); got != "1//refresh" {
+			t.Errorf("token = %q", got)
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	cfg := validConfig(server)
+	if err := Revoke(context.Background(), cfg, "1//refresh"); err != nil {
+		t.Fatalf("Revoke: %v", err)
+	}
+}
+
+func TestRevoke_TypedOAuthError(t *testing.T) {
+	t.Parallel()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":"invalid_token","error_description":"Token is invalid"}`))
+	}))
+	defer server.Close()
+
+	err := Revoke(context.Background(), validConfig(server), "bad-token")
+	var oauthErr *OAuthError
+	if !errors.As(err, &oauthErr) {
+		t.Fatalf("expected OAuthError, got %T: %v", err, err)
+	}
+	if oauthErr.Code != "invalid_token" || StatusCode(err) != http.StatusBadRequest {
+		t.Fatalf("unexpected OAuthError: %#v", oauthErr)
 	}
 }
