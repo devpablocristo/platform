@@ -61,6 +61,9 @@ func TestEventCRUDAndMeetPending(t *testing.T) {
 				input.ConferenceData.CreateRequest.RequestID != "meet-request-1" {
 				t.Errorf("unexpected conference request: %#v", input.ConferenceData)
 			}
+			if input.EventID != "0123456789abcdefghijklmnopqrstuv" {
+				t.Errorf("deterministic event id = %q", input.EventID)
+			}
 			w.Header().Set("ETag", `"event-v1"`)
 			_, _ = io.WriteString(w, `{
 				"id":"event-1",
@@ -119,6 +122,7 @@ func TestEventCRUDAndMeetPending(t *testing.T) {
 	})
 
 	input := EventInput{
+		EventID:        "0123456789abcdefghijklmnopqrstuv",
 		Summary:        "Planning",
 		Start:          EventDateTime{DateTime: "2026-08-01T10:00:00Z"},
 		End:            EventDateTime{DateTime: "2026-08-01T11:00:00Z"},
@@ -192,6 +196,53 @@ func TestEventCRUDAndMeetPending(t *testing.T) {
 		DeleteEventOptions{ETag: updated.ETag},
 	); err != nil {
 		t.Fatalf("DeleteEvent: %v", err)
+	}
+}
+
+func TestCreateEventRejectsInvalidDeterministicID(t *testing.T) {
+	t.Parallel()
+	client := newTestClient(t, func(http.ResponseWriter, *http.Request) {
+		t.Fatal("invalid event id reached the transport")
+	})
+	tests := []struct {
+		name    string
+		input   EventInput
+		message string
+	}{
+		{
+			name:    "too short",
+			input:   EventInput{EventID: "abcd"},
+			message: "between 5 and 1024",
+		},
+		{
+			name:    "outside base32hex alphabet",
+			input:   EventInput{EventID: "event-w"},
+			message: "lowercase base32hex",
+		},
+		{
+			name:    "conflicts with ical uid",
+			input:   EventInput{EventID: "abcde", ICalUID: "external@example.com"},
+			message: "cannot be combined",
+		},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			_, err := client.CreateEvent(
+				context.Background(),
+				"primary",
+				test.input,
+				CreateEventOptions{},
+			)
+			var validationErr *ValidationError
+			if !errors.As(err, &validationErr) {
+				t.Fatalf("expected ValidationError, got %T: %v", err, err)
+			}
+			if !strings.Contains(validationErr.Message, test.message) {
+				t.Fatalf("message = %q, want substring %q", validationErr.Message, test.message)
+			}
+		})
 	}
 }
 

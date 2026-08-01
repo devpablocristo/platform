@@ -124,6 +124,11 @@ func (c *ConferenceData) MeetURI() string {
 
 // EventInput contains the writable fields of a Google Calendar event.
 type EventInput struct {
+	// EventID is an optional caller-provided Google event identifier. Google
+	// accepts lowercase base32hex identifiers (0-9, a-v) between 5 and 1024
+	// characters. Supplying a deterministic value makes create retries
+	// idempotent: a repeated insert can be reconciled through events.get.
+	EventID            string              `json:"id,omitempty"`
 	Summary            string              `json:"summary,omitempty"`
 	Description        string              `json:"description,omitempty"`
 	Location           string              `json:"location,omitempty"`

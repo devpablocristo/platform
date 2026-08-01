@@ -73,6 +73,16 @@ func (c *Client) CreateEvent(
 	if err := required("create event", "CalendarID", calendarID); err != nil {
 		return Event{}, err
 	}
+	if err := validateEventID(input.EventID); err != nil {
+		return Event{}, err
+	}
+	if input.EventID != "" && input.ICalUID != "" {
+		return Event{}, validationError(
+			"create event",
+			"EventID",
+			"cannot be combined with ICalUID",
+		)
+	}
 	query := eventWriteQuery(options.SendUpdates, options.MaxAttendees)
 	var event Event
 	headers, err := c.doJSON(
@@ -90,6 +100,30 @@ func (c *Client) CreateEvent(
 	}
 	setEventETag(&event, headers)
 	return event, nil
+}
+
+func validateEventID(value string) error {
+	if value == "" {
+		return nil
+	}
+	if len(value) < 5 || len(value) > 1024 {
+		return validationError(
+			"create event",
+			"EventID",
+			"must contain between 5 and 1024 base32hex characters",
+		)
+	}
+	for _, character := range value {
+		if (character < '0' || character > '9') &&
+			(character < 'a' || character > 'v') {
+			return validationError(
+				"create event",
+				"EventID",
+				"must use lowercase base32hex characters (0-9, a-v)",
+			)
+		}
+	}
+	return nil
 }
 
 func (c *Client) GetEvent(
