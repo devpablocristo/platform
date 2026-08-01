@@ -1,6 +1,6 @@
 {
   "name": "@devpablocristo/platform-scheduling",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Reusable scheduling calendar, queue operator, and public booking flow (React + FullCalendar).",
   "type": "module",
   "exports": {
@@ -20,7 +20,7 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@devpablocristo/platform-browser": "^0.1.0",
+    "@devpablocristo/platform-browser": "^0.2.1",
     "@devpablocristo/platform-calendar-board": "^0.2.0",
     "@fullcalendar/core": "^6.1.21",
     "@fullcalendar/interaction": "^6.1.21",
@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.2",
-    "@devpablocristo/platform-browser": "^0.1.0",
+    "@devpablocristo/platform-browser": "^0.2.1",
     "@devpablocristo/platform-calendar-board": "^0.2.0",
     "@fullcalendar/core": "6.1.21",
     "@fullcalendar/interaction": "6.1.21",
