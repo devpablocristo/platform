@@ -65,6 +65,7 @@ const sampleBooking: Booking = {
   branch_id: 'branch-1',
   service_id: 'service-1',
   resource_id: 'resource-1',
+  allocations: [{ resource_id: 'resource-1', resource_name: 'Dr. Rivera', units: 1 }],
   reference: 'BK-001',
   customer_name: 'Ada Lovelace',
   customer_phone: '+54 381 555 0202',
@@ -432,26 +433,30 @@ function createClient(overrides?: Partial<Record<keyof SchedulingClient, unknown
   const slot: TimeSlot = {
     resource_id: 'resource-1',
     resource_name: 'Dr. Rivera',
+    allocations: [{ resource_id: 'resource-1', resource_name: 'Dr. Rivera', units: 1 }],
     start_at: '2099-04-05T10:00:00Z',
     end_at: '2099-04-05T10:30:00Z',
     occupies_from: '2099-04-05T10:00:00Z',
     occupies_until: '2099-04-05T10:30:00Z',
     timezone: 'UTC',
     remaining: 1,
-    conflict_count: 0,
+    service_remaining: 1,
+    allocated_units: 0,
     granularity_minutes: 30,
   };
 
   const laterSlot: TimeSlot = {
     resource_id: 'resource-1',
     resource_name: 'Dr. Rivera',
+    allocations: [{ resource_id: 'resource-1', resource_name: 'Dr. Rivera', units: 1 }],
     start_at: '2099-04-05T11:00:00Z',
     end_at: '2099-04-05T11:30:00Z',
     occupies_from: '2099-04-05T11:00:00Z',
     occupies_until: '2099-04-05T11:30:00Z',
     timezone: 'UTC',
     remaining: 1,
-    conflict_count: 0,
+    service_remaining: 1,
+    allocated_units: 0,
     granularity_minutes: 30,
   };
 

@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/uuid"
 
-	corescheduling "github.com/devpablocristo/platform/jobs/go"
 	schedulingdomain "github.com/devpablocristo/platform/features/scheduling/go/domain"
+	corescheduling "github.com/devpablocristo/platform/jobs/go"
 )
 
 func TestCanTransitionBooking(t *testing.T) {
@@ -249,9 +249,9 @@ func TestValidateBlockedRangeFields(t *testing.T) {
 	end := time.Date(2026, 4, 6, 16, 0, 0, 0, time.UTC)
 
 	tests := []struct {
-		name    string
-		in      schedulingdomain.BlockedRange
-		wantErr bool
+		name     string
+		in       schedulingdomain.BlockedRange
+		wantErr  bool
 		wantKind schedulingdomain.BlockedRangeKind
 	}{
 		{

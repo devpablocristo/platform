@@ -4,7 +4,6 @@ import type { PublicSchedulingClient } from './client';
 import { formatSchedulingDateTime, resolveSchedulingCopyLocale } from './locale';
 import type {
   PublicAvailabilitySlot,
-  PublicBooking,
   PublicSchedulingFlowCopy,
   PublicService,
 } from './types';
@@ -14,7 +13,6 @@ const publicKeys = {
   services: (orgRef: string) => ['public-scheduling', 'services', orgRef] as const,
   availability: (orgRef: string, serviceId: string | null, date: string) =>
     ['public-scheduling', 'availability', orgRef, serviceId ?? 'none', date] as const,
-  myBookings: (orgRef: string, phone: string) => ['public-scheduling', 'my-bookings', orgRef, phone] as const,
   queues: (orgRef: string) => ['public-scheduling', 'queues', orgRef] as const,
 };
 
@@ -40,11 +38,6 @@ export const publicSchedulingFlowCopyPresets: Record<'en' | 'es', PublicScheduli
     selectedSlotLabel: 'Selected slot',
     bookNow: 'Book now',
     booking: 'Booking…',
-    myBookingsTitle: 'My bookings',
-    myBookingsDescription: 'Look up public booking history by phone number.',
-    findBookings: 'Find bookings',
-    findingBookings: 'Searching…',
-    noBookings: 'No public bookings found for that phone number.',
     queuesTitle: 'Remote queues',
     queuesDescription: 'Customers can also join a virtual queue without opening the dashboard.',
     joinQueue: 'Join queue',
@@ -57,9 +50,6 @@ export const publicSchedulingFlowCopyPresets: Record<'en' | 'es', PublicScheduli
     loading: 'Loading public booking flow…',
     bookingCreatedTitle: 'Booking created',
     queueCreatedTitle: 'Queue ticket created',
-    confirmBooking: 'Confirm',
-    cancelBooking: 'Cancel',
-    cancelBookingReason: 'Cancelled from public booking flow',
     statuses: {
       hold: 'On hold',
       pending_confirmation: 'Pending confirmation',
@@ -99,11 +89,6 @@ export const publicSchedulingFlowCopyPresets: Record<'en' | 'es', PublicScheduli
     selectedSlotLabel: 'Slot elegido',
     bookNow: 'Reservar',
     booking: 'Reservando…',
-    myBookingsTitle: 'Mis reservas',
-    myBookingsDescription: 'Consultar el historial público por número de teléfono.',
-    findBookings: 'Buscar reservas',
-    findingBookings: 'Buscando…',
-    noBookings: 'No hay reservas públicas para ese teléfono.',
     queuesTitle: 'Colas remotas',
     queuesDescription: 'El cliente también puede sumarse a una cola virtual sin entrar al dashboard.',
     joinQueue: 'Sumarme',
@@ -116,9 +101,6 @@ export const publicSchedulingFlowCopyPresets: Record<'en' | 'es', PublicScheduli
     loading: 'Cargando agenda pública…',
     bookingCreatedTitle: 'Reserva creada',
     queueCreatedTitle: 'Ticket emitido',
-    confirmBooking: 'Confirmar',
-    cancelBooking: 'Cancelar',
-    cancelBookingReason: 'Cancelada desde el flujo público',
     statuses: {
       hold: 'En espera',
       pending_confirmation: 'Pendiente',
@@ -175,8 +157,6 @@ export function PublicSchedulingFlow({
   const [selectedDate, setSelectedDate] = useState(todayValue());
   const [selectedSlot, setSelectedSlot] = useState<PublicAvailabilitySlot | null>(null);
   const [contact, setContact] = useState<ContactDraft>({ name: '', phone: '', email: '', notes: '' });
-  const [lookupPhone, setLookupPhone] = useState('');
-  const [submittedLookupPhone, setSubmittedLookupPhone] = useState('');
   const [feedback, setFeedback] = useState<string | null>(null);
   const trimmedOrgRef = orgRef.trim();
 
@@ -212,13 +192,6 @@ export function PublicSchedulingFlow({
     staleTime: 15_000,
   });
 
-  const myBookingsQuery = useQuery({
-    queryKey: publicKeys.myBookings(trimmedOrgRef, submittedLookupPhone),
-    queryFn: () => client.listMyBookings(trimmedOrgRef, { phone: submittedLookupPhone }),
-    enabled: trimmedOrgRef.length > 0 && submittedLookupPhone.trim().length > 0,
-    staleTime: 10_000,
-  });
-
   useEffect(() => {
     if (selectedServiceId) {
       return;
@@ -246,11 +219,9 @@ export function PublicSchedulingFlow({
     onMutate: () => setFeedback(null),
     onSuccess: async () => {
       setFeedback(copy.bookingCreatedTitle);
-      setSubmittedLookupPhone(contact.phone.trim());
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: publicKeys.availability(trimmedOrgRef, selectedServiceId || null, selectedDate) }),
-        queryClient.invalidateQueries({ queryKey: publicKeys.myBookings(trimmedOrgRef, contact.phone.trim()) }),
-      ]);
+      await queryClient.invalidateQueries({
+        queryKey: publicKeys.availability(trimmedOrgRef, selectedServiceId || null, selectedDate),
+      });
     },
     onError: (error: Error) => setFeedback(error.message),
   });
@@ -265,26 +236,6 @@ export function PublicSchedulingFlow({
     onMutate: () => setFeedback(null),
     onSuccess: () => {
       setFeedback(copy.queueCreatedTitle);
-    },
-    onError: (error: Error) => setFeedback(error.message),
-  });
-
-  const bookingActionMutation = useMutation({
-    mutationFn: async ({ action, booking }: { action: 'confirm' | 'cancel'; booking: PublicBooking }) => {
-      const token = action === 'confirm' ? booking.actions?.confirm_token : booking.actions?.cancel_token;
-      if (!token) {
-        throw new Error('missing booking action token');
-      }
-      if (action === 'confirm') {
-        return client.confirmBooking(trimmedOrgRef, token);
-      }
-      return client.cancelBooking(trimmedOrgRef, token, copy.cancelBookingReason);
-    },
-    onMutate: () => setFeedback(null),
-    onSuccess: async () => {
-      if (submittedLookupPhone.trim()) {
-        await queryClient.invalidateQueries({ queryKey: publicKeys.myBookings(trimmedOrgRef, submittedLookupPhone) });
-      }
     },
     onError: (error: Error) => setFeedback(error.message),
   });
@@ -457,79 +408,6 @@ export function PublicSchedulingFlow({
       </div>
 
       <div className="modules-scheduling__public-grid">
-        <div className="card">
-          <div className="card-header">
-            <div>
-              <h2>{copy.myBookingsTitle}</h2>
-              <p className="text-secondary">{copy.myBookingsDescription}</p>
-            </div>
-          </div>
-          <div className="modules-scheduling__public-bookings-lookup">
-            <div className="form-group grow">
-              <label htmlFor="public-scheduling-bookings-phone">{copy.phoneLabel}</label>
-              <input
-                id="public-scheduling-bookings-phone"
-                value={lookupPhone}
-                onChange={(event) => setLookupPhone(event.target.value)}
-              />
-            </div>
-            <button
-              type="button"
-              className="btn-secondary"
-              disabled={!lookupPhone.trim() || myBookingsQuery.isFetching}
-              onClick={() => setSubmittedLookupPhone(lookupPhone.trim())}
-            >
-              {myBookingsQuery.isFetching ? copy.findingBookings : copy.findBookings}
-            </button>
-          </div>
-          {submittedLookupPhone.trim().length === 0 ? null : myBookingsQuery.isLoading ? (
-            <div className="modules-scheduling__empty">{copy.findingBookings}</div>
-          ) : (myBookingsQuery.data ?? []).length === 0 ? (
-            <div className="modules-scheduling__empty">{copy.noBookings}</div>
-          ) : (
-            <div className="modules-scheduling__public-bookings">
-              {(myBookingsQuery.data ?? []).map((booking) => (
-                <div key={booking.id} className="modules-scheduling__public-booking-card">
-                  <div className="modules-scheduling__public-booking-head">
-                    <strong>{booking.title || booking.party_name}</strong>
-                    <span className="modules-scheduling__badge modules-scheduling__badge--neutral">
-                      {statusLabel(copy, booking.status)}
-                    </span>
-                  </div>
-                  <div className="modules-scheduling__public-booking-meta">
-                    <span>{formatSchedulingDateTime(booking.start_at, locale)}</span>
-                    <span>{booking.party_phone}</span>
-                  </div>
-                  {(booking.actions?.confirm_token || booking.actions?.cancel_token) ? (
-                    <div className="modules-scheduling__public-booking-actions">
-                      {booking.actions?.confirm_token ? (
-                        <button
-                          type="button"
-                          className="btn-secondary btn-sm"
-                          disabled={bookingActionMutation.isPending}
-                          onClick={() => void bookingActionMutation.mutateAsync({ action: 'confirm', booking })}
-                        >
-                          {copy.confirmBooking}
-                        </button>
-                      ) : null}
-                      {booking.actions?.cancel_token ? (
-                        <button
-                          type="button"
-                          className="btn-danger btn-sm"
-                          disabled={bookingActionMutation.isPending}
-                          onClick={() => void bookingActionMutation.mutateAsync({ action: 'cancel', booking })}
-                        >
-                          {copy.cancelBooking}
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         <div className="card">
           <div className="card-header">
             <div>

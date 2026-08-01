@@ -3,7 +3,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
-import luxonPlugin from "@fullcalendar/luxon";
+import luxonPlugin from "@fullcalendar/luxon3";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import type { PointerEvent, ReactNode, RefObject } from "react";
 import { useCallback, useEffect, useRef } from "react";

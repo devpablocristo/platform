@@ -14,85 +14,90 @@ import (
 
 	corescheduling "github.com/devpablocristo/platform/jobs/go"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 
 	"github.com/devpablocristo/platform/errors/go/domainerr"
 	schedulingdomain "github.com/devpablocristo/platform/features/scheduling/go/domain"
 )
 
 var (
-	errQueueInactive            = errors.New("scheduling: queue inactive")
-	errRemoteJoinDisabled       = errors.New("scheduling: remote join disabled")
-	errBookingOverlap           = errors.New("scheduling: booking overlap")
+	// Repository adapters wrap these errors so the application core never
+	// imports a database driver or ORM-specific error.
+	ErrNotFound                 = errors.New("scheduling: not found")
+	ErrAlreadyExists            = errors.New("scheduling: already exists")
+	ErrCapacityExceeded         = errors.New("scheduling: resource capacity exceeded")
+	ErrQueueInactive            = errors.New("scheduling: queue inactive")
+	ErrRemoteJoinDisabled       = errors.New("scheduling: remote join disabled")
 	errNoTicketWaiting          = errors.New("scheduling: no ticket waiting")
 	errTransitionNotAllowed     = errors.New("scheduling: transition not allowed")
 	errNoDiscreteSchedulingSlot = errors.New("scheduling: no discrete slot match")
 )
 
+// RepositoryPort is implemented by the consumer. ReserveBookings and
+// RescheduleBooking must reserve all allocations atomically and return
+// ErrCapacityExceeded when any resource would exceed its capacity.
 type RepositoryPort interface {
-	ListBranches(ctx context.Context, orgID uuid.UUID) ([]schedulingdomain.Branch, error)
-	GetBranch(ctx context.Context, orgID, branchID uuid.UUID) (schedulingdomain.Branch, error)
+	ListBranches(ctx context.Context) ([]schedulingdomain.Branch, error)
+	GetBranch(ctx context.Context, branchID uuid.UUID) (schedulingdomain.Branch, error)
 	CreateBranch(ctx context.Context, in schedulingdomain.Branch) (schedulingdomain.Branch, error)
-	ListServices(ctx context.Context, orgID uuid.UUID) ([]schedulingdomain.Service, error)
-	GetService(ctx context.Context, orgID, serviceID uuid.UUID) (schedulingdomain.Service, error)
+	ListServices(ctx context.Context) ([]schedulingdomain.Service, error)
+	GetService(ctx context.Context, serviceID uuid.UUID) (schedulingdomain.Service, error)
 	CreateService(ctx context.Context, in schedulingdomain.Service) (schedulingdomain.Service, error)
-	ListResources(ctx context.Context, orgID uuid.UUID, branchID *uuid.UUID) ([]schedulingdomain.Resource, error)
-	GetResource(ctx context.Context, orgID, resourceID uuid.UUID) (schedulingdomain.Resource, error)
-	ListServiceResources(ctx context.Context, orgID, branchID, serviceID uuid.UUID, selected *uuid.UUID) ([]schedulingdomain.Resource, error)
+	ListResources(ctx context.Context, branchID *uuid.UUID) ([]schedulingdomain.Resource, error)
+	GetResource(ctx context.Context, resourceID uuid.UUID) (schedulingdomain.Resource, error)
+	ListServiceResources(ctx context.Context, branchID, serviceID uuid.UUID, selected *uuid.UUID) ([]schedulingdomain.Resource, error)
 	CreateResource(ctx context.Context, in schedulingdomain.Resource) (schedulingdomain.Resource, error)
-	ListAvailabilityRules(ctx context.Context, orgID uuid.UUID, branchID, resourceID *uuid.UUID) ([]schedulingdomain.AvailabilityRule, error)
-	ListApplicableAvailabilityRules(ctx context.Context, orgID, branchID uuid.UUID, resourceID *uuid.UUID, day time.Time) ([]schedulingdomain.AvailabilityRule, error)
+	ListAvailabilityRules(ctx context.Context, branchID, resourceID *uuid.UUID) ([]schedulingdomain.AvailabilityRule, error)
+	ListApplicableAvailabilityRules(ctx context.Context, branchID uuid.UUID, resourceID *uuid.UUID, day time.Time) ([]schedulingdomain.AvailabilityRule, error)
 	CreateAvailabilityRule(ctx context.Context, in schedulingdomain.AvailabilityRule) (schedulingdomain.AvailabilityRule, error)
-	ListBlockedRanges(ctx context.Context, orgID uuid.UUID, branchID, resourceID *uuid.UUID, day *time.Time) ([]schedulingdomain.BlockedRange, error)
-	ListBlockedRangesBetween(ctx context.Context, orgID, branchID uuid.UUID, resourceID *uuid.UUID, startAt, endAt time.Time) ([]schedulingdomain.BlockedRange, error)
+	ListBlockedRanges(ctx context.Context, branchID, resourceID *uuid.UUID, day *time.Time) ([]schedulingdomain.BlockedRange, error)
+	ListBlockedRangesBetween(ctx context.Context, branchID uuid.UUID, resourceID *uuid.UUID, startAt, endAt time.Time) ([]schedulingdomain.BlockedRange, error)
 	CreateBlockedRange(ctx context.Context, in schedulingdomain.BlockedRange) (schedulingdomain.BlockedRange, error)
 	UpdateBlockedRange(ctx context.Context, in schedulingdomain.BlockedRange) (schedulingdomain.BlockedRange, error)
-	DeleteBlockedRange(ctx context.Context, orgID, id uuid.UUID) error
+	DeleteBlockedRange(ctx context.Context, id uuid.UUID) error
 	CreateCalendarEvent(ctx context.Context, in schedulingdomain.CalendarEvent) (schedulingdomain.CalendarEvent, error)
-	GetCalendarEvent(ctx context.Context, orgID, id uuid.UUID) (schedulingdomain.CalendarEvent, error)
-	ListCalendarEvents(ctx context.Context, orgID uuid.UUID, filter schedulingdomain.ListCalendarEventsFilter) ([]schedulingdomain.CalendarEvent, error)
-	ListCalendarEventsOccupyingResource(ctx context.Context, orgID, branchID, resourceID uuid.UUID, from, to time.Time) ([]schedulingdomain.CalendarEvent, error)
+	GetCalendarEvent(ctx context.Context, id uuid.UUID) (schedulingdomain.CalendarEvent, error)
+	ListCalendarEvents(ctx context.Context, filter schedulingdomain.ListCalendarEventsFilter) ([]schedulingdomain.CalendarEvent, error)
+	ListCalendarEventsOccupyingResource(ctx context.Context, branchID, resourceID uuid.UUID, from, to time.Time) ([]schedulingdomain.CalendarEvent, error)
 	UpdateCalendarEvent(ctx context.Context, in schedulingdomain.CalendarEvent) (schedulingdomain.CalendarEvent, error)
-	DeleteCalendarEvent(ctx context.Context, orgID, id uuid.UUID) error
-	CountBookingOverlaps(ctx context.Context, orgID, resourceID uuid.UUID, occupiesFrom, occupiesUntil time.Time, excludeBookingID *uuid.UUID) (int64, error)
-	CreateBookings(ctx context.Context, in []schedulingdomain.Booking) ([]schedulingdomain.Booking, error)
-	CreateBooking(ctx context.Context, in schedulingdomain.Booking) (schedulingdomain.Booking, error)
-	GetBookingByID(ctx context.Context, orgID, bookingID uuid.UUID) (schedulingdomain.Booking, error)
-	ListBookings(ctx context.Context, orgID uuid.UUID, filter schedulingdomain.ListBookingsFilter) ([]schedulingdomain.Booking, error)
-	ListBookingsByPhone(ctx context.Context, orgID uuid.UUID, phoneDigits string, limit int) ([]schedulingdomain.Booking, error)
-	UpdateBookingStatus(ctx context.Context, orgID, bookingID uuid.UUID, status schedulingdomain.BookingStatus, confirmedAt, cancelledAt *time.Time, notes string) (schedulingdomain.Booking, error)
-	MarkBookingReminderSent(ctx context.Context, orgID, bookingID uuid.UUID, sentAt time.Time) (schedulingdomain.Booking, error)
+	DeleteCalendarEvent(ctx context.Context, id uuid.UUID) error
+	AllocatedResourceUnits(ctx context.Context, resourceID uuid.UUID, occupiesFrom, occupiesUntil time.Time, excludeBookingID *uuid.UUID) (int, error)
+	ConcurrentServiceBookings(ctx context.Context, serviceID uuid.UUID, occupiesFrom, occupiesUntil time.Time, excludeBookingID *uuid.UUID) (int, error)
+	ReserveBookings(ctx context.Context, in []schedulingdomain.Booking) ([]schedulingdomain.Booking, error)
+	GetBookingByID(ctx context.Context, bookingID uuid.UUID) (schedulingdomain.Booking, error)
+	ListBookings(ctx context.Context, filter schedulingdomain.ListBookingsFilter) ([]schedulingdomain.Booking, error)
+	UpdateBookingStatus(ctx context.Context, bookingID uuid.UUID, status schedulingdomain.BookingStatus, confirmedAt, cancelledAt *time.Time, notes string) (schedulingdomain.Booking, error)
+	MarkBookingReminderSent(ctx context.Context, bookingID uuid.UUID, sentAt time.Time) (schedulingdomain.Booking, error)
 	ExpireOverdueHolds(ctx context.Context, limit int) ([]schedulingdomain.Booking, error)
 	RescheduleBooking(ctx context.Context, in schedulingdomain.Booking) (schedulingdomain.Booking, error)
 	CreateBookingActionToken(ctx context.Context, in schedulingdomain.BookingActionToken) (schedulingdomain.BookingActionToken, error)
 	GetBookingActionTokenByHash(ctx context.Context, tokenHash string) (schedulingdomain.BookingActionToken, error)
 	MarkBookingActionTokenUsed(ctx context.Context, id uuid.UUID, usedAt time.Time) error
-	ListQueues(ctx context.Context, orgID uuid.UUID, branchID *uuid.UUID) ([]schedulingdomain.Queue, error)
-	GetQueueByID(ctx context.Context, orgID, queueID uuid.UUID) (schedulingdomain.Queue, error)
-	UpdateQueueStatus(ctx context.Context, orgID, queueID uuid.UUID, status schedulingdomain.QueueStatus) (schedulingdomain.Queue, error)
+	ListQueues(ctx context.Context, branchID *uuid.UUID) ([]schedulingdomain.Queue, error)
+	GetQueueByID(ctx context.Context, queueID uuid.UUID) (schedulingdomain.Queue, error)
+	UpdateQueueStatus(ctx context.Context, queueID uuid.UUID, status schedulingdomain.QueueStatus) (schedulingdomain.Queue, error)
 	CreateQueue(ctx context.Context, in schedulingdomain.Queue) (schedulingdomain.Queue, error)
 	CreateQueueTicket(ctx context.Context, in schedulingdomain.QueueTicket) (schedulingdomain.QueueTicket, error)
-	GetQueueTicket(ctx context.Context, orgID, queueID, ticketID uuid.UUID) (schedulingdomain.QueueTicket, error)
-	GetQueueTicketPosition(ctx context.Context, orgID, queueID, ticketID uuid.UUID) (schedulingdomain.QueuePosition, error)
-	CallNextTicket(ctx context.Context, orgID, queueID uuid.UUID, servingResourceID, operatorUserID *uuid.UUID) (schedulingdomain.QueueTicket, error)
-	MarkQueueTicketServing(ctx context.Context, orgID, queueID, ticketID uuid.UUID, servingResourceID, operatorUserID *uuid.UUID) (schedulingdomain.QueueTicket, error)
-	UpdateQueueTicketStatus(ctx context.Context, orgID, queueID, ticketID uuid.UUID, status schedulingdomain.QueueTicketStatus, servingResourceID, operatorUserID *uuid.UUID) (schedulingdomain.QueueTicket, error)
-	ReassignQueueTicket(ctx context.Context, orgID, queueID, ticketID uuid.UUID, servingResourceID, operatorUserID *uuid.UUID) (schedulingdomain.QueueTicket, error)
-	ReturnQueueTicketToWaiting(ctx context.Context, orgID, queueID, ticketID uuid.UUID) (schedulingdomain.QueueTicket, error)
+	GetQueueTicket(ctx context.Context, queueID, ticketID uuid.UUID) (schedulingdomain.QueueTicket, error)
+	GetQueueTicketPosition(ctx context.Context, queueID, ticketID uuid.UUID) (schedulingdomain.QueuePosition, error)
+	CallNextTicket(ctx context.Context, queueID uuid.UUID, servingResourceID *uuid.UUID, operatorUserID *string) (schedulingdomain.QueueTicket, error)
+	MarkQueueTicketServing(ctx context.Context, queueID, ticketID uuid.UUID, servingResourceID *uuid.UUID, operatorUserID *string) (schedulingdomain.QueueTicket, error)
+	UpdateQueueTicketStatus(ctx context.Context, queueID, ticketID uuid.UUID, status schedulingdomain.QueueTicketStatus, servingResourceID *uuid.UUID, operatorUserID *string) (schedulingdomain.QueueTicket, error)
+	ReassignQueueTicket(ctx context.Context, queueID, ticketID uuid.UUID, servingResourceID *uuid.UUID, operatorUserID *string) (schedulingdomain.QueueTicket, error)
+	ReturnQueueTicketToWaiting(ctx context.Context, queueID, ticketID uuid.UUID) (schedulingdomain.QueueTicket, error)
 	CreateWaitlistEntry(ctx context.Context, in schedulingdomain.WaitlistEntry) (schedulingdomain.WaitlistEntry, error)
-	ListWaitlistEntries(ctx context.Context, orgID uuid.UUID, filter schedulingdomain.ListWaitlistFilter) ([]schedulingdomain.WaitlistEntry, error)
+	ListWaitlistEntries(ctx context.Context, filter schedulingdomain.ListWaitlistFilter) ([]schedulingdomain.WaitlistEntry, error)
 	ListPendingWaitlistEntries(ctx context.Context, limit int) ([]schedulingdomain.WaitlistEntry, error)
-	UpdateWaitlistEntryStatus(ctx context.Context, orgID, entryID uuid.UUID, status schedulingdomain.WaitlistStatus, expiresAt, notifiedAt *time.Time, bookingID *uuid.UUID, notes string) (schedulingdomain.WaitlistEntry, error)
-	DashboardStats(ctx context.Context, orgID uuid.UUID, branchID *uuid.UUID, day time.Time, timezone string) (schedulingdomain.DashboardStats, error)
-	ListDayAgenda(ctx context.Context, orgID uuid.UUID, branchID *uuid.UUID, day time.Time) ([]schedulingdomain.DayAgendaItem, error)
+	UpdateWaitlistEntryStatus(ctx context.Context, entryID uuid.UUID, status schedulingdomain.WaitlistStatus, expiresAt, notifiedAt *time.Time, bookingID *uuid.UUID, notes string) (schedulingdomain.WaitlistEntry, error)
+	DashboardStats(ctx context.Context, branchID *uuid.UUID, day time.Time, timezone string) (schedulingdomain.DashboardStats, error)
+	ListDayAgenda(ctx context.Context, branchID *uuid.UUID, day time.Time) ([]schedulingdomain.DayAgendaItem, error)
 }
 
 type AuditPort interface {
-	Log(ctx context.Context, orgID string, actor, action, resourceType, resourceID string, payload map[string]any)
+	Log(ctx context.Context, actor, action, resourceType, resourceID string, payload map[string]any)
 }
 
 type NotificationPort interface {
-	Enqueue(ctx context.Context, orgID uuid.UUID, eventType string, payload map[string]any) error
+	Enqueue(ctx context.Context, eventType string, payload map[string]any) error
 }
 
 type Usecases struct {
@@ -113,14 +118,11 @@ func NewUsecases(repo RepositoryPort, audit AuditPort, opts ...Option) *Usecases
 	return uc
 }
 
-func (u *Usecases) ListBranches(ctx context.Context, orgID uuid.UUID) ([]schedulingdomain.Branch, error) {
-	return u.repo.ListBranches(ctx, orgID)
+func (u *Usecases) ListBranches(ctx context.Context) ([]schedulingdomain.Branch, error) {
+	return u.repo.ListBranches(ctx)
 }
 
-func (u *Usecases) CreateBranch(ctx context.Context, orgID uuid.UUID, actor string, in schedulingdomain.Branch) (schedulingdomain.Branch, error) {
-	if orgID == uuid.Nil {
-		return schedulingdomain.Branch{}, domainerr.Validation("org_id is required")
-	}
+func (u *Usecases) CreateBranch(ctx context.Context, actor string, in schedulingdomain.Branch) (schedulingdomain.Branch, error) {
 	if strings.TrimSpace(in.Name) == "" {
 		return schedulingdomain.Branch{}, domainerr.Validation("name is required")
 	}
@@ -131,21 +133,20 @@ func (u *Usecases) CreateBranch(ctx context.Context, orgID uuid.UUID, actor stri
 		return schedulingdomain.Branch{}, domainerr.Validation("timezone must be a valid IANA timezone")
 	}
 	in.ID = ensureUUID(in.ID)
-	in.OrgID = orgID
 	in.Code = normalizeCode(in.Code)
 	out, err := u.repo.CreateBranch(ctx, in)
 	if err != nil {
 		return schedulingdomain.Branch{}, mapRepoError(err, "branch", in.ID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.branch.created", "scheduling_branch", out.ID.String(), map[string]any{"code": out.Code})
+	u.logAudit(ctx, actor, "scheduling.branch.created", "scheduling_branch", out.ID.String(), map[string]any{"code": out.Code})
 	return out, nil
 }
 
-func (u *Usecases) ListServices(ctx context.Context, orgID uuid.UUID) ([]schedulingdomain.Service, error) {
-	return u.repo.ListServices(ctx, orgID)
+func (u *Usecases) ListServices(ctx context.Context) ([]schedulingdomain.Service, error) {
+	return u.repo.ListServices(ctx)
 }
 
-func (u *Usecases) CreateService(ctx context.Context, orgID uuid.UUID, actor string, in schedulingdomain.Service) (schedulingdomain.Service, error) {
+func (u *Usecases) CreateService(ctx context.Context, actor string, in schedulingdomain.Service) (schedulingdomain.Service, error) {
 	if strings.TrimSpace(in.Name) == "" {
 		return schedulingdomain.Service{}, domainerr.Validation("name is required")
 	}
@@ -171,34 +172,33 @@ func (u *Usecases) CreateService(ctx context.Context, orgID uuid.UUID, actor str
 	if in.MaxConcurrentBookings <= 0 {
 		in.MaxConcurrentBookings = 1
 	}
-	if in.MaxConcurrentBookings != 1 {
-		return schedulingdomain.Service{}, domainerr.Validation("max_concurrent_bookings must be 1 in v1; use multiple resources for parallel capacity")
+	if in.MaxConcurrentBookings > 100_000 {
+		return schedulingdomain.Service{}, domainerr.Validation("max_concurrent_bookings must be <= 100000")
 	}
 	if in.MinCancelNoticeMinutes < 0 {
 		return schedulingdomain.Service{}, domainerr.Validation("min_cancel_notice_minutes must be >= 0")
 	}
 	for _, resourceID := range in.ResourceIDs {
-		if _, err := u.repo.GetResource(ctx, orgID, resourceID); err != nil {
+		if _, err := u.repo.GetResource(ctx, resourceID); err != nil {
 			return schedulingdomain.Service{}, mapRepoError(err, "resource", resourceID)
 		}
 	}
 	in.ID = ensureUUID(in.ID)
-	in.OrgID = orgID
 	in.Code = normalizeCode(in.Code)
 	in.FulfillmentMode = mode
 	out, err := u.repo.CreateService(ctx, in)
 	if err != nil {
 		return schedulingdomain.Service{}, mapRepoError(err, "service", in.ID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.service.created", "scheduling_service", out.ID.String(), map[string]any{"code": out.Code, "mode": out.FulfillmentMode})
+	u.logAudit(ctx, actor, "scheduling.service.created", "scheduling_service", out.ID.String(), map[string]any{"code": out.Code, "mode": out.FulfillmentMode})
 	return out, nil
 }
 
-func (u *Usecases) ListResources(ctx context.Context, orgID uuid.UUID, branchID *uuid.UUID) ([]schedulingdomain.Resource, error) {
-	return u.repo.ListResources(ctx, orgID, branchID)
+func (u *Usecases) ListResources(ctx context.Context, branchID *uuid.UUID) ([]schedulingdomain.Resource, error) {
+	return u.repo.ListResources(ctx, branchID)
 }
 
-func (u *Usecases) CreateResource(ctx context.Context, orgID uuid.UUID, actor string, in schedulingdomain.Resource) (schedulingdomain.Resource, error) {
+func (u *Usecases) CreateResource(ctx context.Context, actor string, in schedulingdomain.Resource) (schedulingdomain.Resource, error) {
 	if in.BranchID == uuid.Nil {
 		return schedulingdomain.Resource{}, domainerr.Validation("branch_id is required")
 	}
@@ -215,15 +215,14 @@ func (u *Usecases) CreateResource(ctx context.Context, orgID uuid.UUID, actor st
 	if in.Capacity <= 0 {
 		in.Capacity = 1
 	}
-	if in.Capacity != 1 {
-		return schedulingdomain.Resource{}, domainerr.Validation("capacity must be 1 in v1; model parallel capacity as multiple resources")
+	if in.Capacity > 100_000 {
+		return schedulingdomain.Resource{}, domainerr.Validation("capacity must be <= 100000")
 	}
-	branch, err := u.repo.GetBranch(ctx, orgID, in.BranchID)
+	branch, err := u.repo.GetBranch(ctx, in.BranchID)
 	if err != nil {
 		return schedulingdomain.Resource{}, mapRepoError(err, "branch", in.BranchID)
 	}
 	in.ID = ensureUUID(in.ID)
-	in.OrgID = orgID
 	in.Kind = kind
 	in.Code = normalizeCode(in.Code)
 	if strings.TrimSpace(in.Timezone) == "" {
@@ -236,15 +235,15 @@ func (u *Usecases) CreateResource(ctx context.Context, orgID uuid.UUID, actor st
 	if err != nil {
 		return schedulingdomain.Resource{}, mapRepoError(err, "resource", in.ID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.resource.created", "scheduling_resource", out.ID.String(), map[string]any{"code": out.Code, "branch_id": out.BranchID.String()})
+	u.logAudit(ctx, actor, "scheduling.resource.created", "scheduling_resource", out.ID.String(), map[string]any{"code": out.Code, "branch_id": out.BranchID.String()})
 	return out, nil
 }
 
-func (u *Usecases) ListAvailabilityRules(ctx context.Context, orgID uuid.UUID, branchID, resourceID *uuid.UUID) ([]schedulingdomain.AvailabilityRule, error) {
-	return u.repo.ListAvailabilityRules(ctx, orgID, branchID, resourceID)
+func (u *Usecases) ListAvailabilityRules(ctx context.Context, branchID, resourceID *uuid.UUID) ([]schedulingdomain.AvailabilityRule, error) {
+	return u.repo.ListAvailabilityRules(ctx, branchID, resourceID)
 }
 
-func (u *Usecases) CreateAvailabilityRule(ctx context.Context, orgID uuid.UUID, actor string, in schedulingdomain.AvailabilityRule) (schedulingdomain.AvailabilityRule, error) {
+func (u *Usecases) CreateAvailabilityRule(ctx context.Context, actor string, in schedulingdomain.AvailabilityRule) (schedulingdomain.AvailabilityRule, error) {
 	if in.BranchID == uuid.Nil {
 		return schedulingdomain.AvailabilityRule{}, domainerr.Validation("branch_id is required")
 	}
@@ -270,38 +269,36 @@ func (u *Usecases) CreateAvailabilityRule(ctx context.Context, orgID uuid.UUID, 
 		return schedulingdomain.AvailabilityRule{}, domainerr.Validation("resource_id is required for resource rules")
 	}
 	in.ID = ensureUUID(in.ID)
-	in.OrgID = orgID
 	in.Kind = kind
 	out, err := u.repo.CreateAvailabilityRule(ctx, in)
 	if err != nil {
 		return schedulingdomain.AvailabilityRule{}, mapRepoError(err, "availability_rule", in.ID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.availability_rule.created", "scheduling_availability_rule", out.ID.String(), map[string]any{"branch_id": out.BranchID.String(), "kind": out.Kind})
+	u.logAudit(ctx, actor, "scheduling.availability_rule.created", "scheduling_availability_rule", out.ID.String(), map[string]any{"branch_id": out.BranchID.String(), "kind": out.Kind})
 	return out, nil
 }
 
-func (u *Usecases) ListBlockedRanges(ctx context.Context, orgID uuid.UUID, branchID, resourceID *uuid.UUID, day *time.Time) ([]schedulingdomain.BlockedRange, error) {
-	return u.repo.ListBlockedRanges(ctx, orgID, branchID, resourceID, day)
+func (u *Usecases) ListBlockedRanges(ctx context.Context, branchID, resourceID *uuid.UUID, day *time.Time) ([]schedulingdomain.BlockedRange, error) {
+	return u.repo.ListBlockedRanges(ctx, branchID, resourceID, day)
 }
 
-func (u *Usecases) CreateBlockedRange(ctx context.Context, orgID uuid.UUID, actor string, in schedulingdomain.BlockedRange) (schedulingdomain.BlockedRange, error) {
+func (u *Usecases) CreateBlockedRange(ctx context.Context, actor string, in schedulingdomain.BlockedRange) (schedulingdomain.BlockedRange, error) {
 	kind, err := validateBlockedRangeFields(in)
 	if err != nil {
 		return schedulingdomain.BlockedRange{}, err
 	}
 	in.ID = ensureUUID(in.ID)
-	in.OrgID = orgID
 	in.Kind = kind
 	in.CreatedBy = actor
 	out, err := u.repo.CreateBlockedRange(ctx, in)
 	if err != nil {
 		return schedulingdomain.BlockedRange{}, mapRepoError(err, "blocked_range", in.ID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.blocked_range.created", "scheduling_blocked_range", out.ID.String(), map[string]any{"branch_id": out.BranchID.String(), "kind": out.Kind})
+	u.logAudit(ctx, actor, "scheduling.blocked_range.created", "scheduling_blocked_range", out.ID.String(), map[string]any{"branch_id": out.BranchID.String(), "kind": out.Kind})
 	return out, nil
 }
 
-func (u *Usecases) UpdateBlockedRange(ctx context.Context, orgID uuid.UUID, actor string, id uuid.UUID, in schedulingdomain.BlockedRange) (schedulingdomain.BlockedRange, error) {
+func (u *Usecases) UpdateBlockedRange(ctx context.Context, actor string, id uuid.UUID, in schedulingdomain.BlockedRange) (schedulingdomain.BlockedRange, error) {
 	if id == uuid.Nil {
 		return schedulingdomain.BlockedRange{}, domainerr.Validation("id is required")
 	}
@@ -310,51 +307,49 @@ func (u *Usecases) UpdateBlockedRange(ctx context.Context, orgID uuid.UUID, acto
 		return schedulingdomain.BlockedRange{}, err
 	}
 	in.ID = id
-	in.OrgID = orgID
 	in.Kind = kind
 	out, err := u.repo.UpdateBlockedRange(ctx, in)
 	if err != nil {
 		return schedulingdomain.BlockedRange{}, mapRepoError(err, "blocked_range", id)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.blocked_range.updated", "scheduling_blocked_range", out.ID.String(), map[string]any{"branch_id": out.BranchID.String(), "kind": out.Kind})
+	u.logAudit(ctx, actor, "scheduling.blocked_range.updated", "scheduling_blocked_range", out.ID.String(), map[string]any{"branch_id": out.BranchID.String(), "kind": out.Kind})
 	return out, nil
 }
 
-func (u *Usecases) DeleteBlockedRange(ctx context.Context, orgID uuid.UUID, actor string, id uuid.UUID) error {
+func (u *Usecases) DeleteBlockedRange(ctx context.Context, actor string, id uuid.UUID) error {
 	if id == uuid.Nil {
 		return domainerr.Validation("id is required")
 	}
-	if err := u.repo.DeleteBlockedRange(ctx, orgID, id); err != nil {
+	if err := u.repo.DeleteBlockedRange(ctx, id); err != nil {
 		return mapRepoError(err, "blocked_range", id)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.blocked_range.deleted", "scheduling_blocked_range", id.String(), nil)
+	u.logAudit(ctx, actor, "scheduling.blocked_range.deleted", "scheduling_blocked_range", id.String(), nil)
 	return nil
 }
 
 // ── calendar events (agenda interna) ────────────────────────────────────────
 
-func (u *Usecases) ListCalendarEvents(ctx context.Context, orgID uuid.UUID, filter schedulingdomain.ListCalendarEventsFilter) ([]schedulingdomain.CalendarEvent, error) {
-	return u.repo.ListCalendarEvents(ctx, orgID, filter)
+func (u *Usecases) ListCalendarEvents(ctx context.Context, filter schedulingdomain.ListCalendarEventsFilter) ([]schedulingdomain.CalendarEvent, error) {
+	return u.repo.ListCalendarEvents(ctx, filter)
 }
 
-func (u *Usecases) GetCalendarEvent(ctx context.Context, orgID, id uuid.UUID) (schedulingdomain.CalendarEvent, error) {
+func (u *Usecases) GetCalendarEvent(ctx context.Context, id uuid.UUID) (schedulingdomain.CalendarEvent, error) {
 	if id == uuid.Nil {
 		return schedulingdomain.CalendarEvent{}, domainerr.Validation("id is required")
 	}
-	out, err := u.repo.GetCalendarEvent(ctx, orgID, id)
+	out, err := u.repo.GetCalendarEvent(ctx, id)
 	if err != nil {
 		return schedulingdomain.CalendarEvent{}, mapRepoError(err, "calendar_event", id)
 	}
 	return out, nil
 }
 
-func (u *Usecases) CreateCalendarEvent(ctx context.Context, orgID uuid.UUID, actor string, in schedulingdomain.CalendarEvent) (schedulingdomain.CalendarEvent, error) {
+func (u *Usecases) CreateCalendarEvent(ctx context.Context, actor string, in schedulingdomain.CalendarEvent) (schedulingdomain.CalendarEvent, error) {
 	status, visibility, err := validateCalendarEventFields(in)
 	if err != nil {
 		return schedulingdomain.CalendarEvent{}, err
 	}
 	in.ID = ensureUUID(in.ID)
-	in.OrgID = orgID
 	in.Status = status
 	in.Visibility = visibility
 	in.CreatedBy = actor
@@ -362,11 +357,11 @@ func (u *Usecases) CreateCalendarEvent(ctx context.Context, orgID uuid.UUID, act
 	if err != nil {
 		return schedulingdomain.CalendarEvent{}, mapRepoError(err, "calendar_event", in.ID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.calendar_event.created", "scheduling_calendar_event", out.ID.String(), map[string]any{"title": out.Title, "resource_id": uuidPtrString(out.ResourceID)})
+	u.logAudit(ctx, actor, "scheduling.calendar_event.created", "scheduling_calendar_event", out.ID.String(), map[string]any{"title": out.Title, "resource_id": uuidPtrString(out.ResourceID)})
 	return out, nil
 }
 
-func (u *Usecases) UpdateCalendarEvent(ctx context.Context, orgID uuid.UUID, actor string, id uuid.UUID, in schedulingdomain.CalendarEvent) (schedulingdomain.CalendarEvent, error) {
+func (u *Usecases) UpdateCalendarEvent(ctx context.Context, actor string, id uuid.UUID, in schedulingdomain.CalendarEvent) (schedulingdomain.CalendarEvent, error) {
 	if id == uuid.Nil {
 		return schedulingdomain.CalendarEvent{}, domainerr.Validation("id is required")
 	}
@@ -375,25 +370,24 @@ func (u *Usecases) UpdateCalendarEvent(ctx context.Context, orgID uuid.UUID, act
 		return schedulingdomain.CalendarEvent{}, err
 	}
 	in.ID = id
-	in.OrgID = orgID
 	in.Status = status
 	in.Visibility = visibility
 	out, err := u.repo.UpdateCalendarEvent(ctx, in)
 	if err != nil {
 		return schedulingdomain.CalendarEvent{}, mapRepoError(err, "calendar_event", id)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.calendar_event.updated", "scheduling_calendar_event", out.ID.String(), map[string]any{"title": out.Title, "status": string(out.Status)})
+	u.logAudit(ctx, actor, "scheduling.calendar_event.updated", "scheduling_calendar_event", out.ID.String(), map[string]any{"title": out.Title, "status": string(out.Status)})
 	return out, nil
 }
 
-func (u *Usecases) DeleteCalendarEvent(ctx context.Context, orgID uuid.UUID, actor string, id uuid.UUID) error {
+func (u *Usecases) DeleteCalendarEvent(ctx context.Context, actor string, id uuid.UUID) error {
 	if id == uuid.Nil {
 		return domainerr.Validation("id is required")
 	}
-	if err := u.repo.DeleteCalendarEvent(ctx, orgID, id); err != nil {
+	if err := u.repo.DeleteCalendarEvent(ctx, id); err != nil {
 		return mapRepoError(err, "calendar_event", id)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.calendar_event.deleted", "scheduling_calendar_event", id.String(), nil)
+	u.logAudit(ctx, actor, "scheduling.calendar_event.deleted", "scheduling_calendar_event", id.String(), nil)
 	return nil
 }
 
@@ -455,37 +449,34 @@ func validateBlockedRangeFields(in schedulingdomain.BlockedRange) (schedulingdom
 	return kind, nil
 }
 
-func (u *Usecases) ListAvailableSlots(ctx context.Context, orgID uuid.UUID, query schedulingdomain.SlotQuery) ([]schedulingdomain.TimeSlot, error) {
+func (u *Usecases) ListAvailableSlots(ctx context.Context, query schedulingdomain.SlotQuery) ([]schedulingdomain.TimeSlot, error) {
 	if query.BranchID == uuid.Nil || query.ServiceID == uuid.Nil {
 		return nil, domainerr.Validation("branch_id and service_id are required")
 	}
 	if query.Date.IsZero() {
 		return nil, domainerr.Validation("date is required")
 	}
-	return u.listAvailableSlots(ctx, orgID, query)
-}
-
-func (u *Usecases) ListBookings(ctx context.Context, orgID uuid.UUID, filter schedulingdomain.ListBookingsFilter) ([]schedulingdomain.Booking, error) {
-	return u.repo.ListBookings(ctx, orgID, filter)
-}
-
-func (u *Usecases) ListBookingsByPhone(ctx context.Context, orgID uuid.UUID, phone string, limit int) ([]schedulingdomain.Booking, error) {
-	phoneDigits := digitsOnly(phone)
-	if phoneDigits == "" {
-		return nil, domainerr.Validation("phone is required")
+	participants, err := normalizeParticipants(query.Participants)
+	if err != nil {
+		return nil, err
 	}
-	return u.repo.ListBookingsByPhone(ctx, orgID, phoneDigits, limit)
+	query.Participants = participants
+	return u.listAvailableSlots(ctx, query)
 }
 
-func (u *Usecases) GetBookingByID(ctx context.Context, orgID, bookingID uuid.UUID) (schedulingdomain.Booking, error) {
-	out, err := u.repo.GetBookingByID(ctx, orgID, bookingID)
+func (u *Usecases) ListBookings(ctx context.Context, filter schedulingdomain.ListBookingsFilter) ([]schedulingdomain.Booking, error) {
+	return u.repo.ListBookings(ctx, filter)
+}
+
+func (u *Usecases) GetBookingByID(ctx context.Context, bookingID uuid.UUID) (schedulingdomain.Booking, error) {
+	out, err := u.repo.GetBookingByID(ctx, bookingID)
 	if err != nil {
 		return schedulingdomain.Booking{}, mapRepoError(err, "booking", bookingID)
 	}
 	return out, nil
 }
 
-func (u *Usecases) CreateBooking(ctx context.Context, orgID uuid.UUID, actor string, in schedulingdomain.CreateBookingInput) (schedulingdomain.Booking, error) {
+func (u *Usecases) CreateBooking(ctx context.Context, actor string, in schedulingdomain.CreateBookingInput) (schedulingdomain.Booking, error) {
 	if in.BranchID == uuid.Nil || in.ServiceID == uuid.Nil {
 		return schedulingdomain.Booking{}, domainerr.Validation("branch_id and service_id are required")
 	}
@@ -495,7 +486,12 @@ func (u *Usecases) CreateBooking(ctx context.Context, orgID uuid.UUID, actor str
 	if in.StartAt.IsZero() {
 		return schedulingdomain.Booking{}, domainerr.Validation("start_at is required")
 	}
-	branch, service, err := u.loadBookingScope(ctx, orgID, in.BranchID, in.ServiceID)
+	participants, err := normalizeParticipants(in.Participants)
+	if err != nil {
+		return schedulingdomain.Booking{}, err
+	}
+	in.Participants = participants
+	branch, service, err := u.loadBookingScope(ctx, in.BranchID, in.ServiceID)
 	if err != nil {
 		return schedulingdomain.Booking{}, err
 	}
@@ -518,7 +514,7 @@ func (u *Usecases) CreateBooking(ctx context.Context, orgID uuid.UUID, actor str
 		if !in.EndAt.After(in.StartAt) {
 			return schedulingdomain.Booking{}, domainerr.Validation("end_at must be after start_at")
 		}
-		return u.createSingleBookingFromExplicitRange(ctx, orgID, actor, branch, service, in, status, in.StartAt.UTC(), in.EndAt.UTC(), nil)
+		return u.createSingleBookingFromExplicitRange(ctx, actor, branch, service, in, status, in.StartAt.UTC(), in.EndAt.UTC(), nil)
 	}
 
 	recurrence, err := normalizeBookingRecurrence(in.Recurrence, in.StartAt, branch.Timezone)
@@ -529,22 +525,22 @@ func (u *Usecases) CreateBooking(ctx context.Context, orgID uuid.UUID, actor str
 	if err != nil {
 		return schedulingdomain.Booking{}, err
 	}
-	bookingsToCreate, err := u.prepareBookingsForStarts(ctx, orgID, actor, branch, service, in, status, starts, recurrence)
+	bookingsToCreate, err := u.prepareBookingsForStarts(ctx, actor, branch, service, in, status, starts, recurrence)
 	if err != nil {
 		if errors.Is(err, errNoDiscreteSchedulingSlot) && recurrence == nil &&
-			in.ResourceID != nil && *in.ResourceID != uuid.Nil {
+			hasRequestedResources(in.ResourceID, in.Resources) {
 			endUTC := inferBookingEndFromServiceDefaults(service, in.StartAt.UTC())
 			if !endUTC.After(in.StartAt.UTC()) {
 				return schedulingdomain.Booking{}, domainerr.Conflict("slot not available")
 			}
-			return u.createSingleBookingFromExplicitRange(ctx, orgID, actor, branch, service, in, status, in.StartAt.UTC(), endUTC, nil)
+			return u.createSingleBookingFromExplicitRange(ctx, actor, branch, service, in, status, in.StartAt.UTC(), endUTC, nil)
 		}
 		return schedulingdomain.Booking{}, err
 	}
 	if len(bookingsToCreate) == 0 {
 		return schedulingdomain.Booking{}, domainerr.Conflict("slot not available")
 	}
-	created, err := u.repo.CreateBookings(ctx, bookingsToCreate)
+	created, err := u.repo.ReserveBookings(ctx, bookingsToCreate)
 	if err != nil {
 		if isBookingOverlapErr(err) {
 			return schedulingdomain.Booking{}, domainerr.Conflict("slot not available")
@@ -552,8 +548,8 @@ func (u *Usecases) CreateBooking(ctx context.Context, orgID uuid.UUID, actor str
 		return schedulingdomain.Booking{}, mapRepoError(err, "booking", bookingsToCreate[0].ID)
 	}
 	for _, item := range created {
-		u.logAudit(ctx, orgID, actor, "scheduling.booking.created", "scheduling_booking", item.ID.String(), map[string]any{"service_id": item.ServiceID.String(), "resource_id": item.ResourceID.String(), "status": item.Status})
-		u.emitEvent(ctx, orgID, "scheduling.booking.created", map[string]any{"booking_id": item.ID.String(), "branch_id": item.BranchID.String(), "service_id": item.ServiceID.String()})
+		u.logAudit(ctx, actor, "scheduling.booking.created", "scheduling_booking", item.ID.String(), map[string]any{"service_id": item.ServiceID.String(), "allocations": item.Allocations, "status": item.Status})
+		u.emitEvent(ctx, "scheduling.booking.created", map[string]any{"booking_id": item.ID.String(), "branch_id": item.BranchID.String(), "service_id": item.ServiceID.String()})
 	}
 	return created[0], nil
 }
@@ -562,7 +558,6 @@ func (u *Usecases) CreateBooking(ctx context.Context, orgID uuid.UUID, actor str
 // cliente que envía end_at, o fallback por duración por defecto del servicio).
 func (u *Usecases) createSingleBookingFromExplicitRange(
 	ctx context.Context,
-	orgID uuid.UUID,
 	actor string,
 	branch schedulingdomain.Branch,
 	service schedulingdomain.Service,
@@ -571,31 +566,40 @@ func (u *Usecases) createSingleBookingFromExplicitRange(
 	startUTC, endUTC time.Time,
 	excludeBookingID *uuid.UUID,
 ) (schedulingdomain.Booking, error) {
-	if in.ResourceID == nil || *in.ResourceID == uuid.Nil {
-		return schedulingdomain.Booking{}, domainerr.Validation("resource_id is required")
-	}
 	if !endUTC.After(startUTC) {
 		return schedulingdomain.Booking{}, domainerr.Validation("end_at must be after start_at")
 	}
-	resource, err := u.repo.GetResource(ctx, orgID, *in.ResourceID)
+	allocations, err := NormalizeResourceAllocationsForParticipants(in.ResourceID, in.Resources, in.Participants)
 	if err != nil {
-		return schedulingdomain.Booking{}, mapRepoError(err, "resource", *in.ResourceID)
+		return schedulingdomain.Booking{}, domainerr.Validation(err.Error())
 	}
-	if resource.BranchID != in.BranchID {
-		return schedulingdomain.Booking{}, domainerr.Validation("resource does not belong to branch")
+	if len(allocations) == 0 {
+		return schedulingdomain.Booking{}, domainerr.Validation("at least one resource allocation is required")
 	}
 	occFrom := startUTC.Add(-time.Duration(service.BufferBeforeMinutes) * time.Minute)
 	occUntil := endUTC.Add(time.Duration(service.BufferAfterMinutes) * time.Minute)
-	if err := u.validateBookingRangeFits(ctx, orgID, branch, resource, startUTC, endUTC, occFrom, occUntil, excludeBookingID); err != nil {
+	allocations, err = u.validateBookingAllocationsRangeFits(
+		ctx,
+		branch,
+		service,
+		allocations,
+		startUTC,
+		endUTC,
+		occFrom,
+		occUntil,
+		excludeBookingID,
+	)
+	if err != nil {
 		return schedulingdomain.Booking{}, err
 	}
 	metadata := cloneMetadata(in.Metadata)
 	booking := schedulingdomain.Booking{
 		ID:             uuid.New(),
-		OrgID:          orgID,
 		BranchID:       branch.ID,
 		ServiceID:      service.ID,
-		ResourceID:     resource.ID,
+		ResourceID:     allocations[0].ResourceID,
+		Allocations:    allocations,
+		Participants:   in.Participants,
 		PartyID:        in.PartyID,
 		Reference:      buildBookingReference(startUTC, service.Code),
 		CustomerName:   strings.TrimSpace(in.CustomerName),
@@ -620,7 +624,7 @@ func (u *Usecases) createSingleBookingFromExplicitRange(
 		now := time.Now().UTC()
 		booking.ConfirmedAt = &now
 	}
-	created, err := u.repo.CreateBookings(ctx, []schedulingdomain.Booking{booking})
+	created, err := u.repo.ReserveBookings(ctx, []schedulingdomain.Booking{booking})
 	if err != nil {
 		if isBookingOverlapErr(err) {
 			return schedulingdomain.Booking{}, domainerr.Conflict("slot not available")
@@ -628,8 +632,8 @@ func (u *Usecases) createSingleBookingFromExplicitRange(
 		return schedulingdomain.Booking{}, mapRepoError(err, "booking", booking.ID)
 	}
 	item := created[0]
-	u.logAudit(ctx, orgID, actor, "scheduling.booking.created", "scheduling_booking", item.ID.String(), map[string]any{"service_id": item.ServiceID.String(), "resource_id": item.ResourceID.String(), "status": item.Status})
-	u.emitEvent(ctx, orgID, "scheduling.booking.created", map[string]any{"booking_id": item.ID.String(), "branch_id": item.BranchID.String(), "service_id": item.ServiceID.String()})
+	u.logAudit(ctx, actor, "scheduling.booking.created", "scheduling_booking", item.ID.String(), map[string]any{"service_id": item.ServiceID.String(), "allocations": item.Allocations, "status": item.Status})
+	u.emitEvent(ctx, "scheduling.booking.created", map[string]any{"booking_id": item.ID.String(), "branch_id": item.BranchID.String(), "service_id": item.ServiceID.String()})
 	return item, nil
 }
 
@@ -648,7 +652,6 @@ const maxRecurringBookingOccurrences = 60
 
 func (u *Usecases) prepareBookingsForStarts(
 	ctx context.Context,
-	orgID uuid.UUID,
 	actor string,
 	branch schedulingdomain.Branch,
 	service schedulingdomain.Service,
@@ -660,16 +663,18 @@ func (u *Usecases) prepareBookingsForStarts(
 	seriesID := uuid.New()
 	out := make([]schedulingdomain.Booking, 0, len(starts))
 	for index, startAt := range starts {
-		candidateSlots, err := u.listAvailableSlots(ctx, orgID, schedulingdomain.SlotQuery{
-			BranchID:   in.BranchID,
-			ServiceID:  in.ServiceID,
-			Date:       startAt,
-			ResourceID: in.ResourceID,
+		candidateSlots, err := u.listAvailableSlots(ctx, schedulingdomain.SlotQuery{
+			BranchID:     in.BranchID,
+			ServiceID:    in.ServiceID,
+			Date:         startAt,
+			Participants: in.Participants,
+			ResourceID:   in.ResourceID,
+			Resources:    in.Resources,
 		})
 		if err != nil {
 			return nil, err
 		}
-		matchingSlots := filterSlotsByStart(candidateSlots, startAt.UTC(), in.ResourceID)
+		matchingSlots := filterSlotsByStart(candidateSlots, startAt.UTC(), in.ResourceID, in.Resources, in.Participants)
 		if len(matchingSlots) == 0 {
 			if recurrence == nil {
 				return nil, errNoDiscreteSchedulingSlot
@@ -684,13 +689,12 @@ func (u *Usecases) prepareBookingsForStarts(
 				idempotencyKey = fmt.Sprintf("%s#%02d", idempotencyKey, index+1)
 			}
 		}
-		out = append(out, buildBookingFromSlot(orgID, actor, branch, service, in, matchingSlots[0], status, idempotencyKey, metadata))
+		out = append(out, buildBookingFromSlot(actor, branch, service, in, matchingSlots[0], status, idempotencyKey, metadata))
 	}
 	return out, nil
 }
 
 func buildBookingFromSlot(
-	orgID uuid.UUID,
 	actor string,
 	branch schedulingdomain.Branch,
 	service schedulingdomain.Service,
@@ -702,10 +706,11 @@ func buildBookingFromSlot(
 ) schedulingdomain.Booking {
 	booking := schedulingdomain.Booking{
 		ID:             uuid.New(),
-		OrgID:          orgID,
 		BranchID:       branch.ID,
 		ServiceID:      service.ID,
 		ResourceID:     slot.ResourceID,
+		Allocations:    append([]schedulingdomain.ResourceAllocation(nil), slot.Allocations...),
+		Participants:   in.Participants,
 		PartyID:        in.PartyID,
 		Reference:      buildBookingReference(slot.StartAt, service.Code),
 		CustomerName:   strings.TrimSpace(in.CustomerName),
@@ -927,24 +932,24 @@ func addMonthsPreservingDay(base time.Time, months int) time.Time {
 	return time.Date(targetMonth.Year(), targetMonth.Month(), day, base.Hour(), base.Minute(), base.Second(), base.Nanosecond(), base.Location())
 }
 
-func (u *Usecases) CheckInBooking(ctx context.Context, orgID, bookingID uuid.UUID, actor string) (schedulingdomain.Booking, error) {
-	return u.transitionBooking(ctx, orgID, bookingID, actor, schedulingdomain.BookingStatusCheckedIn, "")
+func (u *Usecases) CheckInBooking(ctx context.Context, bookingID uuid.UUID, actor string) (schedulingdomain.Booking, error) {
+	return u.transitionBooking(ctx, bookingID, actor, schedulingdomain.BookingStatusCheckedIn, "")
 }
 
-func (u *Usecases) StartBookingService(ctx context.Context, orgID, bookingID uuid.UUID, actor string) (schedulingdomain.Booking, error) {
-	return u.transitionBooking(ctx, orgID, bookingID, actor, schedulingdomain.BookingStatusInService, "")
+func (u *Usecases) StartBookingService(ctx context.Context, bookingID uuid.UUID, actor string) (schedulingdomain.Booking, error) {
+	return u.transitionBooking(ctx, bookingID, actor, schedulingdomain.BookingStatusInService, "")
 }
 
-func (u *Usecases) CompleteBooking(ctx context.Context, orgID, bookingID uuid.UUID, actor string) (schedulingdomain.Booking, error) {
-	return u.transitionBooking(ctx, orgID, bookingID, actor, schedulingdomain.BookingStatusCompleted, "")
+func (u *Usecases) CompleteBooking(ctx context.Context, bookingID uuid.UUID, actor string) (schedulingdomain.Booking, error) {
+	return u.transitionBooking(ctx, bookingID, actor, schedulingdomain.BookingStatusCompleted, "")
 }
 
-func (u *Usecases) MarkBookingNoShow(ctx context.Context, orgID, bookingID uuid.UUID, actor string, reason string) (schedulingdomain.Booking, error) {
-	return u.transitionBooking(ctx, orgID, bookingID, actor, schedulingdomain.BookingStatusNoShow, reason)
+func (u *Usecases) MarkBookingNoShow(ctx context.Context, bookingID uuid.UUID, actor string, reason string) (schedulingdomain.Booking, error) {
+	return u.transitionBooking(ctx, bookingID, actor, schedulingdomain.BookingStatusNoShow, reason)
 }
 
-func (u *Usecases) ConfirmBooking(ctx context.Context, orgID, bookingID uuid.UUID, actor string) (schedulingdomain.Booking, error) {
-	current, err := u.repo.GetBookingByID(ctx, orgID, bookingID)
+func (u *Usecases) ConfirmBooking(ctx context.Context, bookingID uuid.UUID, actor string) (schedulingdomain.Booking, error) {
+	current, err := u.repo.GetBookingByID(ctx, bookingID)
 	if err != nil {
 		return schedulingdomain.Booking{}, mapRepoError(err, "booking", bookingID)
 	}
@@ -952,16 +957,16 @@ func (u *Usecases) ConfirmBooking(ctx context.Context, orgID, bookingID uuid.UUI
 		return schedulingdomain.Booking{}, domainerr.Conflict("booking cannot transition to confirmed")
 	}
 	now := time.Now().UTC()
-	out, err := u.repo.UpdateBookingStatus(ctx, orgID, bookingID, schedulingdomain.BookingStatusConfirmed, &now, nil, current.Notes)
+	out, err := u.repo.UpdateBookingStatus(ctx, bookingID, schedulingdomain.BookingStatusConfirmed, &now, nil, current.Notes)
 	if err != nil {
 		return schedulingdomain.Booking{}, mapRepoError(err, "booking", bookingID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.booking.confirmed", "scheduling_booking", out.ID.String(), nil)
+	u.logAudit(ctx, actor, "scheduling.booking.confirmed", "scheduling_booking", out.ID.String(), nil)
 	return out, nil
 }
 
-func (u *Usecases) CancelBooking(ctx context.Context, orgID, bookingID uuid.UUID, actor, reason string) (schedulingdomain.Booking, error) {
-	return u.cancelBooking(ctx, orgID, bookingID, actor, reason, false)
+func (u *Usecases) CancelBooking(ctx context.Context, bookingID uuid.UUID, actor, reason string) (schedulingdomain.Booking, error) {
+	return u.cancelBooking(ctx, bookingID, actor, reason, false)
 }
 
 func (u *Usecases) CancelBookingByToken(ctx context.Context, tokenRaw, reason string) (schedulingdomain.Booking, error) {
@@ -972,7 +977,7 @@ func (u *Usecases) CancelBookingByToken(ctx context.Context, tokenRaw, reason st
 	if token.Action != schedulingdomain.BookingActionCancel {
 		return schedulingdomain.Booking{}, domainerr.Validation("token action mismatch")
 	}
-	out, err := u.cancelBooking(ctx, token.OrgID, token.BookingID, "public-token", reason, true)
+	out, err := u.cancelBooking(ctx, token.BookingID, "public-token", reason, true)
 	if err != nil {
 		return schedulingdomain.Booking{}, err
 	}
@@ -988,7 +993,7 @@ func (u *Usecases) ConfirmBookingByToken(ctx context.Context, tokenRaw string) (
 	if token.Action != schedulingdomain.BookingActionConfirm {
 		return schedulingdomain.Booking{}, domainerr.Validation("token action mismatch")
 	}
-	out, err := u.ConfirmBooking(ctx, token.OrgID, token.BookingID, "public-token")
+	out, err := u.ConfirmBooking(ctx, token.BookingID, "public-token")
 	if err != nil {
 		return schedulingdomain.Booking{}, err
 	}
@@ -996,11 +1001,11 @@ func (u *Usecases) ConfirmBookingByToken(ctx context.Context, tokenRaw string) (
 	return out, nil
 }
 
-func (u *Usecases) CreateBookingActionTokens(ctx context.Context, orgID, bookingID uuid.UUID, ttl time.Duration) (map[schedulingdomain.BookingActionType]schedulingdomain.BookingActionToken, error) {
+func (u *Usecases) CreateBookingActionTokens(ctx context.Context, bookingID uuid.UUID, ttl time.Duration) (map[schedulingdomain.BookingActionType]schedulingdomain.BookingActionToken, error) {
 	if ttl <= 0 {
 		ttl = 48 * time.Hour
 	}
-	booking, err := u.repo.GetBookingByID(ctx, orgID, bookingID)
+	booking, err := u.repo.GetBookingByID(ctx, bookingID)
 	if err != nil {
 		return nil, mapRepoError(err, "booking", bookingID)
 	}
@@ -1015,7 +1020,6 @@ func (u *Usecases) CreateBookingActionTokens(ctx context.Context, orgID, booking
 		}
 		token, err := u.repo.CreateBookingActionToken(ctx, schedulingdomain.BookingActionToken{
 			ID:        uuid.New(),
-			OrgID:     orgID,
 			BookingID: booking.ID,
 			Action:    action,
 			Token:     rawToken,
@@ -1042,17 +1046,17 @@ func (u *Usecases) ExpireOverdueHolds(ctx context.Context, limit int) ([]schedul
 		return nil, err
 	}
 	for _, item := range items {
-		u.emitEvent(ctx, item.OrgID, "scheduling.booking.expired", map[string]any{"booking_id": item.ID.String()})
+		u.emitEvent(ctx, "scheduling.booking.expired", map[string]any{"booking_id": item.ID.String()})
 	}
 	return items, nil
 }
 
-func (u *Usecases) MarkBookingReminderSent(ctx context.Context, orgID, bookingID uuid.UUID, sentAt time.Time) (schedulingdomain.Booking, error) {
-	return u.repo.MarkBookingReminderSent(ctx, orgID, bookingID, sentAt)
+func (u *Usecases) MarkBookingReminderSent(ctx context.Context, bookingID uuid.UUID, sentAt time.Time) (schedulingdomain.Booking, error) {
+	return u.repo.MarkBookingReminderSent(ctx, bookingID, sentAt)
 }
 
-func (u *Usecases) RescheduleBooking(ctx context.Context, orgID uuid.UUID, actor string, in schedulingdomain.RescheduleBookingInput) (schedulingdomain.Booking, error) {
-	current, err := u.repo.GetBookingByID(ctx, orgID, in.BookingID)
+func (u *Usecases) RescheduleBooking(ctx context.Context, actor string, in schedulingdomain.RescheduleBookingInput) (schedulingdomain.Booking, error) {
+	current, err := u.repo.GetBookingByID(ctx, in.BookingID)
 	if err != nil {
 		return schedulingdomain.Booking{}, mapRepoError(err, "booking", in.BookingID)
 	}
@@ -1064,8 +1068,25 @@ func (u *Usecases) RescheduleBooking(ctx context.Context, orgID uuid.UUID, actor
 		branchID = in.BranchID
 	}
 	resourceID := in.ResourceID
-	if resourceID == nil {
-		resourceID = &current.ResourceID
+	requestedAllocations := in.Resources
+	participants, err := normalizeParticipants(current.Participants)
+	if err != nil {
+		return schedulingdomain.Booking{}, err
+	}
+	current.Participants = participants
+	if len(requestedAllocations) == 0 && resourceID == nil {
+		if len(current.Allocations) > 0 {
+			requestedAllocations = append([]schedulingdomain.ResourceAllocation(nil), current.Allocations...)
+		} else {
+			resourceID = &current.ResourceID
+		}
+	}
+	allocations, err := NormalizeResourceAllocationsForParticipants(resourceID, requestedAllocations, participants)
+	if err != nil {
+		return schedulingdomain.Booking{}, domainerr.Validation(err.Error())
+	}
+	if len(allocations) == 0 {
+		return schedulingdomain.Booking{}, domainerr.Validation("at least one resource allocation is required")
 	}
 
 	if in.EndAt != nil && !in.EndAt.IsZero() {
@@ -1076,15 +1097,11 @@ func (u *Usecases) RescheduleBooking(ctx context.Context, orgID uuid.UUID, actor
 		if !in.EndAt.After(in.StartAt) {
 			return schedulingdomain.Booking{}, domainerr.Validation("end_at must be after start_at")
 		}
-		branch, err := u.repo.GetBranch(ctx, orgID, branchID)
+		branch, err := u.repo.GetBranch(ctx, branchID)
 		if err != nil {
 			return schedulingdomain.Booking{}, mapRepoError(err, "branch", branchID)
 		}
-		resource, err := u.repo.GetResource(ctx, orgID, *resourceID)
-		if err != nil {
-			return schedulingdomain.Booking{}, mapRepoError(err, "resource", *resourceID)
-		}
-		service, err := u.repo.GetService(ctx, orgID, current.ServiceID)
+		service, err := u.repo.GetService(ctx, current.ServiceID)
 		if err != nil {
 			return schedulingdomain.Booking{}, mapRepoError(err, "service", current.ServiceID)
 		}
@@ -1093,32 +1110,47 @@ func (u *Usecases) RescheduleBooking(ctx context.Context, orgID uuid.UUID, actor
 		occFrom := startUTC.Add(-time.Duration(service.BufferBeforeMinutes) * time.Minute)
 		occUntil := endUTC.Add(time.Duration(service.BufferAfterMinutes) * time.Minute)
 		excludeID := current.ID
-		if err := u.validateBookingRangeFits(ctx, orgID, branch, resource, startUTC, endUTC, occFrom, occUntil, &excludeID); err != nil {
+		allocations, err = u.validateBookingAllocationsRangeFits(
+			ctx,
+			branch,
+			service,
+			allocations,
+			startUTC,
+			endUTC,
+			occFrom,
+			occUntil,
+			&excludeID,
+		)
+		if err != nil {
 			return schedulingdomain.Booking{}, err
 		}
 		current.BranchID = branchID
-		current.ResourceID = *resourceID
+		current.ResourceID = allocations[0].ResourceID
+		current.Allocations = allocations
 		current.StartAt = startUTC
 		current.EndAt = endUTC
 		current.OccupiesFrom = occFrom
 		current.OccupiesUntil = occUntil
 	} else {
-		slots, err := u.listAvailableSlots(ctx, orgID, schedulingdomain.SlotQuery{
-			BranchID:   branchID,
-			ServiceID:  current.ServiceID,
-			Date:       in.StartAt,
-			ResourceID: resourceID,
+		slots, err := u.listAvailableSlots(ctx, schedulingdomain.SlotQuery{
+			BranchID:     branchID,
+			ServiceID:    current.ServiceID,
+			Date:         in.StartAt,
+			Participants: current.Participants,
+			ResourceID:   resourceID,
+			Resources:    allocations,
 		})
 		if err != nil {
 			return schedulingdomain.Booking{}, err
 		}
-		matching := filterSlotsByStart(slots, in.StartAt.UTC(), resourceID)
+		matching := filterSlotsByStart(slots, in.StartAt.UTC(), resourceID, allocations, participants)
 		if len(matching) == 0 {
 			return schedulingdomain.Booking{}, domainerr.Conflict("slot not available")
 		}
 		slot := matching[0]
 		current.BranchID = branchID
 		current.ResourceID = slot.ResourceID
+		current.Allocations = append([]schedulingdomain.ResourceAllocation(nil), slot.Allocations...)
 		current.StartAt = slot.StartAt
 		current.EndAt = slot.EndAt
 		current.OccupiesFrom = slot.OccupiesFrom
@@ -1132,8 +1164,8 @@ func (u *Usecases) RescheduleBooking(ctx context.Context, orgID uuid.UUID, actor
 		}
 		return schedulingdomain.Booking{}, mapRepoError(err, "booking", current.ID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.booking.rescheduled", "scheduling_booking", out.ID.String(), map[string]any{"start_at": out.StartAt, "end_at": out.EndAt})
-	u.emitEvent(ctx, orgID, "scheduling.booking.rescheduled", map[string]any{"booking_id": out.ID.String(), "start_at": out.StartAt, "end_at": out.EndAt})
+	u.logAudit(ctx, actor, "scheduling.booking.rescheduled", "scheduling_booking", out.ID.String(), map[string]any{"start_at": out.StartAt, "end_at": out.EndAt})
+	u.emitEvent(ctx, "scheduling.booking.rescheduled", map[string]any{"booking_id": out.ID.String(), "start_at": out.StartAt, "end_at": out.EndAt})
 	return out, nil
 }
 
@@ -1141,11 +1173,50 @@ func (u *Usecases) RescheduleBooking(ctx context.Context, orgID uuid.UUID, actor
 // (with the corresponding occupation window built from service buffers) is acceptable
 // for the given resource: inside availability rules, not overlapping any blocked range,
 // and not overlapping any existing booking. Used by reschedule's custom-duration path.
+func (u *Usecases) validateBookingAllocationsRangeFits(
+	ctx context.Context,
+	branch schedulingdomain.Branch,
+	service schedulingdomain.Service,
+	allocations []schedulingdomain.ResourceAllocation,
+	startAt, endAt, occFrom, occUntil time.Time,
+	excludeBookingID *uuid.UUID,
+) ([]schedulingdomain.ResourceAllocation, error) {
+	hydrated := make([]schedulingdomain.ResourceAllocation, 0, len(allocations))
+	for _, allocation := range allocations {
+		resource, err := u.loadServiceResource(ctx, branch.ID, service.ID, allocation.ResourceID)
+		if err != nil {
+			return nil, err
+		}
+		allocation, err = ResolveAllocationUnits(allocation, resource.Capacity)
+		if err != nil {
+			return nil, domainerr.Conflict(err.Error())
+		}
+		if err := u.validateBookingRangeFits(
+			ctx,
+			branch,
+			service,
+			resource,
+			allocation.Units,
+			startAt,
+			endAt,
+			occFrom,
+			occUntil,
+			excludeBookingID,
+		); err != nil {
+			return nil, err
+		}
+		allocation.ResourceName = resource.Name
+		hydrated = append(hydrated, allocation)
+	}
+	return hydrated, nil
+}
+
 func (u *Usecases) validateBookingRangeFits(
 	ctx context.Context,
-	orgID uuid.UUID,
 	branch schedulingdomain.Branch,
+	service schedulingdomain.Service,
 	resource schedulingdomain.Resource,
+	units int,
 	startAt, endAt, occFrom, occUntil time.Time,
 	excludeBookingID *uuid.UUID,
 ) error {
@@ -1161,7 +1232,7 @@ func (u *Usecases) validateBookingRangeFits(
 		}
 	}
 	dayLocal := startAt.In(loc)
-	rules, err := u.repo.ListApplicableAvailabilityRules(ctx, orgID, branch.ID, &resource.ID, dayLocal)
+	rules, err := u.repo.ListApplicableAvailabilityRules(ctx, branch.ID, &resource.ID, dayLocal)
 	if err != nil {
 		return err
 	}
@@ -1195,18 +1266,25 @@ func (u *Usecases) validateBookingRangeFits(
 	if !rangeFitsAnyWindow(startAt, endAt, activeWindows) {
 		return domainerr.Conflict("outside business hours")
 	}
-	blocked, err := u.repo.ListBlockedRangesBetween(ctx, orgID, branch.ID, &resource.ID, occFrom, occUntil)
+	blocked, err := u.repo.ListBlockedRangesBetween(ctx, branch.ID, &resource.ID, occFrom, occUntil)
 	if err != nil {
 		return err
 	}
 	if len(blocked) > 0 {
 		return domainerr.Conflict("overlaps with a blocked range")
 	}
-	count, err := u.repo.CountBookingOverlaps(ctx, orgID, resource.ID, occFrom, occUntil, excludeBookingID)
+	allocated, err := u.repo.AllocatedResourceUnits(ctx, resource.ID, occFrom, occUntil, excludeBookingID)
 	if err != nil {
 		return err
 	}
-	if count > 0 {
+	if allocated+units > resource.Capacity {
+		return domainerr.Conflict("slot not available")
+	}
+	concurrent, err := u.repo.ConcurrentServiceBookings(ctx, service.ID, occFrom, occUntil, excludeBookingID)
+	if err != nil {
+		return err
+	}
+	if concurrent+1 > service.MaxConcurrentBookings {
 		return domainerr.Conflict("slot not available")
 	}
 	return nil
@@ -1223,22 +1301,22 @@ func rangeFitsAnyWindow(start, end time.Time, windows []corescheduling.Window) b
 	return false
 }
 
-func (u *Usecases) ListQueues(ctx context.Context, orgID uuid.UUID, branchID *uuid.UUID) ([]schedulingdomain.Queue, error) {
-	return u.repo.ListQueues(ctx, orgID, branchID)
+func (u *Usecases) ListQueues(ctx context.Context, branchID *uuid.UUID) ([]schedulingdomain.Queue, error) {
+	return u.repo.ListQueues(ctx, branchID)
 }
 
-func (u *Usecases) CreateQueue(ctx context.Context, orgID uuid.UUID, actor string, in schedulingdomain.Queue) (schedulingdomain.Queue, error) {
+func (u *Usecases) CreateQueue(ctx context.Context, actor string, in schedulingdomain.Queue) (schedulingdomain.Queue, error) {
 	if in.BranchID == uuid.Nil {
 		return schedulingdomain.Queue{}, domainerr.Validation("branch_id is required")
 	}
 	if strings.TrimSpace(in.Name) == "" || strings.TrimSpace(in.Code) == "" {
 		return schedulingdomain.Queue{}, domainerr.Validation("name and code are required")
 	}
-	if _, err := u.repo.GetBranch(ctx, orgID, in.BranchID); err != nil {
+	if _, err := u.repo.GetBranch(ctx, in.BranchID); err != nil {
 		return schedulingdomain.Queue{}, mapRepoError(err, "branch", in.BranchID)
 	}
 	if in.ServiceID != nil && *in.ServiceID != uuid.Nil {
-		service, err := u.repo.GetService(ctx, orgID, *in.ServiceID)
+		service, err := u.repo.GetService(ctx, *in.ServiceID)
 		if err != nil {
 			return schedulingdomain.Queue{}, mapRepoError(err, "service", *in.ServiceID)
 		}
@@ -1258,7 +1336,6 @@ func (u *Usecases) CreateQueue(ctx context.Context, orgID uuid.UUID, actor strin
 		in.AvgServiceSecond = 600
 	}
 	in.ID = ensureUUID(in.ID)
-	in.OrgID = orgID
 	in.Code = normalizeCode(in.Code)
 	in.Strategy = strategy
 	in.Status = status
@@ -1269,30 +1346,30 @@ func (u *Usecases) CreateQueue(ctx context.Context, orgID uuid.UUID, actor strin
 	if err != nil {
 		return schedulingdomain.Queue{}, mapRepoError(err, "queue", in.ID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.queue.created", "scheduling_queue", out.ID.String(), map[string]any{"code": out.Code})
+	u.logAudit(ctx, actor, "scheduling.queue.created", "scheduling_queue", out.ID.String(), map[string]any{"code": out.Code})
 	return out, nil
 }
 
-func (u *Usecases) PauseQueue(ctx context.Context, orgID, queueID uuid.UUID, actor string) (schedulingdomain.Queue, error) {
-	return u.transitionQueue(ctx, orgID, queueID, actor, schedulingdomain.QueueStatusPaused)
+func (u *Usecases) PauseQueue(ctx context.Context, queueID uuid.UUID, actor string) (schedulingdomain.Queue, error) {
+	return u.transitionQueue(ctx, queueID, actor, schedulingdomain.QueueStatusPaused)
 }
 
-func (u *Usecases) ReopenQueue(ctx context.Context, orgID, queueID uuid.UUID, actor string) (schedulingdomain.Queue, error) {
-	return u.transitionQueue(ctx, orgID, queueID, actor, schedulingdomain.QueueStatusActive)
+func (u *Usecases) ReopenQueue(ctx context.Context, queueID uuid.UUID, actor string) (schedulingdomain.Queue, error) {
+	return u.transitionQueue(ctx, queueID, actor, schedulingdomain.QueueStatusActive)
 }
 
-func (u *Usecases) CloseQueue(ctx context.Context, orgID, queueID uuid.UUID, actor string) (schedulingdomain.Queue, error) {
-	return u.transitionQueue(ctx, orgID, queueID, actor, schedulingdomain.QueueStatusClosed)
+func (u *Usecases) CloseQueue(ctx context.Context, queueID uuid.UUID, actor string) (schedulingdomain.Queue, error) {
+	return u.transitionQueue(ctx, queueID, actor, schedulingdomain.QueueStatusClosed)
 }
 
-func (u *Usecases) IssueQueueTicket(ctx context.Context, orgID uuid.UUID, actor string, in schedulingdomain.CreateQueueTicketInput) (schedulingdomain.QueueTicket, error) {
+func (u *Usecases) IssueQueueTicket(ctx context.Context, actor string, in schedulingdomain.CreateQueueTicketInput) (schedulingdomain.QueueTicket, error) {
 	if in.QueueID == uuid.Nil {
 		return schedulingdomain.QueueTicket{}, domainerr.Validation("queue_id is required")
 	}
 	if strings.TrimSpace(in.CustomerName) == "" {
 		return schedulingdomain.QueueTicket{}, domainerr.Validation("customer_name is required")
 	}
-	queue, err := u.repo.GetQueueByID(ctx, orgID, in.QueueID)
+	queue, err := u.repo.GetQueueByID(ctx, in.QueueID)
 	if err != nil {
 		return schedulingdomain.QueueTicket{}, mapRepoError(err, "queue", in.QueueID)
 	}
@@ -1311,7 +1388,6 @@ func (u *Usecases) IssueQueueTicket(ctx context.Context, orgID uuid.UUID, actor 
 	}
 	out, err := u.repo.CreateQueueTicket(ctx, schedulingdomain.QueueTicket{
 		ID:             uuid.New(),
-		OrgID:          orgID,
 		QueueID:        queue.ID,
 		BranchID:       queue.BranchID,
 		ServiceID:      queue.ServiceID,
@@ -1329,126 +1405,126 @@ func (u *Usecases) IssueQueueTicket(ctx context.Context, orgID uuid.UUID, actor 
 	if err != nil {
 		return schedulingdomain.QueueTicket{}, mapQueueError(err, queue.ID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.queue.ticket.created", "scheduling_queue_ticket", out.ID.String(), map[string]any{"queue_id": queue.ID.String(), "number": out.Number})
+	u.logAudit(ctx, actor, "scheduling.queue.ticket.created", "scheduling_queue_ticket", out.ID.String(), map[string]any{"queue_id": queue.ID.String(), "number": out.Number})
 	return out, nil
 }
 
-func (u *Usecases) GetQueueTicketPosition(ctx context.Context, orgID, queueID, ticketID uuid.UUID) (schedulingdomain.QueuePosition, error) {
-	out, err := u.repo.GetQueueTicketPosition(ctx, orgID, queueID, ticketID)
+func (u *Usecases) GetQueueTicketPosition(ctx context.Context, queueID, ticketID uuid.UUID) (schedulingdomain.QueuePosition, error) {
+	out, err := u.repo.GetQueueTicketPosition(ctx, queueID, ticketID)
 	if err != nil {
 		return schedulingdomain.QueuePosition{}, mapRepoError(err, "queue_ticket", ticketID)
 	}
 	return out, nil
 }
 
-func (u *Usecases) CallNextTicket(ctx context.Context, orgID, queueID uuid.UUID, actor string, servingResourceID, operatorUserID *uuid.UUID) (schedulingdomain.QueueTicket, error) {
-	out, err := u.repo.CallNextTicket(ctx, orgID, queueID, servingResourceID, operatorUserID)
+func (u *Usecases) CallNextTicket(ctx context.Context, queueID uuid.UUID, actor string, servingResourceID *uuid.UUID, operatorUserID *string) (schedulingdomain.QueueTicket, error) {
+	out, err := u.repo.CallNextTicket(ctx, queueID, servingResourceID, operatorUserID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, ErrNotFound) || errors.Is(err, errNoTicketWaiting) {
 			return schedulingdomain.QueueTicket{}, domainerr.NotFound("no waiting tickets")
 		}
 		return schedulingdomain.QueueTicket{}, mapQueueError(err, queueID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.queue.ticket.called", "scheduling_queue_ticket", out.ID.String(), map[string]any{"queue_id": queueID.String(), "number": out.Number})
+	u.logAudit(ctx, actor, "scheduling.queue.ticket.called", "scheduling_queue_ticket", out.ID.String(), map[string]any{"queue_id": queueID.String(), "number": out.Number})
 	return out, nil
 }
 
-func (u *Usecases) MarkTicketServing(ctx context.Context, orgID, queueID, ticketID uuid.UUID, actor string, servingResourceID, operatorUserID *uuid.UUID) (schedulingdomain.QueueTicket, error) {
-	current, err := u.repo.GetQueueTicket(ctx, orgID, queueID, ticketID)
+func (u *Usecases) MarkTicketServing(ctx context.Context, queueID, ticketID uuid.UUID, actor string, servingResourceID *uuid.UUID, operatorUserID *string) (schedulingdomain.QueueTicket, error) {
+	current, err := u.repo.GetQueueTicket(ctx, queueID, ticketID)
 	if err != nil {
 		return schedulingdomain.QueueTicket{}, mapRepoError(err, "queue_ticket", ticketID)
 	}
 	if !canTransitionQueueTicket(current.Status, schedulingdomain.QueueTicketStatusServing) {
 		return schedulingdomain.QueueTicket{}, domainerr.Conflict("ticket cannot transition to serving")
 	}
-	out, err := u.repo.MarkQueueTicketServing(ctx, orgID, queueID, ticketID, servingResourceID, operatorUserID)
+	out, err := u.repo.MarkQueueTicketServing(ctx, queueID, ticketID, servingResourceID, operatorUserID)
 	if err != nil {
 		return schedulingdomain.QueueTicket{}, mapQueueError(err, queueID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.queue.ticket.serving", "scheduling_queue_ticket", out.ID.String(), nil)
+	u.logAudit(ctx, actor, "scheduling.queue.ticket.serving", "scheduling_queue_ticket", out.ID.String(), nil)
 	return out, nil
 }
 
-func (u *Usecases) CompleteTicket(ctx context.Context, orgID, queueID, ticketID uuid.UUID, actor string, servingResourceID, operatorUserID *uuid.UUID) (schedulingdomain.QueueTicket, error) {
-	current, err := u.repo.GetQueueTicket(ctx, orgID, queueID, ticketID)
+func (u *Usecases) CompleteTicket(ctx context.Context, queueID, ticketID uuid.UUID, actor string, servingResourceID *uuid.UUID, operatorUserID *string) (schedulingdomain.QueueTicket, error) {
+	current, err := u.repo.GetQueueTicket(ctx, queueID, ticketID)
 	if err != nil {
 		return schedulingdomain.QueueTicket{}, mapRepoError(err, "queue_ticket", ticketID)
 	}
 	if !canTransitionQueueTicket(current.Status, schedulingdomain.QueueTicketStatusCompleted) {
 		return schedulingdomain.QueueTicket{}, domainerr.Conflict("ticket cannot transition to completed")
 	}
-	out, err := u.repo.UpdateQueueTicketStatus(ctx, orgID, queueID, ticketID, schedulingdomain.QueueTicketStatusCompleted, servingResourceID, operatorUserID)
+	out, err := u.repo.UpdateQueueTicketStatus(ctx, queueID, ticketID, schedulingdomain.QueueTicketStatusCompleted, servingResourceID, operatorUserID)
 	if err != nil {
 		return schedulingdomain.QueueTicket{}, mapQueueError(err, queueID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.queue.ticket.completed", "scheduling_queue_ticket", out.ID.String(), nil)
+	u.logAudit(ctx, actor, "scheduling.queue.ticket.completed", "scheduling_queue_ticket", out.ID.String(), nil)
 	return out, nil
 }
 
-func (u *Usecases) CancelTicket(ctx context.Context, orgID, queueID, ticketID uuid.UUID, actor string) (schedulingdomain.QueueTicket, error) {
-	current, err := u.repo.GetQueueTicket(ctx, orgID, queueID, ticketID)
+func (u *Usecases) CancelTicket(ctx context.Context, queueID, ticketID uuid.UUID, actor string) (schedulingdomain.QueueTicket, error) {
+	current, err := u.repo.GetQueueTicket(ctx, queueID, ticketID)
 	if err != nil {
 		return schedulingdomain.QueueTicket{}, mapRepoError(err, "queue_ticket", ticketID)
 	}
 	if !canTransitionQueueTicket(current.Status, schedulingdomain.QueueTicketStatusCancelled) {
 		return schedulingdomain.QueueTicket{}, domainerr.Conflict("ticket cannot transition to cancelled")
 	}
-	out, err := u.repo.UpdateQueueTicketStatus(ctx, orgID, queueID, ticketID, schedulingdomain.QueueTicketStatusCancelled, current.ServingResourceID, current.OperatorUserID)
+	out, err := u.repo.UpdateQueueTicketStatus(ctx, queueID, ticketID, schedulingdomain.QueueTicketStatusCancelled, current.ServingResourceID, current.OperatorUserID)
 	if err != nil {
 		return schedulingdomain.QueueTicket{}, mapQueueError(err, queueID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.queue.ticket.cancelled", "scheduling_queue_ticket", out.ID.String(), nil)
+	u.logAudit(ctx, actor, "scheduling.queue.ticket.cancelled", "scheduling_queue_ticket", out.ID.String(), nil)
 	return out, nil
 }
 
-func (u *Usecases) MarkTicketNoShow(ctx context.Context, orgID, queueID, ticketID uuid.UUID, actor string) (schedulingdomain.QueueTicket, error) {
-	current, err := u.repo.GetQueueTicket(ctx, orgID, queueID, ticketID)
+func (u *Usecases) MarkTicketNoShow(ctx context.Context, queueID, ticketID uuid.UUID, actor string) (schedulingdomain.QueueTicket, error) {
+	current, err := u.repo.GetQueueTicket(ctx, queueID, ticketID)
 	if err != nil {
 		return schedulingdomain.QueueTicket{}, mapRepoError(err, "queue_ticket", ticketID)
 	}
 	if !canTransitionQueueTicket(current.Status, schedulingdomain.QueueTicketStatusNoShow) {
 		return schedulingdomain.QueueTicket{}, domainerr.Conflict("ticket cannot transition to no_show")
 	}
-	out, err := u.repo.UpdateQueueTicketStatus(ctx, orgID, queueID, ticketID, schedulingdomain.QueueTicketStatusNoShow, current.ServingResourceID, current.OperatorUserID)
+	out, err := u.repo.UpdateQueueTicketStatus(ctx, queueID, ticketID, schedulingdomain.QueueTicketStatusNoShow, current.ServingResourceID, current.OperatorUserID)
 	if err != nil {
 		return schedulingdomain.QueueTicket{}, mapQueueError(err, queueID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.queue.ticket.no_show", "scheduling_queue_ticket", out.ID.String(), nil)
+	u.logAudit(ctx, actor, "scheduling.queue.ticket.no_show", "scheduling_queue_ticket", out.ID.String(), nil)
 	return out, nil
 }
 
-func (u *Usecases) ReassignTicket(ctx context.Context, orgID, queueID, ticketID uuid.UUID, actor string, servingResourceID, operatorUserID *uuid.UUID) (schedulingdomain.QueueTicket, error) {
+func (u *Usecases) ReassignTicket(ctx context.Context, queueID, ticketID uuid.UUID, actor string, servingResourceID *uuid.UUID, operatorUserID *string) (schedulingdomain.QueueTicket, error) {
 	if servingResourceID == nil || *servingResourceID == uuid.Nil {
 		return schedulingdomain.QueueTicket{}, domainerr.Validation("serving_resource_id is required")
 	}
-	if _, err := u.repo.GetResource(ctx, orgID, *servingResourceID); err != nil {
+	if _, err := u.repo.GetResource(ctx, *servingResourceID); err != nil {
 		return schedulingdomain.QueueTicket{}, mapRepoError(err, "resource", *servingResourceID)
 	}
-	out, err := u.repo.ReassignQueueTicket(ctx, orgID, queueID, ticketID, servingResourceID, operatorUserID)
+	out, err := u.repo.ReassignQueueTicket(ctx, queueID, ticketID, servingResourceID, operatorUserID)
 	if err != nil {
 		return schedulingdomain.QueueTicket{}, mapQueueError(err, queueID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.queue.ticket.reassigned", "scheduling_queue_ticket", out.ID.String(), map[string]any{"serving_resource_id": servingResourceID.String()})
+	u.logAudit(ctx, actor, "scheduling.queue.ticket.reassigned", "scheduling_queue_ticket", out.ID.String(), map[string]any{"serving_resource_id": servingResourceID.String()})
 	return out, nil
 }
 
-func (u *Usecases) ReturnTicketToWaiting(ctx context.Context, orgID, queueID, ticketID uuid.UUID, actor string) (schedulingdomain.QueueTicket, error) {
-	current, err := u.repo.GetQueueTicket(ctx, orgID, queueID, ticketID)
+func (u *Usecases) ReturnTicketToWaiting(ctx context.Context, queueID, ticketID uuid.UUID, actor string) (schedulingdomain.QueueTicket, error) {
+	current, err := u.repo.GetQueueTicket(ctx, queueID, ticketID)
 	if err != nil {
 		return schedulingdomain.QueueTicket{}, mapRepoError(err, "queue_ticket", ticketID)
 	}
 	if current.Status != schedulingdomain.QueueTicketStatusCalled && current.Status != schedulingdomain.QueueTicketStatusServing {
 		return schedulingdomain.QueueTicket{}, domainerr.Conflict("ticket cannot transition to waiting")
 	}
-	out, err := u.repo.ReturnQueueTicketToWaiting(ctx, orgID, queueID, ticketID)
+	out, err := u.repo.ReturnQueueTicketToWaiting(ctx, queueID, ticketID)
 	if err != nil {
 		return schedulingdomain.QueueTicket{}, mapQueueError(err, queueID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.queue.ticket.returned_to_waiting", "scheduling_queue_ticket", out.ID.String(), nil)
+	u.logAudit(ctx, actor, "scheduling.queue.ticket.returned_to_waiting", "scheduling_queue_ticket", out.ID.String(), nil)
 	return out, nil
 }
 
-func (u *Usecases) JoinWaitlist(ctx context.Context, orgID uuid.UUID, actor string, in schedulingdomain.CreateWaitlistInput) (schedulingdomain.WaitlistEntry, error) {
+func (u *Usecases) JoinWaitlist(ctx context.Context, actor string, in schedulingdomain.CreateWaitlistInput) (schedulingdomain.WaitlistEntry, error) {
 	if in.BranchID == uuid.Nil || in.ServiceID == uuid.Nil {
 		return schedulingdomain.WaitlistEntry{}, domainerr.Validation("branch_id and service_id are required")
 	}
@@ -1458,7 +1534,7 @@ func (u *Usecases) JoinWaitlist(ctx context.Context, orgID uuid.UUID, actor stri
 	if in.RequestedStartAt.IsZero() {
 		return schedulingdomain.WaitlistEntry{}, domainerr.Validation("requested_start_at is required")
 	}
-	_, service, err := u.loadBookingScope(ctx, orgID, in.BranchID, in.ServiceID)
+	_, service, err := u.loadBookingScope(ctx, in.BranchID, in.ServiceID)
 	if err != nil {
 		return schedulingdomain.WaitlistEntry{}, err
 	}
@@ -1469,7 +1545,7 @@ func (u *Usecases) JoinWaitlist(ctx context.Context, orgID uuid.UUID, actor stri
 		return schedulingdomain.WaitlistEntry{}, domainerr.Conflict("service does not allow waitlist")
 	}
 	if in.ResourceID != nil && *in.ResourceID != uuid.Nil {
-		if _, err := u.repo.GetResource(ctx, orgID, *in.ResourceID); err != nil {
+		if _, err := u.repo.GetResource(ctx, *in.ResourceID); err != nil {
 			return schedulingdomain.WaitlistEntry{}, mapRepoError(err, "resource", *in.ResourceID)
 		}
 	}
@@ -1480,7 +1556,6 @@ func (u *Usecases) JoinWaitlist(ctx context.Context, orgID uuid.UUID, actor stri
 	now := time.Now().UTC()
 	out, err := u.repo.CreateWaitlistEntry(ctx, schedulingdomain.WaitlistEntry{
 		ID:               uuid.New(),
-		OrgID:            orgID,
 		BranchID:         in.BranchID,
 		ServiceID:        in.ServiceID,
 		ResourceID:       in.ResourceID,
@@ -1500,12 +1575,12 @@ func (u *Usecases) JoinWaitlist(ctx context.Context, orgID uuid.UUID, actor stri
 	if err != nil {
 		return schedulingdomain.WaitlistEntry{}, err
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.waitlist.joined", "scheduling_waitlist_entry", out.ID.String(), map[string]any{"service_id": out.ServiceID.String()})
+	u.logAudit(ctx, actor, "scheduling.waitlist.joined", "scheduling_waitlist_entry", out.ID.String(), map[string]any{"service_id": out.ServiceID.String()})
 	return out, nil
 }
 
-func (u *Usecases) ListWaitlistEntries(ctx context.Context, orgID uuid.UUID, filter schedulingdomain.ListWaitlistFilter) ([]schedulingdomain.WaitlistEntry, error) {
-	return u.repo.ListWaitlistEntries(ctx, orgID, filter)
+func (u *Usecases) ListWaitlistEntries(ctx context.Context, filter schedulingdomain.ListWaitlistFilter) ([]schedulingdomain.WaitlistEntry, error) {
+	return u.repo.ListWaitlistEntries(ctx, filter)
 }
 
 func (u *Usecases) ProcessWaitlistAvailability(ctx context.Context, now time.Time, limit int) ([]schedulingdomain.WaitlistEntry, error) {
@@ -1519,24 +1594,25 @@ func (u *Usecases) ProcessWaitlistAvailability(ctx context.Context, now time.Tim
 	notified := make([]schedulingdomain.WaitlistEntry, 0)
 	for _, entry := range entries {
 		if entry.RequestedStartAt.Before(now.UTC()) {
-			_, _ = u.repo.UpdateWaitlistEntryStatus(ctx, entry.OrgID, entry.ID, schedulingdomain.WaitlistStatusExpired, nil, nil, nil, "requested slot already passed")
+			_, _ = u.repo.UpdateWaitlistEntryStatus(ctx, entry.ID, schedulingdomain.WaitlistStatusExpired, nil, nil, nil, "requested slot already passed")
 			continue
 		}
-		slots, err := u.listAvailableSlots(ctx, entry.OrgID, schedulingdomain.SlotQuery{
-			BranchID:   entry.BranchID,
-			ServiceID:  entry.ServiceID,
-			Date:       entry.RequestedStartAt,
-			ResourceID: entry.ResourceID,
+		slots, err := u.listAvailableSlots(ctx, schedulingdomain.SlotQuery{
+			BranchID:     entry.BranchID,
+			ServiceID:    entry.ServiceID,
+			Date:         entry.RequestedStartAt,
+			Participants: 1,
+			ResourceID:   entry.ResourceID,
 		})
 		if err != nil {
 			continue
 		}
-		matching := filterSlotsByStart(slots, entry.RequestedStartAt.UTC(), entry.ResourceID)
+		matching := filterSlotsByStart(slots, entry.RequestedStartAt.UTC(), entry.ResourceID, nil, 1)
 		if len(matching) == 0 {
 			continue
 		}
 		expiresAt := minTimePtr(ptrTime(now.UTC().Add(2*time.Hour)), ptrTime(entry.RequestedStartAt.UTC()))
-		updated, err := u.repo.UpdateWaitlistEntryStatus(ctx, entry.OrgID, entry.ID, schedulingdomain.WaitlistStatusNotified, expiresAt, ptrTime(now.UTC()), nil, entry.Notes)
+		updated, err := u.repo.UpdateWaitlistEntryStatus(ctx, entry.ID, schedulingdomain.WaitlistStatusNotified, expiresAt, ptrTime(now.UTC()), nil, entry.Notes)
 		if err != nil {
 			continue
 		}
@@ -1545,31 +1621,31 @@ func (u *Usecases) ProcessWaitlistAvailability(ctx context.Context, now time.Tim
 	return notified, nil
 }
 
-func (u *Usecases) Dashboard(ctx context.Context, orgID uuid.UUID, branchID *uuid.UUID, day time.Time) (schedulingdomain.DashboardStats, error) {
+func (u *Usecases) Dashboard(ctx context.Context, branchID *uuid.UUID, day time.Time) (schedulingdomain.DashboardStats, error) {
 	timezone := "UTC"
 	if branchID != nil && *branchID != uuid.Nil {
-		branch, err := u.repo.GetBranch(ctx, orgID, *branchID)
+		branch, err := u.repo.GetBranch(ctx, *branchID)
 		if err != nil {
 			return schedulingdomain.DashboardStats{}, mapRepoError(err, "branch", *branchID)
 		}
 		timezone = branch.Timezone
 	}
-	return u.repo.DashboardStats(ctx, orgID, branchID, day, timezone)
+	return u.repo.DashboardStats(ctx, branchID, day, timezone)
 }
 
-func (u *Usecases) DayAgenda(ctx context.Context, orgID uuid.UUID, branchID *uuid.UUID, day time.Time) ([]schedulingdomain.DayAgendaItem, error) {
-	return u.repo.ListDayAgenda(ctx, orgID, branchID, day)
+func (u *Usecases) DayAgenda(ctx context.Context, branchID *uuid.UUID, day time.Time) ([]schedulingdomain.DayAgendaItem, error) {
+	return u.repo.ListDayAgenda(ctx, branchID, day)
 }
 
-func (u *Usecases) loadBookingScope(ctx context.Context, orgID, branchID, serviceID uuid.UUID) (schedulingdomain.Branch, schedulingdomain.Service, error) {
-	branch, err := u.repo.GetBranch(ctx, orgID, branchID)
+func (u *Usecases) loadBookingScope(ctx context.Context, branchID, serviceID uuid.UUID) (schedulingdomain.Branch, schedulingdomain.Service, error) {
+	branch, err := u.repo.GetBranch(ctx, branchID)
 	if err != nil {
 		return schedulingdomain.Branch{}, schedulingdomain.Service{}, mapRepoError(err, "branch", branchID)
 	}
 	if !branch.Active {
 		return schedulingdomain.Branch{}, schedulingdomain.Service{}, domainerr.Conflict("branch is inactive")
 	}
-	service, err := u.repo.GetService(ctx, orgID, serviceID)
+	service, err := u.repo.GetService(ctx, serviceID)
 	if err != nil {
 		return schedulingdomain.Branch{}, schedulingdomain.Service{}, mapRepoError(err, "service", serviceID)
 	}
@@ -1579,17 +1655,10 @@ func (u *Usecases) loadBookingScope(ctx context.Context, orgID, branchID, servic
 	return branch, service, nil
 }
 
-func (u *Usecases) listAvailableSlots(ctx context.Context, orgID uuid.UUID, query schedulingdomain.SlotQuery) ([]schedulingdomain.TimeSlot, error) {
-	branch, service, err := u.loadBookingScope(ctx, orgID, query.BranchID, query.ServiceID)
+func (u *Usecases) listAvailableSlots(ctx context.Context, query schedulingdomain.SlotQuery) ([]schedulingdomain.TimeSlot, error) {
+	branch, service, err := u.loadBookingScope(ctx, query.BranchID, query.ServiceID)
 	if err != nil {
 		return nil, err
-	}
-	resources, err := u.repo.ListServiceResources(ctx, orgID, branch.ID, service.ID, query.ResourceID)
-	if err != nil {
-		return nil, err
-	}
-	if len(resources) == 0 {
-		return []schedulingdomain.TimeSlot{}, nil
 	}
 	branchLoc, err := time.LoadLocation(branch.Timezone)
 	if err != nil {
@@ -1597,50 +1666,53 @@ func (u *Usecases) listAvailableSlots(ctx context.Context, orgID uuid.UUID, quer
 	}
 	dayLocal := time.Date(query.Date.Year(), query.Date.Month(), query.Date.Day(), 0, 0, 0, 0, branchLoc)
 
-	out := make([]schedulingdomain.TimeSlot, 0)
-	for _, resource := range resources {
-		resourceLoc := branchLoc
-		if strings.TrimSpace(resource.Timezone) != "" {
-			loc, err := time.LoadLocation(resource.Timezone)
-			if err == nil {
-				resourceLoc = loc
-			}
-		}
-		rules, err := u.repo.ListApplicableAvailabilityRules(ctx, orgID, branch.ID, &resource.ID, dayLocal)
-		if err != nil {
-			return nil, err
-		}
-		if len(rules) == 0 {
-			continue
-		}
-		windowStart := time.Date(dayLocal.Year(), dayLocal.Month(), dayLocal.Day(), 0, 0, 0, 0, resourceLoc)
-		windowEnd := windowStart.Add(24 * time.Hour)
-		blocked, err := u.repo.ListBlockedRangesBetween(ctx, orgID, branch.ID, &resource.ID, windowStart.UTC(), windowEnd.UTC())
-		if err != nil {
-			return nil, err
-		}
-		// Los eventos de agenda interna con resource_id ocupan ese recurso a efectos del
-		// slot picker: el cliente externo nunca ve un hueco donde el dueño ya agendó una
-		// reunión, aunque el evento mismo no se exponga en la surface pública. Los eventos
-		// sin resource_id (tiempo personal del owner) no entran acá y no afectan slots.
-		events, err := u.repo.ListCalendarEventsOccupyingResource(ctx, orgID, branch.ID, resource.ID, windowStart.UTC(), windowEnd.UTC())
-		if err != nil {
-			return nil, err
-		}
-		for _, ev := range events {
-			blocked = append(blocked, schedulingdomain.BlockedRange{StartAt: ev.StartAt, EndAt: ev.EndAt})
-		}
-		candidates := generateSlotsForResource(resourceLoc, branch, resource, service, dayLocal.In(resourceLoc), rules, blocked)
-		for _, slot := range candidates {
-			conflicts, err := u.repo.CountBookingOverlaps(ctx, orgID, resource.ID, slot.OccupiesFrom, slot.OccupiesUntil, nil)
+	allocations, err := NormalizeResourceAllocationsForParticipants(query.ResourceID, query.Resources, query.Participants)
+	if err != nil {
+		return nil, domainerr.Validation(err.Error())
+	}
+	if len(allocations) > 0 {
+		slotSets := make(map[uuid.UUID][]schedulingdomain.TimeSlot, len(allocations))
+		for index := range allocations {
+			resource, err := u.loadServiceResource(ctx, branch.ID, service.ID, allocations[index].ResourceID)
 			if err != nil {
 				return nil, err
 			}
-			if conflicts > 0 {
-				continue
+			allocations[index], err = ResolveAllocationUnits(allocations[index], resource.Capacity)
+			if err != nil {
+				return []schedulingdomain.TimeSlot{}, nil
 			}
-			slot.ConflictCount = int(conflicts)
-			out = append(out, slot)
+			allocations[index].ResourceName = resource.Name
+			slots, err := u.listAvailableSlotsForResource(ctx, branch, service, resource, dayLocal, branchLoc)
+			if err != nil {
+				return nil, err
+			}
+			slotSets[resource.ID] = slots
+		}
+		return IntersectResourceSlots(allocations, slotSets), nil
+	}
+
+	resources, err := u.repo.ListServiceResources(ctx, branch.ID, service.ID, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(resources) == 0 {
+		return []schedulingdomain.TimeSlot{}, nil
+	}
+	out := make([]schedulingdomain.TimeSlot, 0)
+	for _, resource := range resources {
+		slots, err := u.listAvailableSlotsForResource(ctx, branch, service, resource, dayLocal, branchLoc)
+		if err != nil {
+			return nil, err
+		}
+		for index := range slots {
+			slots[index].Allocations[0].Units = query.Participants
+			slots[index].Remaining = min(
+				RemainingReservations(resource.Capacity, slots[index].AllocatedUnits, query.Participants),
+				slots[index].ServiceRemaining,
+			)
+			if slots[index].Remaining > 0 {
+				out = append(out, slots[index])
+			}
 		}
 	}
 	sort.Slice(out, func(i, j int) bool {
@@ -1649,6 +1721,91 @@ func (u *Usecases) listAvailableSlots(ctx context.Context, orgID uuid.UUID, quer
 		}
 		return out[i].StartAt.Before(out[j].StartAt)
 	})
+	return out, nil
+}
+
+func (u *Usecases) loadServiceResource(
+	ctx context.Context,
+	branchID, serviceID, resourceID uuid.UUID,
+) (schedulingdomain.Resource, error) {
+	resource, err := u.repo.GetResource(ctx, resourceID)
+	if err != nil {
+		return schedulingdomain.Resource{}, mapRepoError(err, "resource", resourceID)
+	}
+	if resource.BranchID != branchID || !resource.Active {
+		return schedulingdomain.Resource{}, domainerr.Validation("resource does not belong to the active branch")
+	}
+	eligible, err := u.repo.ListServiceResources(ctx, branchID, serviceID, &resourceID)
+	if err != nil {
+		return schedulingdomain.Resource{}, err
+	}
+	if len(eligible) != 1 || eligible[0].ID != resourceID {
+		return schedulingdomain.Resource{}, domainerr.Validation("resource is not enabled for service")
+	}
+	return resource, nil
+}
+
+func (u *Usecases) listAvailableSlotsForResource(
+	ctx context.Context,
+	branch schedulingdomain.Branch,
+	service schedulingdomain.Service,
+	resource schedulingdomain.Resource,
+	dayLocal time.Time,
+	branchLoc *time.Location,
+) ([]schedulingdomain.TimeSlot, error) {
+	resourceLoc := branchLoc
+	if strings.TrimSpace(resource.Timezone) != "" {
+		if loc, err := time.LoadLocation(resource.Timezone); err == nil {
+			resourceLoc = loc
+		}
+	}
+	rules, err := u.repo.ListApplicableAvailabilityRules(ctx, branch.ID, &resource.ID, dayLocal)
+	if err != nil {
+		return nil, err
+	}
+	if len(rules) == 0 {
+		return []schedulingdomain.TimeSlot{}, nil
+	}
+	windowStart := time.Date(dayLocal.Year(), dayLocal.Month(), dayLocal.Day(), 0, 0, 0, 0, resourceLoc)
+	windowEnd := windowStart.Add(24 * time.Hour)
+	blocked, err := u.repo.ListBlockedRangesBetween(ctx, branch.ID, &resource.ID, windowStart.UTC(), windowEnd.UTC())
+	if err != nil {
+		return nil, err
+	}
+	events, err := u.repo.ListCalendarEventsOccupyingResource(ctx, branch.ID, resource.ID, windowStart.UTC(), windowEnd.UTC())
+	if err != nil {
+		return nil, err
+	}
+	for _, event := range events {
+		blocked = append(blocked, schedulingdomain.BlockedRange{StartAt: event.StartAt, EndAt: event.EndAt})
+	}
+	candidates := generateSlotsForResource(resourceLoc, branch, resource, service, dayLocal.In(resourceLoc), rules, blocked)
+	out := make([]schedulingdomain.TimeSlot, 0, len(candidates))
+	for _, slot := range candidates {
+		allocated, err := u.repo.AllocatedResourceUnits(ctx, resource.ID, slot.OccupiesFrom, slot.OccupiesUntil, nil)
+		if err != nil {
+			return nil, err
+		}
+		concurrent, err := u.repo.ConcurrentServiceBookings(ctx, service.ID, slot.OccupiesFrom, slot.OccupiesUntil, nil)
+		if err != nil {
+			return nil, err
+		}
+		resourceRemaining := max(resource.Capacity-allocated, 0)
+		serviceRemaining := max(service.MaxConcurrentBookings-concurrent, 0)
+		if resourceRemaining == 0 || serviceRemaining == 0 {
+			continue
+		}
+		slot.Allocations = []schedulingdomain.ResourceAllocation{{
+			ResourceID:   resource.ID,
+			ResourceName: resource.Name,
+			Mode:         schedulingdomain.ResourceAllocationModeCapacity,
+			Units:        1,
+		}}
+		slot.Remaining = resourceRemaining
+		slot.ServiceRemaining = serviceRemaining
+		slot.AllocatedUnits = allocated
+		out = append(out, slot)
+	}
 	return out, nil
 }
 
@@ -1703,16 +1860,17 @@ func generateSlotsForResource(loc *time.Location, branch schedulingdomain.Branch
 	slots := make([]schedulingdomain.TimeSlot, 0, len(coreSlots))
 	for _, slot := range coreSlots {
 		slots = append(slots, schedulingdomain.TimeSlot{
-			ResourceID:     resource.ID,
-			ResourceName:   resource.Name,
-			StartAt:        slot.StartAt.UTC(),
-			EndAt:          slot.EndAt.UTC(),
-			OccupiesFrom:   slot.OccupiesFrom.UTC(),
-			OccupiesUntil:  slot.OccupiesUntil.UTC(),
-			Timezone:       timezone,
-			Remaining:      1,
-			ConflictCount:  0,
-			GranularityMin: slot.GranularityMinutes,
+			ResourceID:       resource.ID,
+			ResourceName:     resource.Name,
+			StartAt:          slot.StartAt.UTC(),
+			EndAt:            slot.EndAt.UTC(),
+			OccupiesFrom:     slot.OccupiesFrom.UTC(),
+			OccupiesUntil:    slot.OccupiesUntil.UTC(),
+			Timezone:         timezone,
+			Remaining:        resource.Capacity,
+			ServiceRemaining: service.MaxConcurrentBookings,
+			AllocatedUnits:   0,
+			GranularityMin:   slot.GranularityMinutes,
 		})
 	}
 	return slots
@@ -1728,13 +1886,24 @@ func slotStartMatchesRequested(slotStart, requested time.Time) bool {
 	return a.Truncate(time.Minute).Equal(b.Truncate(time.Minute))
 }
 
-func filterSlotsByStart(slots []schedulingdomain.TimeSlot, startAt time.Time, resourceID *uuid.UUID) []schedulingdomain.TimeSlot {
+func hasRequestedResources(resourceID *uuid.UUID, resources []schedulingdomain.ResourceAllocation) bool {
+	return len(resources) > 0 || (resourceID != nil && *resourceID != uuid.Nil)
+}
+
+func filterSlotsByStart(
+	slots []schedulingdomain.TimeSlot,
+	startAt time.Time,
+	resourceID *uuid.UUID,
+	resources []schedulingdomain.ResourceAllocation,
+	participants int,
+) []schedulingdomain.TimeSlot {
 	out := make([]schedulingdomain.TimeSlot, 0)
+	requested, _ := NormalizeResourceAllocationsForParticipants(resourceID, resources, participants)
 	for _, slot := range slots {
 		if !slotStartMatchesRequested(slot.StartAt, startAt) {
 			continue
 		}
-		if resourceID != nil && *resourceID != uuid.Nil && slot.ResourceID != *resourceID {
+		if len(requested) > 0 && !slotContainsAllocations(slot, requested) {
 			continue
 		}
 		out = append(out, slot)
@@ -1742,8 +1911,30 @@ func filterSlotsByStart(slots []schedulingdomain.TimeSlot, startAt time.Time, re
 	return out
 }
 
-func (u *Usecases) transitionBooking(ctx context.Context, orgID, bookingID uuid.UUID, actor string, target schedulingdomain.BookingStatus, reason string) (schedulingdomain.Booking, error) {
-	current, err := u.repo.GetBookingByID(ctx, orgID, bookingID)
+func slotContainsAllocations(slot schedulingdomain.TimeSlot, requested []schedulingdomain.ResourceAllocation) bool {
+	if len(slot.Allocations) != len(requested) {
+		return false
+	}
+	for _, requirement := range requested {
+		found := false
+		for _, allocation := range slot.Allocations {
+			if allocation.ResourceID == requirement.ResourceID &&
+				allocation.Mode == requirement.Mode &&
+				(requirement.Mode == schedulingdomain.ResourceAllocationModeExclusive ||
+					allocation.Units == requirement.Units) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
+func (u *Usecases) transitionBooking(ctx context.Context, bookingID uuid.UUID, actor string, target schedulingdomain.BookingStatus, reason string) (schedulingdomain.Booking, error) {
+	current, err := u.repo.GetBookingByID(ctx, bookingID)
 	if err != nil {
 		return schedulingdomain.Booking{}, mapRepoError(err, "booking", bookingID)
 	}
@@ -1759,17 +1950,17 @@ func (u *Usecases) transitionBooking(ctx context.Context, orgID, bookingID uuid.
 	case schedulingdomain.BookingStatusCancelled:
 		cancelledAt = &now
 	}
-	out, err := u.repo.UpdateBookingStatus(ctx, orgID, bookingID, target, confirmedAt, cancelledAt, strings.TrimSpace(reason))
+	out, err := u.repo.UpdateBookingStatus(ctx, bookingID, target, confirmedAt, cancelledAt, strings.TrimSpace(reason))
 	if err != nil {
 		return schedulingdomain.Booking{}, mapRepoError(err, "booking", bookingID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.booking."+string(target), "scheduling_booking", out.ID.String(), map[string]any{"reason": strings.TrimSpace(reason)})
-	u.emitEvent(ctx, orgID, "scheduling.booking."+string(target), map[string]any{"booking_id": out.ID.String()})
+	u.logAudit(ctx, actor, "scheduling.booking."+string(target), "scheduling_booking", out.ID.String(), map[string]any{"reason": strings.TrimSpace(reason)})
+	u.emitEvent(ctx, "scheduling.booking."+string(target), map[string]any{"booking_id": out.ID.String()})
 	return out, nil
 }
 
-func (u *Usecases) cancelBooking(ctx context.Context, orgID, bookingID uuid.UUID, actor, reason string, enforcePolicy bool) (schedulingdomain.Booking, error) {
-	current, err := u.repo.GetBookingByID(ctx, orgID, bookingID)
+func (u *Usecases) cancelBooking(ctx context.Context, bookingID uuid.UUID, actor, reason string, enforcePolicy bool) (schedulingdomain.Booking, error) {
+	current, err := u.repo.GetBookingByID(ctx, bookingID)
 	if err != nil {
 		return schedulingdomain.Booking{}, mapRepoError(err, "booking", bookingID)
 	}
@@ -1777,7 +1968,7 @@ func (u *Usecases) cancelBooking(ctx context.Context, orgID, bookingID uuid.UUID
 		return schedulingdomain.Booking{}, domainerr.Conflict("booking cannot transition to cancelled")
 	}
 	if enforcePolicy {
-		service, err := u.repo.GetService(ctx, orgID, current.ServiceID)
+		service, err := u.repo.GetService(ctx, current.ServiceID)
 		if err != nil {
 			return schedulingdomain.Booking{}, mapRepoError(err, "service", current.ServiceID)
 		}
@@ -1786,17 +1977,17 @@ func (u *Usecases) cancelBooking(ctx context.Context, orgID, bookingID uuid.UUID
 		}
 	}
 	now := time.Now().UTC()
-	out, err := u.repo.UpdateBookingStatus(ctx, orgID, bookingID, schedulingdomain.BookingStatusCancelled, nil, &now, strings.TrimSpace(reason))
+	out, err := u.repo.UpdateBookingStatus(ctx, bookingID, schedulingdomain.BookingStatusCancelled, nil, &now, strings.TrimSpace(reason))
 	if err != nil {
 		return schedulingdomain.Booking{}, mapRepoError(err, "booking", bookingID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.booking.cancelled", "scheduling_booking", out.ID.String(), map[string]any{"reason": strings.TrimSpace(reason)})
-	u.emitEvent(ctx, orgID, "scheduling.booking.cancelled", map[string]any{"booking_id": out.ID.String()})
+	u.logAudit(ctx, actor, "scheduling.booking.cancelled", "scheduling_booking", out.ID.String(), map[string]any{"reason": strings.TrimSpace(reason)})
+	u.emitEvent(ctx, "scheduling.booking.cancelled", map[string]any{"booking_id": out.ID.String()})
 	return out, nil
 }
 
-func (u *Usecases) transitionQueue(ctx context.Context, orgID, queueID uuid.UUID, actor string, target schedulingdomain.QueueStatus) (schedulingdomain.Queue, error) {
-	current, err := u.repo.GetQueueByID(ctx, orgID, queueID)
+func (u *Usecases) transitionQueue(ctx context.Context, queueID uuid.UUID, actor string, target schedulingdomain.QueueStatus) (schedulingdomain.Queue, error) {
+	current, err := u.repo.GetQueueByID(ctx, queueID)
 	if err != nil {
 		return schedulingdomain.Queue{}, mapRepoError(err, "queue", queueID)
 	}
@@ -1815,11 +2006,11 @@ func (u *Usecases) transitionQueue(ctx context.Context, orgID, queueID uuid.UUID
 	case schedulingdomain.QueueStatusClosed:
 		return schedulingdomain.Queue{}, domainerr.Conflict("queue cannot transition from closed")
 	}
-	out, err := u.repo.UpdateQueueStatus(ctx, orgID, queueID, target)
+	out, err := u.repo.UpdateQueueStatus(ctx, queueID, target)
 	if err != nil {
 		return schedulingdomain.Queue{}, mapRepoError(err, "queue", queueID)
 	}
-	u.logAudit(ctx, orgID, actor, "scheduling.queue."+string(target), "scheduling_queue", out.ID.String(), nil)
+	u.logAudit(ctx, actor, "scheduling.queue."+string(target), "scheduling_queue", out.ID.String(), nil)
 	return out, nil
 }
 
@@ -1887,16 +2078,16 @@ func mapRepoError(err error, resource string, id uuid.UUID) error {
 	if err == nil {
 		return nil
 	}
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+	if errors.Is(err, ErrNotFound) {
 		if id != uuid.Nil {
 			return domainerr.NotFoundf(resource, id.String())
 		}
 		return domainerr.NotFound(resource)
 	}
-	if isBookingOverlapErr(err) {
+	if errors.Is(err, ErrCapacityExceeded) {
 		return domainerr.Conflict("slot not available")
 	}
-	if strings.Contains(strings.ToLower(err.Error()), "duplicate") || strings.Contains(strings.ToLower(err.Error()), "unique") || strings.Contains(strings.ToLower(err.Error()), "23505") {
+	if errors.Is(err, ErrAlreadyExists) {
 		return domainerr.Conflict(resource + " already exists")
 	}
 	return err
@@ -1906,24 +2097,20 @@ func mapQueueError(err error, queueID uuid.UUID) error {
 	if err == nil {
 		return nil
 	}
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+	if errors.Is(err, ErrNotFound) {
 		return domainerr.NotFoundf("queue", queueID.String())
 	}
-	if errors.Is(err, errQueueInactive) {
+	if errors.Is(err, ErrQueueInactive) {
 		return domainerr.Conflict("queue is not active")
 	}
-	if errors.Is(err, errRemoteJoinDisabled) {
+	if errors.Is(err, ErrRemoteJoinDisabled) {
 		return domainerr.Conflict("queue does not allow remote join")
 	}
 	return err
 }
 
 func isBookingOverlapErr(err error) bool {
-	if err == nil {
-		return false
-	}
-	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "scheduling_bookings_no_overlap") || strings.Contains(msg, "23p01")
+	return errors.Is(err, ErrCapacityExceeded)
 }
 
 func defaultBookingStatus(in schedulingdomain.CreateBookingInput) schedulingdomain.BookingStatus {
@@ -1936,6 +2123,19 @@ func defaultBookingStatus(in schedulingdomain.CreateBookingInput) schedulingdoma
 	default:
 		return schedulingdomain.BookingStatusConfirmed
 	}
+}
+
+func normalizeParticipants(participants int) (int, error) {
+	if participants == 0 {
+		return 1, nil
+	}
+	if participants < 0 {
+		return 0, domainerr.Validation("participants must be positive")
+	}
+	if participants > maxAllocationUnits {
+		return 0, domainerr.Validation("participants must be <= 100000")
+	}
+	return participants, nil
 }
 
 func canTransitionBooking(from, to schedulingdomain.BookingStatus) bool {
@@ -2171,26 +2371,16 @@ func min(a, b int) int {
 	return b
 }
 
-func digitsOnly(v string) string {
-	var b strings.Builder
-	for _, r := range v {
-		if r >= '0' && r <= '9' {
-			b.WriteRune(r)
-		}
-	}
-	return b.String()
-}
-
-func (u *Usecases) logAudit(ctx context.Context, orgID uuid.UUID, actor, action, resourceType, resourceID string, payload map[string]any) {
+func (u *Usecases) logAudit(ctx context.Context, actor, action, resourceType, resourceID string, payload map[string]any) {
 	if u.audit == nil {
 		return
 	}
-	u.audit.Log(ctx, orgID.String(), actor, action, resourceType, resourceID, payload)
+	u.audit.Log(ctx, actor, action, resourceType, resourceID, payload)
 }
 
-func (u *Usecases) emitEvent(ctx context.Context, orgID uuid.UUID, eventType string, payload map[string]any) {
+func (u *Usecases) emitEvent(ctx context.Context, eventType string, payload map[string]any) {
 	if u.notifications == nil {
 		return
 	}
-	_ = u.notifications.Enqueue(ctx, orgID, eventType, payload)
+	_ = u.notifications.Enqueue(ctx, eventType, payload)
 }

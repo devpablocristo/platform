@@ -444,13 +444,15 @@ export function buildSchedulingCreateModalStateFromStart({
     {
       resource_id: fallbackResource.id,
       resource_name: fallbackResource.name,
+      allocations: [{ resource_id: fallbackResource.id, resource_name: fallbackResource.name, units: 1 }],
       start_at: start.toISOString(),
       end_at: provisionalEnd.toISOString(),
       occupies_from: start.toISOString(),
       occupies_until: provisionalEnd.toISOString(),
       timezone: effectiveSchedulingTimeZone(fallbackResource, selectedBranch),
       remaining: 1,
-      conflict_count: 0,
+      service_remaining: Math.max(selectedService.max_concurrent_bookings, 1),
+      allocated_units: 0,
       granularity_minutes: selectedService.slot_granularity_minutes,
     },
     selectedService,
@@ -482,13 +484,15 @@ export function buildSyntheticTimeSlotFromEditor(
   return {
     resource_id: resource.id,
     resource_name: resource.name,
+    allocations: [{ resource_id: resource.id, resource_name: resource.name, units: 1 }],
     start_at: startAt,
     end_at: endAt,
     occupies_from: startAt,
     occupies_until: endAt,
     timezone: timeZone,
     remaining: 1,
-    conflict_count: 0,
+    service_remaining: Math.max(service.max_concurrent_bookings, 1),
+    allocated_units: 0,
     granularity_minutes: service.slot_granularity_minutes,
   };
 }

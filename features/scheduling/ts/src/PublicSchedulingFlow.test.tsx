@@ -8,7 +8,6 @@ import type { PublicSchedulingClient } from './client';
 import { PublicSchedulingFlow } from './PublicSchedulingFlow';
 import type {
   PublicAvailabilitySlot,
-  PublicBooking,
   PublicBusinessInfo,
   PublicQueueSummary,
   PublicService,
@@ -45,16 +44,13 @@ function createClient(overrides?: Partial<Record<keyof PublicSchedulingClient, u
     },
   ];
   const queues: PublicQueueSummary[] = [];
-  const bookings: PublicBooking[] = [];
-
   return {
     getBusinessInfo: vi.fn(async () => business),
     listServices: vi.fn(async () => services),
     getAvailability: vi.fn(async () => availability),
     book: vi.fn(async () => ({
       id: 'booking-1',
-      party_name: 'Ada Lovelace',
-      party_phone: '+54 381 555 0202',
+      reference: 'BOOKING-1',
       title: 'Consulta inicial',
       status: 'pending_confirmation',
       start_at: availability[0].start_at,
@@ -65,7 +61,6 @@ function createClient(overrides?: Partial<Record<keyof PublicSchedulingClient, u
         cancel_token: 'cancel-token',
       },
     })),
-    listMyBookings: vi.fn(async () => bookings),
     listQueues: vi.fn(async () => queues),
     createQueueTicket: vi.fn(),
     getQueuePosition: vi.fn(),
@@ -156,37 +151,12 @@ describe('PublicSchedulingFlow', () => {
     expect(screen.getByText(/\d{1,2}\/\d{1,2}\/\d{4}/)).toBeTruthy();
   });
 
-  it('localizes booking action buttons when using english regional locales', async () => {
-    const client = createClient({
-      listMyBookings: vi.fn(async () => [
-        {
-          id: 'booking-1',
-          party_name: 'Ada Lovelace',
-          party_phone: '+54 381 555 0202',
-          title: 'Initial consult',
-          status: 'pending_confirmation',
-          start_at: '2099-04-05T10:00:00Z',
-          end_at: '2099-04-05T10:30:00Z',
-          duration: 30,
-          actions: {
-            confirm_token: 'confirm-token',
-            cancel_token: 'cancel-token',
-          },
-        },
-      ]),
-    });
+  it('does not expose a public booking-history lookup by phone', async () => {
+    const client = createClient();
 
     renderFlow(client, { locale: 'en-US' });
 
-    const lookupPhoneInput = await screen.findByLabelText('Phone', {
-      selector: 'input#public-scheduling-bookings-phone',
-    });
-    fireEvent.change(lookupPhoneInput, {
-      target: { value: '+54 381 555 0202' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Find bookings' }));
-
-    expect(await screen.findByRole('button', { name: 'Confirm' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /Select slot/i }, { timeout: 5_000 })).toBeTruthy();
+    expect(document.getElementById('public-scheduling-bookings-phone')).toBeNull();
   });
 });

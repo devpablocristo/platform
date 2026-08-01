@@ -75,6 +75,13 @@ export type Resource = {
   updated_at: string;
 };
 
+export type ResourceAllocation = {
+  resource_id: string;
+  resource_name?: string;
+  mode?: 'capacity' | 'exclusive';
+  units?: number;
+};
+
 export type AvailabilityRule = {
   id: string;
   org_id: string;
@@ -130,13 +137,15 @@ export type ListBlockedRangesQuery = {
 export type TimeSlot = {
   resource_id: string;
   resource_name: string;
+  allocations: ResourceAllocation[];
   start_at: string;
   end_at: string;
   occupies_from: string;
   occupies_until: string;
   timezone: string;
   remaining: number;
-  conflict_count: number;
+  service_remaining: number;
+  allocated_units: number;
   granularity_minutes: number;
 };
 
@@ -146,6 +155,8 @@ export type Booking = {
   branch_id: string;
   service_id: string;
   resource_id: string;
+  allocations: ResourceAllocation[];
+  participants?: number;
   party_id?: string | null;
   reference: string;
   customer_name: string;
@@ -355,6 +366,7 @@ export type SlotQuery = {
   serviceId: string;
   date: string;
   resourceId?: string | null;
+  participants?: number;
 };
 
 export type BookingRecurrence = {
@@ -369,6 +381,8 @@ export type CreateBookingPayload = {
   branch_id: string;
   service_id: string;
   resource_id?: string;
+  resources?: ResourceAllocation[];
+  participants?: number;
   party_id?: string;
   customer_name: string;
   customer_phone: string;
@@ -387,6 +401,7 @@ export type CreateBookingPayload = {
 export type RescheduleBookingPayload = {
   branch_id?: string;
   resource_id?: string;
+  resources?: ResourceAllocation[];
   start_at: string;
   end_at?: string;
 };
@@ -418,9 +433,7 @@ export type PublicBookingActionLinks = {
 
 export type PublicBooking = {
   id: string;
-  party_name: string;
-  party_phone: string;
-  customer_email?: string;
+  reference: string;
   title: string;
   status: BookingStatus;
   start_at: string;
@@ -481,22 +494,20 @@ export type PublicAvailabilityQuery = {
   date: string;
   resourceId?: string | null;
   duration?: number;
+  participants?: number;
 };
 
 export type PublicBookPayload = {
   branch_id?: string;
   service_id?: string;
   resource_id?: string;
+  resources?: ResourceAllocation[];
+  participants?: number;
   customer_name: string;
   customer_phone: string;
   customer_email?: string;
   start_at: string;
   notes?: string;
-};
-
-export type PublicMyBookingsQuery = {
-  phone: string;
-  limit?: number;
 };
 
 export type PublicQueueTicketPayload = {
@@ -584,11 +595,6 @@ export type PublicSchedulingFlowCopy = {
   selectedSlotLabel: string;
   bookNow: string;
   booking: string;
-  myBookingsTitle: string;
-  myBookingsDescription: string;
-  findBookings: string;
-  findingBookings: string;
-  noBookings: string;
   queuesTitle: string;
   queuesDescription: string;
   joinQueue: string;
@@ -601,9 +607,6 @@ export type PublicSchedulingFlowCopy = {
   loading: string;
   bookingCreatedTitle: string;
   queueCreatedTitle: string;
-  confirmBooking: string;
-  cancelBooking: string;
-  cancelBookingReason: string;
   statuses: Record<string, string>;
 };
 

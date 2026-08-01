@@ -24,24 +24,24 @@ type AvailabilitySlot struct {
 }
 
 type AvailabilityQuery struct {
-	Date       time.Time
-	Duration   int
-	BranchID   *uuid.UUID
-	ServiceID  *uuid.UUID
-	ResourceID *uuid.UUID
+	Date         time.Time
+	Duration     int
+	Participants int
+	BranchID     *uuid.UUID
+	ServiceID    *uuid.UUID
+	ResourceID   *uuid.UUID
 }
 
 type Booking struct {
-	ID            uuid.UUID   `json:"id"`
-	CustomerName  string      `json:"party_name"`
-	CustomerPhone string      `json:"party_phone"`
-	CustomerEmail string      `json:"customer_email,omitempty"`
-	Title         string      `json:"title"`
-	Status        string      `json:"status"`
-	StartAt       time.Time   `json:"start_at"`
-	EndAt         time.Time   `json:"end_at"`
-	Duration      int         `json:"duration"`
-	ActionLinks   ActionLinks `json:"actions,omitempty"`
+	ID           uuid.UUID   `json:"id"`
+	Reference    string      `json:"reference"`
+	Title        string      `json:"title"`
+	Status       string      `json:"status"`
+	StartAt      time.Time   `json:"start_at"`
+	EndAt        time.Time   `json:"end_at"`
+	Duration     int         `json:"duration"`
+	Participants int         `json:"participants"`
+	ActionLinks  ActionLinks `json:"actions,omitempty"`
 }
 
 type ActionLinks struct {

@@ -56,6 +56,7 @@ export type {
   QueuePosition,
   QueueTicket,
   Resource,
+  ResourceAllocation,
   PublicSchedulingFlowCopy,
   QueueOperatorBoardCopy,
   SchedulingCalendarCopy,
