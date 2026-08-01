@@ -1,12 +1,12 @@
-// Package google implementa el flujo OAuth 2.0 contra Google para suscribir
-// productos al Google Calendar API.
+// Package google provides a low-level, product-agnostic Google Calendar API
+// client and the OAuth 2.0 operations needed to obtain its bearer tokens.
 //
 // Es deliberadamente agnóstico de cualquier producto específico: no conoce
 // bookings, ni usuarios, ni multi-tenant. Recibe credenciales OAuth y devuelve
 // tokens. La persistencia, encriptación, y el mapping a entidades de dominio
 // son responsabilidad del consumidor.
 //
-// El flujo cubierto es el "authorization code" estándar para apps server-side:
+// El flujo OAuth cubierto es el "authorization code" estándar para apps server-side:
 //
 //  1. El producto llama a BuildAuthURL(state) y redirige al usuario.
 //  2. Google muestra la pantalla de consent.
@@ -34,15 +34,20 @@ import (
 )
 
 const (
-	defaultAuthURL  = "https://accounts.google.com/o/oauth2/v2/auth"
-	defaultTokenURL = "https://oauth2.googleapis.com/token"
+	defaultAuthURL   = "https://accounts.google.com/o/oauth2/v2/auth"
+	defaultTokenURL  = "https://oauth2.googleapis.com/token"
+	defaultRevokeURL = "https://oauth2.googleapis.com/revoke"
 )
 
 // ScopeCalendarReadonly y ScopeCalendar son los scopes típicos para Google
 // Calendar API. El producto elige cuál pedir según el caso de uso.
 const (
-	ScopeCalendarReadonly = "https://www.googleapis.com/auth/calendar.readonly"
-	ScopeCalendar         = "https://www.googleapis.com/auth/calendar"
+	ScopeCalendar               = "https://www.googleapis.com/auth/calendar"
+	ScopeCalendarReadonly       = "https://www.googleapis.com/auth/calendar.readonly"
+	ScopeCalendarEvents         = "https://www.googleapis.com/auth/calendar.events"
+	ScopeCalendarEventsReadonly = "https://www.googleapis.com/auth/calendar.events.readonly"
+	ScopeCalendarCalendars      = "https://www.googleapis.com/auth/calendar.calendars"
+	ScopeCalendarFreeBusy       = "https://www.googleapis.com/auth/calendar.freebusy"
 )
 
 // Config son las credenciales del OAuth client + endpoints. Los URLs son
@@ -56,10 +61,12 @@ type Config struct {
 	RedirectURL string
 	// Scopes solicitados. Si está vacío, defaultea a [ScopeCalendarReadonly].
 	Scopes []string
-	// AuthURL / TokenURL: override para tests. Vacíos = endpoints oficiales.
-	AuthURL  string
-	TokenURL string
-	// HTTPClient: override para tests. Nil = http.DefaultClient con timeout 30s.
+	// AuthURL / TokenURL / RevokeURL: overrides para tests.
+	// Vacíos = endpoints oficiales.
+	AuthURL   string
+	TokenURL  string
+	RevokeURL string
+	// HTTPClient: override para tests. Nil = client con timeout de 30s.
 	HTTPClient *http.Client
 }
 
@@ -75,6 +82,13 @@ func (c Config) tokenURL() string {
 		return c.TokenURL
 	}
 	return defaultTokenURL
+}
+
+func (c Config) revokeURL() string {
+	if c.RevokeURL != "" {
+		return c.RevokeURL
+	}
+	return defaultRevokeURL
 }
 
 func (c Config) httpClient() *http.Client {
@@ -95,14 +109,21 @@ func (c Config) scopes() []string {
 // flow. Lo llama BuildAuthURL implícitamente; el producto puede llamarlo
 // al boot para fail-fast.
 func (c Config) Validate() error {
-	if strings.TrimSpace(c.ClientID) == "" {
-		return errors.New("google oauth: ClientID is required")
-	}
-	if strings.TrimSpace(c.ClientSecret) == "" {
-		return errors.New("google oauth: ClientSecret is required")
+	if err := c.validateClient(); err != nil {
+		return err
 	}
 	if strings.TrimSpace(c.RedirectURL) == "" {
-		return errors.New("google oauth: RedirectURL is required")
+		return validationError("oauth", "RedirectURL", "is required")
+	}
+	return nil
+}
+
+func (c Config) validateClient() error {
+	if strings.TrimSpace(c.ClientID) == "" {
+		return validationError("oauth", "ClientID", "is required")
+	}
+	if strings.TrimSpace(c.ClientSecret) == "" {
+		return validationError("oauth", "ClientSecret", "is required")
 	}
 	return nil
 }
@@ -112,12 +133,12 @@ func (c Config) Validate() error {
 // prompt=consent); en refreshes posteriores Google omite ese campo y el
 // producto debe conservar el original.
 type Token struct {
-	AccessToken  string    `json:"access_token"`
-	RefreshToken string    `json:"refresh_token,omitempty"`
-	TokenType    string    `json:"token_type"`
-	ExpiresIn    int64     `json:"expires_in"`
-	Scope        string    `json:"scope,omitempty"`
-	IDToken      string    `json:"id_token,omitempty"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token,omitempty"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int64  `json:"expires_in"`
+	Scope        string `json:"scope,omitempty"`
+	IDToken      string `json:"id_token,omitempty"`
 	// FetchedAt se setea localmente al momento de recibir la respuesta.
 	// Útil para calcular el ExpiresAt sin trust en relojes remotos.
 	FetchedAt time.Time `json:"-"`
@@ -145,7 +166,7 @@ func BuildAuthURL(cfg Config, state string) (string, error) {
 		return "", err
 	}
 	if strings.TrimSpace(state) == "" {
-		return "", errors.New("google oauth: state is required for CSRF protection")
+		return "", validationError("oauth", "state", "is required for CSRF protection")
 	}
 	q := url.Values{}
 	q.Set("client_id", cfg.ClientID)
@@ -167,7 +188,7 @@ func ExchangeCode(ctx context.Context, cfg Config, code string) (Token, error) {
 		return Token{}, err
 	}
 	if strings.TrimSpace(code) == "" {
-		return Token{}, errors.New("google oauth: code is required")
+		return Token{}, validationError("oauth", "code", "is required")
 	}
 	form := url.Values{}
 	form.Set("code", code)
@@ -182,11 +203,11 @@ func ExchangeCode(ctx context.Context, cfg Config, code string) (Token, error) {
 // un nuevo refresh_token en este flow (salvo que el viejo haya sido revocado),
 // así que el producto debe seguir usando el original.
 func Refresh(ctx context.Context, cfg Config, refreshToken string) (Token, error) {
-	if err := cfg.Validate(); err != nil {
+	if err := cfg.validateClient(); err != nil {
 		return Token{}, err
 	}
 	if strings.TrimSpace(refreshToken) == "" {
-		return Token{}, errors.New("google oauth: refresh_token is required")
+		return Token{}, validationError("oauth", "refresh_token", "is required")
 	}
 	form := url.Values{}
 	form.Set("refresh_token", refreshToken)
@@ -196,49 +217,90 @@ func Refresh(ctx context.Context, cfg Config, refreshToken string) (Token, error
 	return postForm(ctx, cfg, form)
 }
 
-// errorResponse modela el shape de errores que devuelve Google: { error, error_description }.
-type errorResponse struct {
-	Error            string `json:"error"`
-	ErrorDescription string `json:"error_description"`
-}
-
 func postForm(ctx context.Context, cfg Config, form url.Values) (Token, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, cfg.tokenURL(), strings.NewReader(form.Encode()))
 	if err != nil {
-		return Token{}, fmt.Errorf("google oauth: build request: %w", err)
+		return Token{}, &TransportError{Operation: "oauth token build request", Err: err}
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 
 	resp, err := cfg.httpClient().Do(req)
 	if err != nil {
-		return Token{}, fmt.Errorf("google oauth: token endpoint request: %w", err)
+		return Token{}, &TransportError{Operation: "oauth token endpoint", Err: err}
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBody))
 	if err != nil {
-		return Token{}, fmt.Errorf("google oauth: read response: %w", err)
+		return Token{}, &ResponseError{Operation: "oauth token", Err: fmt.Errorf("read body: %w", err)}
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		var errResp errorResponse
-		if err := json.Unmarshal(body, &errResp); err == nil && errResp.Error != "" {
-			if errResp.ErrorDescription != "" {
-				return Token{}, fmt.Errorf("google oauth: %s: %s", errResp.Error, errResp.ErrorDescription)
-			}
-			return Token{}, fmt.Errorf("google oauth: %s", errResp.Error)
-		}
-		return Token{}, fmt.Errorf("google oauth: token endpoint returned status %d", resp.StatusCode)
+		return Token{}, decodeOAuthError(resp.StatusCode, resp.Header, body)
 	}
 
 	var token Token
 	if err := json.Unmarshal(body, &token); err != nil {
-		return Token{}, fmt.Errorf("google oauth: decode token: %w", err)
+		return Token{}, &ResponseError{Operation: "oauth token", Err: fmt.Errorf("decode JSON: %w", err)}
 	}
 	if strings.TrimSpace(token.AccessToken) == "" {
-		return Token{}, errors.New("google oauth: token endpoint returned empty access_token")
+		return Token{}, &ResponseError{
+			Operation: "oauth token",
+			Err:       errors.New("endpoint returned empty access_token"),
+		}
 	}
 	token.FetchedAt = time.Now().UTC()
 	return token, nil
+}
+
+// Revoke invalidates an access token or refresh token. Google does not require
+// client credentials for this endpoint, so only RevokeURL and HTTPClient from
+// Config are used.
+func Revoke(ctx context.Context, cfg Config, token string) error {
+	if strings.TrimSpace(token) == "" {
+		return validationError("oauth", "token", "is required")
+	}
+	form := url.Values{}
+	form.Set("token", token)
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		cfg.revokeURL(),
+		strings.NewReader(form.Encode()),
+	)
+	if err != nil {
+		return &TransportError{Operation: "oauth revoke build request", Err: err}
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := cfg.httpClient().Do(req)
+	if err != nil {
+		return &TransportError{Operation: "oauth revoke endpoint", Err: err}
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBody))
+	if err != nil {
+		return &ResponseError{Operation: "oauth revoke", Err: fmt.Errorf("read body: %w", err)}
+	}
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return decodeOAuthError(resp.StatusCode, resp.Header, body)
+	}
+	return nil
+}
+
+func decodeOAuthError(statusCode int, headers http.Header, body []byte) *OAuthError {
+	var payload struct {
+		Error            string `json:"error"`
+		ErrorDescription string `json:"error_description"`
+	}
+	_ = json.Unmarshal(body, &payload)
+	return &OAuthError{
+		StatusCode:  statusCode,
+		Code:        payload.Error,
+		Description: payload.ErrorDescription,
+		Body:        string(body),
+		Headers:     headers.Clone(),
+	}
 }
