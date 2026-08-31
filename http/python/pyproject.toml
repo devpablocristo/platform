@@ -9,7 +9,7 @@ description = "FastAPI/Starlette helpers agnostic to product domain (alineado co
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.115,<1",
+    "fastapi>=0.141.1,<1",
     "starlette>=0.41,<2",
 ]
 
